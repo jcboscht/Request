@@ -1459,7 +1459,7 @@ td.td-action{white-space:nowrap;}
 <div id="modal-milestone" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-milestone')">
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">📌 Nuevo Milestone</div>
+      <div class="modal-title" id="modal-milestone-title">📌 Nuevo Milestone</div>
       <button class="modal-close" onclick="closeModal('modal-milestone')">✕</button>
     </div>
     <div class="modal-body">
@@ -2150,6 +2150,7 @@ let _fileHandle = null;
 let _editingIniId = null; // tracks initiative being edited
 let _lastSaved = null;
 let _lastFileTimestamp = null; // for conflict detection
+let _isSaving = false;         // guard against concurrent autosave
 
 // ─── Session timeout ───────────────────────────────────────
 const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
@@ -2260,6 +2261,8 @@ async function loadFromFile(notify=true) {
 
 async function saveToFile() {
   if (!_fileHandle) return;
+  if (_isSaving) return;   // prevent concurrent saves
+  _isSaving = true;
   try {
     const perm = await _fileHandle.queryPermission({mode:'readwrite'});
     if (perm !== 'granted') {
@@ -2306,6 +2309,7 @@ async function saveToFile() {
     _lastSaved = new Date();
     updateSyncUI();
   } catch(e) { console.warn('saveToFile:', e); }
+  finally { _isSaving = false; }
 }
 
 async function connectExistingFile() {
@@ -2572,6 +2576,7 @@ async function doAuth() {
 }
 function logout() {
   state.isAdmin=false; state.isTeam=false; state.currentUser=null; state.currentUserId=null;
+  localStorage.removeItem('sorh_last_activity');
   saveState(); updateUserUI();
   toast('👋 Sesión cerrada','Has cerrado sesión correctamente.','info');
   showLoginScreen();
@@ -3405,6 +3410,8 @@ function startIntakeWithCategory(cat) {
 }
 
 function renderIntake() {
+  // Pre-fill name from logged-in user if not already set
+  if(!intakeData.requester_name && state.currentUser) intakeData.requester_name = state.currentUser;
   const catOptions = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${intakeData.category===c?'selected':''}>${CATEGORIES[c].icon} ${c}</option>`).join('');
   const areaOptions = AREAS.map(a=>`<option value="${a}" ${intakeData.requester_area===a?'selected':''}>${a}</option>`).join('');
 
@@ -5038,24 +5045,35 @@ function editInitiative(iniId) {
   const ini = state.initiatives.find(i=>i.id===iniId);
   if(!ini) return;
   _editingIniId = iniId;
-  // Switch to initiative tab
-  switchIniTab(0);
-  // Populate form fields
+  // Populate dropdowns first (same logic as openNewInitiativeModal)
+  const catSel   = document.getElementById('ini-cat');
+  const ownerSel = document.getElementById('ini-owner');
+  const msOwnerSel = document.getElementById('ms-owner');
+  const msIniSel   = document.getElementById('ms-ini-select');
+  if(catSel) catSel.innerHTML = '<option value="">Selecciona categoría</option>' +
+    Object.keys(CATEGORIES).map(c=>`<option value="${c}">${CATEGORIES[c].icon} ${c}</option>`).join('');
+  const teamOpts = ['<option value="">Sin asignar</option>',
+    ...state.config.team.map(m=>`<option value="${m}">${m}</option>`)].join('');
+  if(ownerSel)   ownerSel.innerHTML   = teamOpts;
+  if(msOwnerSel) msOwnerSel.innerHTML = teamOpts;
+  if(msIniSel)   msIniSel.innerHTML   = '<option value="">Selecciona la iniciativa</option>' +
+    state.initiatives.map((i,idx)=>`<option value="${idx}">${i.name}</option>`).join('');
+  // Populate text fields
   document.getElementById('ini-name').value  = ini.name || '';
   document.getElementById('ini-start').value = ini.start_date || '';
   document.getElementById('ini-end').value   = ini.target_close_date || '';
   document.getElementById('ini-desc').value  = ini.description || '';
-  const nextEl = document.getElementById('ini-next'); if(nextEl) nextEl.value = ini.next_step || '';
+  const nextEl  = document.getElementById('ini-next');  if(nextEl)  nextEl.value  = ini.next_step || '';
   const risksEl = document.getElementById('ini-risks'); if(risksEl) risksEl.value = ini.risks || '';
-  // Set selects (after populating via existing populate functions)
-  setTimeout(()=>{
-    const catSel = document.getElementById('ini-cat'); if(catSel) catSel.value = ini.category || '';
-    const ownerSel = document.getElementById('ini-owner'); if(ownerSel) ownerSel.value = ini.primary_owner || '';
-    const statusSel = document.getElementById('ini-status'); if(statusSel) statusSel.value = ini.status || 'En planeación';
-  }, 50);
-  // Update modal title
+  // Now set select values (dropdowns are already populated)
+  if(catSel)    catSel.value    = ini.category || '';
+  if(ownerSel)  ownerSel.value  = ini.primary_owner || '';
+  const statusSel = document.getElementById('ini-status');
+  if(statusSel) statusSel.value = ini.status || 'En planeación';
+  // Update modal title and open
   const titleEl = document.querySelector('#modal-new-initiative .modal-title');
   if(titleEl) titleEl.textContent = '✏️ Editar Iniciativa';
+  switchIniTab(0);
   openModal('modal-new-initiative');
 }
 
@@ -5076,7 +5094,7 @@ function submitNewRoadmapItem() {
     if(!cat) { toast('⚠️ Requerido','Selecciona una categoría.','warning'); return; }
     if(!end) { toast('⚠️ Requerido','Indica la fecha objetivo de cierre.','warning'); return; }
     const newIni = {
-      id:`INI-${String(state.initiatives.length+1).padStart('3','0')}`,
+      id:`INI-${Date.now().toString().slice(-6)}`,
       name, category:cat, primary_owner:owner||'TBD', stakeholders:[],
       start_date:start||new Date().toISOString().split('T')[0],
       target_close_date:end, status:status||'En planeación',
@@ -6081,6 +6099,7 @@ function init() {
 
   // Render initial view or show login
   if(state.isAdmin || state.isTeam) {
+    touchSession(); // refresh activity timestamp on page reload
     navigate('home');
   } else {
     showLoginScreen();
@@ -6135,16 +6154,19 @@ let aiGreeted = false;
 
 function toggleAIPanel() {
   aiPanelOpen = !aiPanelOpen;
-  const panel = document.getElementById('ai-panel');
+  const panel   = document.getElementById('ai-panel');
   const overlay = document.getElementById('ai-overlay');
+  const fab     = document.getElementById('ai-fab');
   if(aiPanelOpen) {
     panel.classList.add('open');
     if(overlay) overlay.classList.add('open');
+    if(fab) fab.style.display = 'none';          // hide FAB behind drawer
     if(!aiGreeted) { aiGreeted=true; aiBot(aiGreeting()); }
     setTimeout(()=>{ const inp = document.getElementById('ai-input'); if(inp) inp.focus(); }, 300);
   } else {
     panel.classList.remove('open');
     if(overlay) overlay.classList.remove('open');
+    if(fab) fab.style.display = '';              // restore FAB
   }
 }
 
@@ -6254,8 +6276,8 @@ document.addEventListener('DOMContentLoaded', init);
 #ai-panel-htxt{flex:1}
 #ai-panel-htxt .ai-name{font-size:14px;font-weight:700;color:#fff}
 #ai-panel-htxt .ai-sub{font-size:11px;color:#94a3b8}
-#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
-#ai-close-btn:hover{color:#fff}
+#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px}
+#ai-close-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
 #ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:160px;max-height:340px}
 .ai-msg{padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.5;max-width:92%}
 .ai-msg.bot{background:var(--surface2);color:var(--text-primary);border:1px solid var(--border-light);align-self:flex-start;border-bottom-left-radius:4px}
