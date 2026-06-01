@@ -971,7 +971,7 @@ td.td-action{white-space:nowrap;}
   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- ─── SIDEBAR ─────────────────────────────────────────── -->
-  <nav id="sidebar">
+  <nav id="sidebar" ontouchstart="if(event.target===this)closeSidebar()">
     <div class="sidebar-logo">
       <div class="logo-text">⚡ Strategic Ops</div>
       <div class="logo-sub">Request Hub v1.0</div>
@@ -1034,10 +1034,11 @@ td.td-action{white-space:nowrap;}
   <div id="main">
     <!-- Top bar -->
     <header id="topbar">
-      <button class="btn-icon" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+      <button class="btn-icon" onclick="toggleSidebar()" style="display:none;min-width:44px;min-height:44px;justify-content:center;align-items:center" id="menu-btn">☰</button>
       <div class="topbar-title" id="topbar-title">Inicio</div>
       <div class="topbar-actions" id="topbar-actions">
-        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
+        <span id="autosave-indicator" style="font-size:10px;color:var(--text-muted);transition:opacity 1s;opacity:0;align-self:center;margin-right:4px"></span>
+      <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
           <span class="sync-dot yellow" id="sync-dot"></span>
           <span id="sync-label">Sin archivo</span>
         </div>
@@ -1099,7 +1100,7 @@ td.td-action{white-space:nowrap;}
         <div class="modal-title" id="modal-task-title">Detalle de Tarea</div>
         <div id="modal-task-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
       </div>
-      <button class="modal-close" onclick="closeTaskModal()">✕</button>
+      <button class="modal-close" onclick="flushTaskFieldEdits();closeTaskModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-task-body"></div>
     <div class="modal-footer" id="modal-task-footer"></div>
@@ -1430,6 +1431,13 @@ td.td-action{white-space:nowrap;}
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Deja vacío para mantener la contraseña actual (al editar)</div>
       </div>
       <div class="form-group">
+        <label class="form-label">Área / Equipo</label>
+        <select class="form-select" id="user-modal-area">
+          <option value="">— Sin área asignada —</option>
+        </select>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Se autocargará al crear solicitudes y tareas</div>
+      </div>
+      <div class="form-group">
         <label class="form-label form-required">Rol</label>
         <select class="form-select" id="user-modal-role">
           <option value="admin">🔑 Administrador — acceso completo</option>
@@ -1643,6 +1651,7 @@ let state = {
 // ═══════════════════════════════════════════════════════════
 function saveState() {
   try {
+    state._savedAt = Date.now();
     localStorage.setItem('sorh_requests', JSON.stringify(state.requests));
     localStorage.setItem('sorh_initiatives', JSON.stringify(state.initiatives));
     localStorage.setItem('sorh_config', JSON.stringify(state.config));
@@ -2217,6 +2226,19 @@ async function loadFromFile(notify=true) {
 }
 
 async function saveToFile() {
+  // Conflict guard: if file is newer than our last load, warn user
+  if(fileHandle && state._loadedAt && state._savedAt) {
+    try {
+      const fileData = await fileHandle.getFile();
+      if(fileData.lastModified > state._loadedAt + 5000) {
+        const el = document.getElementById('autosave-indicator');
+        if(el){ el.style.opacity='1'; el.style.color='var(--error)';
+          el.textContent='⚠️ Conflicto: otro usuario guardó cambios. Recarga para sincronizar.';
+          setTimeout(()=>{ if(el){el.style.opacity='0';el.style.color='';} },8000);
+        }
+      }
+    } catch(e) {}
+  }
   if (!_fileHandle) return;
   try {
     const perm = await _fileHandle.queryPermission({mode:'readwrite'});
@@ -2518,6 +2540,10 @@ const VIEW_TITLES = {
   planeacion:'📅 Planeación Q — Roadmaps Transversales'
 };
 function navigate(view) {
+  if(view === 'config' && !state.isAdmin) {
+    toast('🔒 Sin acceso','Solo administradores pueden acceder a configuración.','warning');
+    view = 'home';
+  }
   const adminViews = ['dashboard','heatmap','library','reports','config'];
   if(adminViews.includes(view) && !state.isAdmin) {
     toast('🔒 Acceso restringido','Esta sección requiere acceso de administrador.','warning');
@@ -3302,6 +3328,11 @@ let intakeData = { category:'', request_type:'', title:'', description:'',
 function startIntakeWithCategory(cat) {
   intakeData.category = cat;
   intakeData.requester_name = state.currentUser || intakeData.requester_name;
+  // Auto-fill area from user profile
+  if(state.currentUserId) {
+    const u = (state.config.users||[]).find(x=>x.id===state.currentUserId);
+    if(u && u.area) intakeData.requester_area = u.area;
+  }
   navigate('intake');
 }
 
@@ -3897,11 +3928,12 @@ function submitPlaneacionItem() {
 }
 
 function deletePlaneacionItem(id) {
-  if(!confirm('¿Eliminar esta iniciativa del roadmap?')) return;
-  state.areaRoadmaps = state.areaRoadmaps.filter(i=>i.id!==id);
-  saveState();
-  renderPlaneacion();
-  toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
+  showConfirm('¿Eliminar esta iniciativa del roadmap? Esta acción no se puede deshacer.', ()=>{
+    state.areaRoadmaps = state.areaRoadmaps.filter(i=>i.id!==id);
+    saveState();
+    renderPlaneacion();
+    toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
+  });
 }
 
 function saveTaskField(id, field, value) {
@@ -3939,25 +3971,37 @@ function populateLinkMilestones(reqId) {
     milestones.map(m=>`<option value="${m.id||m.name}">${m.name}</option>`).join('');
 }
 
+function showConfirm(message, onConfirm) {
+  document.getElementById('confirm-title').textContent = 'Confirmar acción';
+  document.getElementById('confirm-msg').textContent = message;
+  document.getElementById('confirm-ok').onclick = () => {
+    closeModal('modal-confirm');
+    onConfirm();
+  };
+  openModal('modal-confirm');
+}
+
 function deleteRequest(id) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
-  if(!confirm(`¿Eliminar la solicitud "${req.title}"?\nEsta acción no se puede deshacer.`)) return;
-  state.requests = state.requests.filter(r=>r.id!==id);
-  saveState();
-  if(state.currentView==='backlog') renderBacklog();
-  else if(state.currentView==='kanban') renderKanban();
-  toast('🗑 Eliminada','Solicitud eliminada correctamente.','info');
+  showConfirm(`¿Eliminar la solicitud "${req.title}"? Esta acción no se puede deshacer.`, ()=>{
+    state.requests = state.requests.filter(r=>r.id!==id);
+    saveState();
+    if(state.currentView==='backlog') renderBacklog();
+    else if(state.currentView==='kanban') renderKanban();
+    toast('🗑 Eliminada','Solicitud eliminada correctamente.','info');
+  });
 }
 
 function deleteInitiative(id) {
   const ini = state.initiatives.find(i=>i.id===id);
   if(!ini) return;
-  if(!confirm(`¿Eliminar la iniciativa "${ini.name}"?\nEsta acción no se puede deshacer.`)) return;
-  state.initiatives = state.initiatives.filter(i=>i.id!==id);
-  saveState();
-  renderRoadmap();
-  toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
+  showConfirm(`¿Eliminar la iniciativa "${ini.name}"? Esta acción no se puede deshacer.`, ()=>{
+    state.initiatives = state.initiatives.filter(i=>i.id!==id);
+    saveState();
+    renderRoadmap();
+    toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
+  });
 }
 
 function renderBacklog() {
@@ -5220,6 +5264,12 @@ function openUserModal(id) {
   document.getElementById('user-modal-username').value = user ? user.username : '';
   document.getElementById('user-modal-password').value = '';
   document.getElementById('user-modal-role').value = user ? user.role : 'team';
+  // Populate area dropdown from CROSS_AREAS
+  const areaSel = document.getElementById('user-modal-area');
+  const crossAreas = (state.config && state.config.crossAreas) || CROSS_AREAS;
+  areaSel.innerHTML = '<option value="">— Sin área asignada —</option>' +
+    crossAreas.map(a=>`<option value="${a}">${a}</option>`).join('');
+  areaSel.value = user ? (user.area||'') : '';
   openModal('modal-user');
   setTimeout(()=>document.getElementById('user-modal-name').focus(), 200);
 }
@@ -5230,6 +5280,7 @@ function submitUser() {
   const username = document.getElementById('user-modal-username').value.trim().toLowerCase();
   const password = document.getElementById('user-modal-password').value;
   const role     = document.getElementById('user-modal-role').value;
+  const area     = document.getElementById('user-modal-area').value;
   if(!name || !username) { toast('⚠️ Campos requeridos','Nombre y usuario son obligatorios.','warning'); return; }
   if(!state.config.users) state.config.users = [];
   // Check duplicate username (excluding self)
@@ -5241,7 +5292,7 @@ function submitUser() {
     if(idx>=0) {
       state.config.users[idx] = {
         ...state.config.users[idx],
-        name, username, role,
+        name, username, role, area,
         ...(password ? {password} : {})
       };
     }
@@ -5250,7 +5301,7 @@ function submitUser() {
     // Create
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
-    state.config.users.push({id:newId, name, username, password, role});
+    state.config.users.push({id:newId, name, username, password, role, area});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -5306,13 +5357,13 @@ function saveConfig() {
   toast('💾 Configuración guardada','Los cambios se han guardado correctamente.','success');
 }
 function confirmReset() {
-  if(confirm('¿Estás seguro de que deseas reiniciar todos los datos? Esta acción no se puede deshacer.')) {
+  showConfirm('¿Reiniciar TODOS los datos? Esta acción no se puede deshacer.', ()=>{
     localStorage.removeItem('sorh_requests');
     localStorage.removeItem('sorh_initiatives');
     state.requests=[];state.initiatives=[];
     seedData(); navigate('home');
     toast('🔄 Datos reiniciados','Se cargaron los datos de muestra.','info');
-  }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5328,8 +5379,19 @@ function openTask(id) {
   openModal('modal-task');
 }
 
+function flushTaskFieldEdits() {
+  if(!currentTaskId) return;
+  const req = state.requests.find(r=>r.id===currentTaskId);
+  if(!req) return;
+  const descEl = document.querySelector('#modal-task-body textarea[onblur*="description"]');
+  const objEl  = document.querySelector('#modal-task-body textarea[onblur*="objective"]');
+  if(descEl && descEl.value.trim() !== (req.description||'').trim()) saveTaskField(currentTaskId,'description',descEl.value);
+  if(objEl  && objEl.value.trim()  !== (req.objective||'').trim())  saveTaskField(currentTaskId,'objective', objEl.value);
+}
+
 function closeTaskModal(e) {
   if(e && e.target!==document.getElementById('modal-task')) return;
+  flushTaskFieldEdits();
   closeModal('modal-task');
   currentTaskId=null;
 }
@@ -5836,7 +5898,9 @@ function submitQuickTask() {
   const types = CATEGORIES[cat]?.types||['General'];
   const newReq = {
     id:genId(cat), created_at:now, updated_at:now,
-    requester_name:state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
+    requester_name:state.currentUser||'Equipo',
+    requester_area:(()=>{ const u=(state.config.users||[]).find(x=>x.id===state.currentUserId); return u&&u.area?u.area:'VCN Strategic Ops'; })(),
+    requester_business_line:'VCN',
     category:cat, request_type:types[0], title, description:desc, objective:desc,
     needed_by:'', requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
     status:'Backlog', assigned_owner:owner, admin_priority:prio, complexity:'Media', internal_only:true,
@@ -5928,7 +5992,8 @@ function aiGreeting() {
   const active = req.filter(r=>!['Concluida','Cancelada'].includes(r.status)).length;
   const overdue = req.filter(r=>isOverdue(r.needed_by)&&!['Concluida','Cancelada'].includes(r.status)).length;
   const name = state.currentUser ? state.currentUser.split(' ')[0] : '';
-  return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Tu copiloto para dudas, seguimiento a solicitudes, iniciativas y pendientes del área.\n\nTienes **${active}** solicitud${active!==1?'es':''} activa${active!==1?'s':''}.${overdue>0?` ⚠️ **${overdue}** vencida${overdue!==1?'s':''}.`:''} ¿Qué quieres revisar hoy?`;
+  if(active === 0) return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Todavía no hay solicitudes activas en el hub. ¿Empezamos creando una?`;
+  return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Tu copiloto de Ops.\n\nTienes **${active}** solicitud${active!==1?'es':''} activa${active!==1?'s':''}.${overdue>0?` ⚠️ **${overdue}** vencida${overdue!==1?'s':''}.`:''} ¿Qué quieres revisar hoy?`;
 }
 
 function aiBot(msg) {
@@ -6011,6 +6076,18 @@ function aiRespond(q) {
   }
 }
 // ═══════════════════════════════════════════════════════════
+
+// ── Auto-save every 60 seconds ──────────────────────────────
+setInterval(()=>{
+  if(!state.currentUserId) return; // only when logged in
+  saveState();
+  const el = document.getElementById('autosave-indicator');
+  if(el){
+    el.textContent = '✓ Auto-guardado ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    el.style.opacity='1';
+    setTimeout(()=>{ if(el) el.style.opacity='0'; }, 3000);
+  }
+}, 60000);
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
