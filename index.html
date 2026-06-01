@@ -1115,14 +1115,21 @@ td.td-action{white-space:nowrap;}
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Usuario</label>
-        <input type="text" class="form-input" id="auth-username" placeholder="Tu nombre de usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+        <label class="form-label">Tipo de acceso</label>
+        <select class="form-select" id="auth-type">
+          <option value="admin">Administrador</option>
+          <option value="team">Miembro del Equipo</option>
+        </select>
+      </div>
+      <div class="form-group" id="auth-name-group" style="display:none">
+        <label class="form-label">Tu nombre</label>
+        <select class="form-select" id="auth-name"></select>
       </div>
       <div class="form-group">
         <label class="form-label">Contraseña</label>
-        <input type="password" class="form-input" id="auth-password" placeholder="Ingresa la contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
+        <input type="password" class="form-input" id="auth-password" placeholder="Ingresa la contraseña" onkeydown="if(event.key==='Enter')doAuth()">
       </div>
-      <div id="auth-error" class="form-error hidden">Usuario o contraseña incorrectos</div>
+      <div id="auth-error" class="form-error hidden">Contraseña incorrecta</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeAuthModal()">Cancelar</button>
@@ -1459,7 +1466,7 @@ td.td-action{white-space:nowrap;}
 <div id="modal-milestone" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-milestone')">
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title" id="modal-milestone-title">📌 Nuevo Milestone</div>
+      <div class="modal-title">📌 Nuevo Milestone</div>
       <button class="modal-close" onclick="closeModal('modal-milestone')">✕</button>
     </div>
     <div class="modal-body">
@@ -2147,39 +2154,7 @@ function seedData() {
 // ═══════════════════════════════════════════════════════════
 const _FS_DB = 'sorh-file-db', _FS_STORE = 'handles', _FS_KEY = 'data-file';
 let _fileHandle = null;
-let _editingIniId = null; // tracks initiative being edited
 let _lastSaved = null;
-let _lastFileTimestamp = null; // for conflict detection
-let _isSaving = false;         // guard against concurrent autosave
-
-// ─── Session timeout ───────────────────────────────────────
-const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
-function touchSession() {
-  localStorage.setItem('sorh_last_activity', Date.now().toString());
-}
-function checkSessionTimeout() {
-  const last = parseInt(localStorage.getItem('sorh_last_activity') || '0');
-  if (last && Date.now() - last > SESSION_TIMEOUT_MS) {
-    localStorage.removeItem('sorh_last_activity');
-    state.isAdmin = false; state.isTeam = false;
-    state.currentUser = null; state.currentUserId = null;
-    saveState();
-    updateUserUI();
-    toast('⏰ Sesión expirada', 'Tu sesión expiró por inactividad. Inicia sesión de nuevo.', 'warning');
-    showLoginScreen();
-    return true;
-  }
-  touchSession();
-  return false;
-}
-
-// ─── SHA-256 password hashing ──────────────────────────────
-async function hashPwd(pwd) {
-  const salt = 'sorh2026_';
-  const msgBuf = new TextEncoder().encode(salt + pwd);
-  const hashBuf = await crypto.subtle.digest('SHA-256', msgBuf);
-  return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
 const _FS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
 async function _dbOp(mode, fn) {
@@ -2215,23 +2190,6 @@ async function initFileSync() {
   updateSyncUI();
 }
 
-// ─── Multi-user merge: prefer the item with newer updated_at ──
-function mergeById(existing, incoming) {
-  const map = new Map();
-  (existing || []).forEach(item => map.set(item.id, item));
-  (incoming || []).forEach(item => {
-    const cur = map.get(item.id);
-    if (!cur) {
-      map.set(item.id, item);
-    } else {
-      const curTs = cur.updated_at || cur.created_at || '0';
-      const incTs = item.updated_at || item.created_at || '0';
-      if (incTs > curTs) map.set(item.id, item);
-    }
-  });
-  return Array.from(map.values());
-}
-
 async function loadFromFile(notify=true) {
   if (!_fileHandle) return;
   try {
@@ -2243,12 +2201,11 @@ async function loadFromFile(notify=true) {
     const file = await _fileHandle.getFile();
     const text = await file.text();
     const data = JSON.parse(text);
-    if (data.saved_at) _lastFileTimestamp = data.saved_at;
-    if (data.requests)      state.requests      = mergeById(state.requests, data.requests);
-    if (data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
-    if (data.documents)     state.documents     = mergeById(state.documents, data.documents);
-    if (data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
-    if (data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
+    if (data.requests)      state.requests      = data.requests;
+    if (data.initiatives)   state.initiatives   = data.initiatives;
+    if (data.documents)     state.documents     = data.documents;
+    if (data.areaRoadmaps)  state.areaRoadmaps  = data.areaRoadmaps;
+    if (data.notifications) state.notifications = data.notifications;
     if (data.config) state.config = { ...state.config, ...data.config };
     _lastSaved = new Date();
     updateSyncUI();
@@ -2261,42 +2218,14 @@ async function loadFromFile(notify=true) {
 
 async function saveToFile() {
   if (!_fileHandle) return;
-  if (_isSaving) return;   // prevent concurrent saves
-  _isSaving = true;
   try {
     const perm = await _fileHandle.queryPermission({mode:'readwrite'});
     if (perm !== 'granted') {
       const granted = await _fileHandle.requestPermission({mode:'readwrite'});
       if (granted !== 'granted') return;
     }
-    // Conflict detection: re-read file to check if another user saved since our last read
-    const currentFile = await _fileHandle.getFile();
-    const currentText = await currentFile.text();
-    let conflict = false;
-    try {
-      const currentData = JSON.parse(currentText);
-      if (currentData.saved_at && _lastFileTimestamp && currentData.saved_at !== _lastFileTimestamp) {
-        conflict = true;
-      }
-    } catch(e) {}
-    if (conflict) {
-      const proceed = confirm(
-        '⚠️ Conflicto detectado: Otro usuario guardó cambios desde tu última sincronización.\n\n' +
-        '¿Deseas continuar guardando? Esto fusionará los cambios automáticamente.'
-      );
-      if (!proceed) return;
-      // Merge before saving
-      try {
-        const remoteData = JSON.parse(currentText);
-        if (remoteData.requests)     state.requests     = mergeById(state.requests, remoteData.requests);
-        if (remoteData.initiatives)  state.initiatives  = mergeById(state.initiatives, remoteData.initiatives);
-        if (remoteData.documents)    state.documents    = mergeById(state.documents, remoteData.documents);
-        if (remoteData.areaRoadmaps) state.areaRoadmaps = mergeById(state.areaRoadmaps, remoteData.areaRoadmaps);
-      } catch(e) {}
-    }
-    const nowTs = new Date().toISOString();
     const data = {
-      v: 2, saved_at: nowTs, saved_by: state.currentUser||'system',
+      v: 2, saved_at: new Date().toISOString(), saved_by: state.currentUser||'system',
       requests: state.requests, initiatives: state.initiatives,
       config: state.config, documents: state.documents,
       notifications: (state.notifications||[]).slice(-100),
@@ -2305,11 +2234,9 @@ async function saveToFile() {
     const writable = await _fileHandle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
-    _lastFileTimestamp = nowTs;
     _lastSaved = new Date();
     updateSyncUI();
   } catch(e) { console.warn('saveToFile:', e); }
-  finally { _isSaving = false; }
 }
 
 async function connectExistingFile() {
@@ -2410,11 +2337,11 @@ function importDataJSON(input) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.requests)      state.requests      = mergeById(state.requests, data.requests);
-      if(data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
-      if(data.documents)     state.documents     = mergeById(state.documents, data.documents);
-      if(data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
-      if(data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
+      if(data.requests)      state.requests      = data.requests;
+      if(data.initiatives)   state.initiatives   = data.initiatives;
+      if(data.documents)     state.documents     = data.documents;
+      if(data.areaRoadmaps)  state.areaRoadmaps  = data.areaRoadmaps;
+      if(data.notifications) state.notifications = data.notifications;
       if(data.config) state.config = {...state.config, ...data.config};
       saveState(); updateNavBadges(); updateUserUI();
       if(state.isAdmin||state.isTeam) navigate(state.currentView||'home');
@@ -2455,45 +2382,30 @@ function toggleLoginPwd() {
   else { inp.type='password'; if(btn) btn.textContent='👁'; }
 }
 
-async function doLogin() {
+function doLogin() {
   const username = (document.getElementById('login-username').value||'').trim().toLowerCase();
   const password = document.getElementById('login-password').value||'';
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   if(!username || !password) { if(errEl) errEl.style.display='block'; return; }
-  if(btn) { btn.disabled=true; btn.textContent='Verificando…'; }
+  // Find user
   const users = state.config.users || [];
-  const candidate = users.find(u => u.username.toLowerCase()===username);
-  let matched = false;
-  if(candidate) {
-    if(candidate.password_hashed) {
-      const h = await hashPwd(password);
-      matched = h === candidate.password;
-    } else {
-      // Legacy plaintext — migrate on success
-      if(password === candidate.password) {
-        matched = true;
-        candidate.password = await hashPwd(password);
-        candidate.password_hashed = true;
-      }
-    }
-  }
-  if(btn) { btn.disabled=false; btn.textContent='Ingresar'; }
-  if(!matched) {
+  const user = users.find(u => u.username.toLowerCase()===username && u.password===password);
+  if(!user) {
     if(errEl) errEl.style.display='block';
     document.getElementById('login-password').value='';
     document.getElementById('login-password').focus();
+    // Shake animation
     const card = document.querySelector('.login-card');
     if(card) { card.style.animation='shake 0.4s ease'; setTimeout(()=>card.style.animation='',400); }
     return;
   }
-  const user = candidate;
+  // Auth success
   if(errEl) errEl.style.display='none';
   state.isAdmin = user.role === 'admin';
   state.isTeam  = user.role === 'admin' || user.role === 'team';
   state.currentUser = user.name;
   state.currentUserId = user.id;
-  touchSession();
   saveState();
   updateUserUI();
   updateNavBadges();
@@ -2510,8 +2422,6 @@ async function doLogin() {
 })();
 
 function openAuthModal() {
-  const uEl = document.getElementById('auth-username');
-  if(uEl) uEl.value='';
   populateAuthSelects();
   document.getElementById('auth-password').value = '';
   document.getElementById('auth-error').classList.add('hidden');
@@ -2536,35 +2446,23 @@ document.addEventListener('DOMContentLoaded',()=>{
   const at = document.getElementById('auth-type');
   if(at) at.addEventListener('change', handleAuthTypeChange);
 });
-async function doAuth() {
-  const username = (document.getElementById('auth-username').value||'').trim().toLowerCase();
+function doAuth() {
+  const type = document.getElementById('auth-type').value;
   const pass = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
-  if(!username || !pass) { errEl.classList.remove('hidden'); return; }
-  const users = state.config.users || [];
-  const candidate = users.find(u => u.username.toLowerCase()===username);
   let ok = false;
-  if(candidate) {
-    if(candidate.password_hashed) {
-      const h = await hashPwd(pass);
-      ok = h === candidate.password;
-    } else {
-      if(pass === candidate.password) {
-        ok = true;
-        candidate.password = await hashPwd(pass);
-        candidate.password_hashed = true;
-      }
-    }
+  if(type==='admin' && pass===state.config.adminPassword) {
+    state.isAdmin=true; state.isTeam=true;
+    state.currentUser='Admin (JC)';
+    ok=true;
+  } else if(type==='team' && pass===state.config.teamPassword) {
+    state.isAdmin=false; state.isTeam=true;
+    state.currentUser=document.getElementById('auth-name').value;
+    ok=true;
   }
   if(ok) {
-    state.isAdmin = candidate.role === 'admin';
-    state.isTeam  = candidate.role === 'admin' || candidate.role === 'team';
-    state.currentUser = candidate.name;
-    state.currentUserId = candidate.id;
-    touchSession();
     closeModal('modal-auth');
     updateUserUI();
-    updateNavBadges();
     saveState();
     toast('✅ Acceso concedido','Bienvenido, '+state.currentUser,'success');
     navigate(state.currentView);
@@ -2576,7 +2474,6 @@ async function doAuth() {
 }
 function logout() {
   state.isAdmin=false; state.isTeam=false; state.currentUser=null; state.currentUserId=null;
-  localStorage.removeItem('sorh_last_activity');
   saveState(); updateUserUI();
   toast('👋 Sesión cerrada','Has cerrado sesión correctamente.','info');
   showLoginScreen();
@@ -2621,7 +2518,6 @@ const VIEW_TITLES = {
   planeacion:'📅 Planeación Q — Roadmaps Transversales'
 };
 function navigate(view) {
-  if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
   const adminViews = ['dashboard','heatmap','library','reports','config'];
   if(adminViews.includes(view) && !state.isAdmin) {
     toast('🔒 Acceso restringido','Esta sección requiere acceso de administrador.','warning');
@@ -3410,8 +3306,6 @@ function startIntakeWithCategory(cat) {
 }
 
 function renderIntake() {
-  // Pre-fill name from logged-in user if not already set
-  if(!intakeData.requester_name && state.currentUser) intakeData.requester_name = state.currentUser;
   const catOptions = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${intakeData.category===c?'selected':''}>${CATEGORIES[c].icon} ${c}</option>`).join('');
   const areaOptions = AREAS.map(a=>`<option value="${a}" ${intakeData.requester_area===a?'selected':''}>${a}</option>`).join('');
 
@@ -4640,12 +4534,7 @@ function renderRoadmap() {
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ini.description}</div>
             ${(()=>{const linked=state.requests.filter(r=>r.linked_initiative_id===ini.id);return linked.length?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${linked.map(r=>`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${r.title.substring(0,25)}${r.title.length>25?'…':''}</span>`).join('')}</div>`:'';})()}
           </div>
-          ${state.isAdmin?`
-            <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
-              <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
-              <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
-            </div>
-          `:''}
+          ${state.isAdmin?`<button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C;flex-shrink:0;align-self:flex-start" title="Eliminar iniciativa">🗑 Eliminar</button>`:''}
         </div>
         <div class="card-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -4654,8 +4543,8 @@ function renderRoadmap() {
               <div style="font-size:13px;font-weight:600">${ini.primary_owner}</div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">INICIO → CIERRE</div>
-              <div style="font-size:13px;font-weight:600">${ini.start_date?fmtDate(ini.start_date)+' → ':''}${fmtDate(ini.target_close_date)}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">FECHA OBJETIVO</div>
+              <div style="font-size:13px;font-weight:600">${fmtDate(ini.target_close_date)}</div>
             </div>
             <div>
               <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">PRÓXIMO PASO</div>
@@ -4734,12 +4623,7 @@ function renderRoadmap() {
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ini.description}</div>
           ${linkedTasks.length?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${linkedTasks.map(r=>`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${r.title.substring(0,22)}${r.title.length>22?'…':''}</span>`).join('')}</div>`:''}
         </div>
-        ${state.isAdmin?`
-          <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
-            <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
-            <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
-          </div>
-        `:''}
+        ${state.isAdmin?`<button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>`:''}
       </div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -5014,9 +4898,6 @@ function renderRoadmapGantt() {
 
 // ─── INITIATIVE / MILESTONE MODAL ────────────────────────
 function openNewInitiativeModal() {
-  _editingIniId = null;
-  const titleEl = document.querySelector('#modal-new-initiative .modal-title');
-  if(titleEl) titleEl.textContent = '🗺️ Agregar al Roadmap';
   // Populate selects
   const catSel = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
@@ -5041,42 +4922,6 @@ function switchIniTab(t) {
     if(form) form.style.display = i===t?'block':'none';
   });
 }
-function editInitiative(iniId) {
-  const ini = state.initiatives.find(i=>i.id===iniId);
-  if(!ini) return;
-  _editingIniId = iniId;
-  // Populate dropdowns first (same logic as openNewInitiativeModal)
-  const catSel   = document.getElementById('ini-cat');
-  const ownerSel = document.getElementById('ini-owner');
-  const msOwnerSel = document.getElementById('ms-owner');
-  const msIniSel   = document.getElementById('ms-ini-select');
-  if(catSel) catSel.innerHTML = '<option value="">Selecciona categoría</option>' +
-    Object.keys(CATEGORIES).map(c=>`<option value="${c}">${CATEGORIES[c].icon} ${c}</option>`).join('');
-  const teamOpts = ['<option value="">Sin asignar</option>',
-    ...state.config.team.map(m=>`<option value="${m}">${m}</option>`)].join('');
-  if(ownerSel)   ownerSel.innerHTML   = teamOpts;
-  if(msOwnerSel) msOwnerSel.innerHTML = teamOpts;
-  if(msIniSel)   msIniSel.innerHTML   = '<option value="">Selecciona la iniciativa</option>' +
-    state.initiatives.map((i,idx)=>`<option value="${idx}">${i.name}</option>`).join('');
-  // Populate text fields
-  document.getElementById('ini-name').value  = ini.name || '';
-  document.getElementById('ini-start').value = ini.start_date || '';
-  document.getElementById('ini-end').value   = ini.target_close_date || '';
-  document.getElementById('ini-desc').value  = ini.description || '';
-  const nextEl  = document.getElementById('ini-next');  if(nextEl)  nextEl.value  = ini.next_step || '';
-  const risksEl = document.getElementById('ini-risks'); if(risksEl) risksEl.value = ini.risks || '';
-  // Now set select values (dropdowns are already populated)
-  if(catSel)    catSel.value    = ini.category || '';
-  if(ownerSel)  ownerSel.value  = ini.primary_owner || '';
-  const statusSel = document.getElementById('ini-status');
-  if(statusSel) statusSel.value = ini.status || 'En planeación';
-  // Update modal title and open
-  const titleEl = document.querySelector('#modal-new-initiative .modal-title');
-  if(titleEl) titleEl.textContent = '✏️ Editar Iniciativa';
-  switchIniTab(0);
-  openModal('modal-new-initiative');
-}
-
 function submitNewRoadmapItem() {
   const activeTab = document.getElementById('ini-form-0').style.display!=='none' ? 0 : 1;
   if(activeTab === 0) {
@@ -5094,27 +4939,13 @@ function submitNewRoadmapItem() {
     if(!cat) { toast('⚠️ Requerido','Selecciona una categoría.','warning'); return; }
     if(!end) { toast('⚠️ Requerido','Indica la fecha objetivo de cierre.','warning'); return; }
     const newIni = {
-      id:`INI-${Date.now().toString().slice(-6)}`,
+      id:`INI-${String(state.initiatives.length+1).padStart('3','0')}`,
       name, category:cat, primary_owner:owner||'TBD', stakeholders:[],
       start_date:start||new Date().toISOString().split('T')[0],
       target_close_date:end, status:status||'En planeación',
       description:desc, next_step:next, risks:risks, request_ids:[],
       milestones:[]
     };
-    if(_editingIniId) {
-      // Edit mode: merge into existing
-      const existingIdx = state.initiatives.findIndex(i=>i.id===_editingIniId);
-      if(existingIdx >= 0) {
-        state.initiatives[existingIdx] = { ...state.initiatives[existingIdx], ...newIni, id:_editingIniId, milestones:state.initiatives[existingIdx].milestones||[] };
-        _editingIniId = null;
-        saveState();
-        closeModal('modal-new-initiative');
-        renderRoadmap();
-        toast('✅ Iniciativa actualizada', name, 'success');
-        return;
-      }
-      _editingIniId = null;
-    }
     state.initiatives.push(newIni);
     saveState();
     addNotification('new_request','🗺️ Nueva iniciativa añadida', `${name} — ${status}`);
@@ -5393,7 +5224,7 @@ function openUserModal(id) {
   setTimeout(()=>document.getElementById('user-modal-name').focus(), 200);
 }
 
-async function submitUser() {
+function submitUser() {
   const id       = document.getElementById('user-modal-id').value;
   const name     = document.getElementById('user-modal-name').value.trim();
   const username = document.getElementById('user-modal-username').value.trim().toLowerCase();
@@ -5408,23 +5239,18 @@ async function submitUser() {
     // Edit
     const idx = state.config.users.findIndex(u=>u.id===id);
     if(idx>=0) {
-      const updatedUser = {
+      state.config.users[idx] = {
         ...state.config.users[idx],
-        name, username, role
+        name, username, role,
+        ...(password ? {password} : {})
       };
-      if(password) {
-        updatedUser.password = await hashPwd(password);
-        updatedUser.password_hashed = true;
-      }
-      state.config.users[idx] = updatedUser;
     }
     toast('✅ Usuario actualizado','Los cambios han sido guardados.','success');
   } else {
     // Create
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
-    const hashedPwd = await hashPwd(password);
-    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:true, role});
+    state.config.users.push({id:newId, name, username, password, role});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -5573,8 +5399,6 @@ function renderTaskDetail(req) {
             <select style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--surface)" onchange="updateMilestone('${req.id}',${i},'status',this.value)">
               ${MS_STATUSES.map(s=>`<option value="${s}" ${ms.status===s?'selected':''}>${s}</option>`).join('')}
             </select>
-            <button onclick="editMilestone('${req.id}',${i})" title="Editar" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--text-muted)" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">✏️</button>
-            <button onclick="deleteMilestone('${req.id}',${i})" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--text-muted)" onmouseover="this.style.color='var(--error)'" onmouseout="this.style.color='var(--text-muted)'">🗑</button>
           `:''}
         </div>
       </div>
@@ -5939,11 +5763,8 @@ function addFile(id) {
 function addMilestone(id) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
-  // Store target request id on modal — clear msIdx to indicate add mode
-  const modal = document.getElementById('modal-milestone');
-  modal.dataset.reqId = id;
-  delete modal.dataset.msIdx;
-  document.getElementById('modal-milestone-title') && (document.getElementById('modal-milestone-title').textContent = '📌 Agregar Milestone');
+  // Store target request id on modal
+  document.getElementById('modal-milestone').dataset.reqId = id;
   document.getElementById('ms-modal-name').value = '';
   document.getElementById('ms-modal-date').value = '';
   document.getElementById('ms-modal-desc').value = '';
@@ -5954,38 +5775,8 @@ function addMilestone(id) {
   setTimeout(()=>document.getElementById('ms-modal-name').focus(), 150);
 }
 
-function editMilestone(reqId, idx) {
-  const req = state.requests.find(r=>r.id===reqId);
-  if(!req || !req.milestones || !req.milestones[idx]) return;
-  const ms = req.milestones[idx];
-  const modal = document.getElementById('modal-milestone');
-  modal.dataset.reqId = reqId;
-  modal.dataset.msIdx = String(idx);
-  document.getElementById('modal-milestone-title') && (document.getElementById('modal-milestone-title').textContent = '✏️ Editar Milestone');
-  document.getElementById('ms-modal-name').value = ms.name || '';
-  document.getElementById('ms-modal-date').value = ms.target_date || '';
-  document.getElementById('ms-modal-desc').value = ms.description || '';
-  const ownerSel = document.getElementById('ms-modal-owner');
-  if(ownerSel) ownerSel.value = ms.owner || '';
-  openModal('modal-milestone');
-}
-
-function deleteMilestone(reqId, idx) {
-  const req = state.requests.find(r=>r.id===reqId);
-  if(!req || !req.milestones || !req.milestones[idx]) return;
-  const ms = req.milestones[idx];
-  if(!confirm(`¿Eliminar el milestone "${ms.name}"?`)) return;
-  req.milestones.splice(idx, 1);
-  req.updated_at = new Date().toISOString();
-  saveState();
-  renderTaskDetail(req);
-  toast('🗑 Milestone eliminado', ms.name, 'info');
-}
-
 function submitMilestoneModal() {
-  const modal = document.getElementById('modal-milestone');
-  const id = modal.dataset.reqId;
-  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
+  const id = document.getElementById('modal-milestone').dataset.reqId;
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const name = document.getElementById('ms-modal-name').value.trim();
@@ -5994,19 +5785,12 @@ function submitMilestoneModal() {
   const owner = document.getElementById('ms-modal-owner').value;
   const desc = document.getElementById('ms-modal-desc').value.trim();
   if(!req.milestones) req.milestones = [];
-  if(msIdx >= 0 && req.milestones[msIdx]) {
-    // Edit mode: preserve id and status
-    req.milestones[msIdx] = { ...req.milestones[msIdx], name, owner, target_date:date, description:desc };
-    toast('✅ Milestone actualizado', name, 'success');
-  } else {
-    // Add mode
-    req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
-    toast('📌 Milestone agregado', name, 'success');
-  }
+  req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
   req.updated_at = new Date().toISOString();
   saveState();
   closeModal('modal-milestone');
   renderTaskDetail(req);
+  toast('📌 Milestone agregado', name, 'success');
 }
 
 function loadTemplate(id, templateKey) {
@@ -6099,7 +5883,6 @@ function init() {
 
   // Render initial view or show login
   if(state.isAdmin || state.isTeam) {
-    touchSession(); // refresh activity timestamp on page reload
     navigate('home');
   } else {
     showLoginScreen();
@@ -6107,29 +5890,6 @@ function init() {
 
   // Init file sync (async — loads from OneDrive file if connected)
   initFileSync().catch(e => console.warn('File sync init:', e));
-
-  // Browser compatibility banner
-  if(typeof window !== 'undefined') {
-    const isChromium = !!(window.chrome || navigator.userAgent.indexOf('Edg') > -1 || navigator.userAgent.indexOf('Chrome') > -1);
-    if(!isChromium) {
-      const banner = document.createElement('div');
-      banner.innerHTML = '⚠️ <strong>Compatibilidad:</strong> La sincronización automática con archivos solo funciona en Chrome o Edge. Otras funciones están disponibles.';
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#FEF3C7;color:#92400E;padding:8px 16px;font-size:13px;text-align:center;border-bottom:1px solid #F59E0B';
-      document.body.prepend(banner);
-      setTimeout(()=>banner.remove(), 8000);
-    }
-  }
-
-  // Autosave every 60 seconds
-  setInterval(async () => {
-    if(state.isAdmin || state.isTeam) {
-      if(_fileHandle) {
-        await saveToFile();
-      } else {
-        saveState();
-      }
-    }
-  }, 60000);
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e=>{
@@ -6139,12 +5899,11 @@ function init() {
       closeModal('modal-quick');
       closeModal('modal-confirm');
       closeSidebar();
-      if(aiPanelOpen) toggleAIPanel();
     }
   });
 
   console.log('%c⚡ Strategic Ops Request Hub v1.0', 'font-size:16px;font-weight:bold;color:#008080;background:#E0F5F0;padding:8px 16px;border-radius:8px');
-  // credentials removed from console
+  console.log('%c🔑 Admin: admin2026 | 👥 Equipo: team2026', 'font-size:12px;color:#6B7280');
 }
 
 
@@ -6154,19 +5913,13 @@ let aiGreeted = false;
 
 function toggleAIPanel() {
   aiPanelOpen = !aiPanelOpen;
-  const panel   = document.getElementById('ai-panel');
-  const overlay = document.getElementById('ai-overlay');
-  const fab     = document.getElementById('ai-fab');
+  const panel = document.getElementById('ai-panel');
   if(aiPanelOpen) {
     panel.classList.add('open');
-    if(overlay) overlay.classList.add('open');
-    if(fab) fab.style.display = 'none';          // hide FAB behind drawer
     if(!aiGreeted) { aiGreeted=true; aiBot(aiGreeting()); }
-    setTimeout(()=>{ const inp = document.getElementById('ai-input'); if(inp) inp.focus(); }, 300);
+    document.getElementById('ai-input').focus();
   } else {
     panel.classList.remove('open');
-    if(overlay) overlay.classList.remove('open');
-    if(fab) fab.style.display = '';              // restore FAB
   }
 }
 
@@ -6267,17 +6020,15 @@ document.addEventListener('DOMContentLoaded', init);
 #ai-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:52px;height:52px;border-radius:50%;background:#1a1a2e;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
 #ai-fab:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(0,0,0,0.45)}
 #ai-fab .ai-q{font-size:22px;font-weight:800;color:#fff;line-height:1;font-family:var(--font-sans)}
-#ai-overlay{position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,0.35);display:none}
-#ai-overlay.open{display:block}
-#ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:9000;width:360px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 32px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
-#ai-panel.open{transform:translateX(0)}
+#ai-panel{position:fixed;bottom:92px;right:28px;z-index:9000;width:340px;max-height:520px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:none;flex-direction:column;overflow:hidden}
+#ai-panel.open{display:flex}
 #ai-panel-header{padding:14px 16px;background:#1a1a2e;display:flex;align-items:center;gap:10px}
 #ai-panel-header svg{flex-shrink:0}
 #ai-panel-htxt{flex:1}
 #ai-panel-htxt .ai-name{font-size:14px;font-weight:700;color:#fff}
 #ai-panel-htxt .ai-sub{font-size:11px;color:#94a3b8}
-#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px}
-#ai-close-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
+#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+#ai-close-btn:hover{color:#fff}
 #ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:160px;max-height:340px}
 .ai-msg{padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.5;max-width:92%}
 .ai-msg.bot{background:var(--surface2);color:var(--text-primary);border:1px solid var(--border-light);align-self:flex-start;border-bottom-left-radius:4px}
@@ -6301,7 +6052,6 @@ document.addEventListener('DOMContentLoaded', init);
 </button>
 
 <!-- AI Panel -->
-<div id="ai-overlay" onclick="toggleAIPanel()"></div>
 <div id="ai-panel">
   <div id="ai-panel-header">
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
