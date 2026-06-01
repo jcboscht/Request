@@ -1153,6 +1153,23 @@ td.td-action{white-space:nowrap;}
           <option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option>
         </select>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Fecha requerida</label>
+          <input type="date" class="form-input" id="qt-needed-by">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duración estimada</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" class="form-input" id="qt-duration" min="1" placeholder="0" style="width:70px">
+            <select class="form-select" id="qt-duration-unit" style="flex:1">
+              <option value="días">días</option>
+              <option value="horas">horas</option>
+              <option value="semanas">semanas</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">Asignar a</label>
         <select class="form-select" id="qt-owner"></select>
@@ -1203,11 +1220,11 @@ td.td-action{white-space:nowrap;}
   <div class="modal" style="max-width:580px;width:96%" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">🗺️ Agregar al Roadmap</div>
-      <button class="modal-close" onclick="closeModal('modal-new-initiative')">✕</button>
+      <button class="modal-close" onclick="_editingIniId=null;document.getElementById('ini-tabs-wrapper').style.display='flex';closeModal('modal-new-initiative')">✕</button>
     </div>
     <div class="modal-body" style="padding:16px">
       <!-- Tabs -->
-      <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
+      <div id="ini-tabs-wrapper" style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
         <button id="ini-tab-0" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="switchIniTab(0)">🚀 Nueva Iniciativa</button>
         <button id="ini-tab-1" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="switchIniTab(1)">📌 Nuevo Milestone</button>
       </div>
@@ -4663,6 +4680,7 @@ function renderRoadmap() {
           ${state.isAdmin?`
             <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
               <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
+              <button onclick="duplicateInitiative('${ini.id}')" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#15803D" title="Duplicar iniciativa">📋 Duplicar</button>
               <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
             </div>
           `:''}
@@ -4757,6 +4775,7 @@ function renderRoadmap() {
         ${state.isAdmin?`
           <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
             <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
+            <button onclick="duplicateInitiative('${ini.id}')" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#15803D" title="Duplicar iniciativa">📋 Duplicar</button>
             <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
           </div>
         `:''}
@@ -5092,6 +5111,11 @@ function openNewInitiativeModal() {
   _editingIniId = null;
   const titleEl = document.querySelector('#modal-new-initiative .modal-title');
   if(titleEl) titleEl.textContent = '🗺️ Agregar al Roadmap';
+  // Reset edit-mode UI
+  const tabsWrapper = document.getElementById('ini-tabs-wrapper');
+  if(tabsWrapper) tabsWrapper.style.display = 'flex';
+  const saveBtn = document.querySelector('#modal-new-initiative .modal-footer .btn-primary');
+  if(saveBtn) saveBtn.textContent = '✅ Guardar';
   // Populate selects
   const catSel = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
@@ -5120,7 +5144,7 @@ function editInitiative(iniId) {
   const ini = state.initiatives.find(i=>i.id===iniId);
   if(!ini) return;
   _editingIniId = iniId;
-  // Populate dropdowns first (same logic as openNewInitiativeModal)
+  // Populate dropdowns
   const catSel   = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
   const msOwnerSel = document.getElementById('ms-owner');
@@ -5140,16 +5164,35 @@ function editInitiative(iniId) {
   document.getElementById('ini-desc').value  = ini.description || '';
   const nextEl  = document.getElementById('ini-next');  if(nextEl)  nextEl.value  = ini.next_step || '';
   const risksEl = document.getElementById('ini-risks'); if(risksEl) risksEl.value = ini.risks || '';
-  // Now set select values (dropdowns are already populated)
+  // Set select values
   if(catSel)    catSel.value    = ini.category || '';
   if(ownerSel)  ownerSel.value  = ini.primary_owner || '';
   const statusSel = document.getElementById('ini-status');
   if(statusSel) statusSel.value = ini.status || 'En planeación';
-  // Update modal title and open
+  // Edit mode UI: hide milestone tab, update title & save button
   const titleEl = document.querySelector('#modal-new-initiative .modal-title');
   if(titleEl) titleEl.textContent = '✏️ Editar Iniciativa';
+  const tabsWrapper = document.getElementById('ini-tabs-wrapper');
+  if(tabsWrapper) tabsWrapper.style.display = 'none';
+  const saveBtn = document.querySelector('#modal-new-initiative .modal-footer .btn-primary');
+  if(saveBtn) saveBtn.textContent = '💾 Guardar cambios';
   switchIniTab(0);
   openModal('modal-new-initiative');
+}
+
+function duplicateInitiative(iniId) {
+  const ini = state.initiatives.find(i=>i.id===iniId);
+  if(!ini) return;
+  const now = new Date().toISOString();
+  const copy = JSON.parse(JSON.stringify(ini));
+  copy.id = `INI-${Date.now().toString().slice(-6)}`;
+  copy.name = `(Copia) ${ini.name}`;
+  copy.status = 'En planeación';
+  copy.milestones = (ini.milestones||[]).map(ms=>({...ms, id:`ms-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, status:'No iniciado'}));
+  state.initiatives.push(copy);
+  saveState();
+  renderRoadmap();
+  toast('📋 Iniciativa duplicada', copy.name, 'success');
 }
 
 function submitNewRoadmapItem() {
@@ -5702,7 +5745,8 @@ function renderTaskDetail(req) {
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">SOLICITANTE</div><div style="font-size:13px;font-weight:600">${req.requester_name}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ÁREA / BL</div><div style="font-size:13px;font-weight:600">${req.requester_area||'—'} / ${req.requester_business_line||'—'}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">TIPO DE SOLICITUD</div><div style="font-size:12px">${req.request_type}</div></div>
-          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA</div><div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)}${isOverdue(req.needed_by)?' ⚠️':''}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA</div><div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)||'—'}${isOverdue(req.needed_by)?' ⚠️':''}</div></div>
+          ${req.duration?`<div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">DURACIÓN ESTIMADA</div><div style="font-size:13px;font-weight:600">⏱ ${req.duration}</div></div>`:''}
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ID</div><div style="font-size:12px;font-family:monospace;color:var(--text-muted)">${req.id}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">CREADO</div><div style="font-size:12px;color:var(--text-muted)">${fmtDateTime(req.created_at)}</div></div>
         </div>
@@ -6121,6 +6165,10 @@ function submitQuickTask() {
   const prio = document.getElementById('qt-priority').value;
   const owner = document.getElementById('qt-owner').value;
   const desc = document.getElementById('qt-desc').value.trim();
+  const neededBy = document.getElementById('qt-needed-by')?.value || '';
+  const durVal = document.getElementById('qt-duration')?.value || '';
+  const durUnit = document.getElementById('qt-duration-unit')?.value || 'días';
+  const duration = durVal ? `${durVal} ${durUnit}` : '';
   if(!title) { toast('⚠️ Campo requerido','Agrega un título.','warning'); return; }
   if(!desc) { toast('⚠️ Campo requerido','Agrega una descripción.','warning'); return; }
   const now = new Date().toISOString();
@@ -6129,7 +6177,8 @@ function submitQuickTask() {
     id:genId(cat), created_at:now, updated_at:now,
     requester_name:state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
     category:cat, request_type:types[0], title, description:desc, objective:desc,
-    needed_by:'', requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
+    needed_by:neededBy, requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
+    duration:duration,
     status:'Backlog', assigned_owner:owner, admin_priority:prio, complexity:'Media', internal_only:true,
     activity_log:[{type:'log',author:state.currentUser||'Equipo',content:'Tarea interna creada.',created_at:now}],
     files:[], milestones:[]
@@ -6139,6 +6188,8 @@ function submitQuickTask() {
   closeModal('modal-quick');
   document.getElementById('qt-title').value='';
   document.getElementById('qt-desc').value='';
+  if(document.getElementById('qt-needed-by')) document.getElementById('qt-needed-by').value='';
+  if(document.getElementById('qt-duration')) document.getElementById('qt-duration').value='';
   toast('⚡ Tarea creada',title,'success');
   updateNavBadges();
   if(state.currentView==='kanban') renderKanban();
