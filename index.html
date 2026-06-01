@@ -925,6 +925,42 @@ td.td-action{white-space:nowrap;}
   background:rgba(0,0,0,0.4);backdrop-filter:blur(2px);
 }
 #sidebar-overlay.open{display:block;}
+/* ── Presence Avatars ─────────────────────────────────── */
+#presence-bar{display:flex;align-items:center;gap:0;margin-right:4px}
+.presence-avatar{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:500;color:#fff;cursor:default;
+  border:2px solid var(--bg,#fff);position:relative;
+  margin-left:-6px;transition:transform .15s, opacity .4s;
+  flex-shrink:0;z-index:1;
+}
+.presence-avatar:first-child{margin-left:0}
+.presence-avatar:hover{transform:scale(1.18);z-index:10}
+.presence-avatar.editing::after{
+  content:'✏️';font-size:8px;position:absolute;
+  bottom:-2px;right:-2px;line-height:1;
+}
+.presence-avatar.editing{animation:presence-pulse 1.2s infinite}
+.presence-avatar.offline{opacity:0;pointer-events:none}
+.presence-overflow{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--surface2);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;color:var(--text-secondary);
+  margin-left:-6px;flex-shrink:0;
+}
+.edit-lock-banner{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:#FEFCE8;border:1px solid #FDE047;border-radius:6px;
+  font-size:12px;color:#854D0E;margin-bottom:10px;
+}
+.edit-lock-banner button{
+  margin-left:auto;background:none;border:none;cursor:pointer;
+  font-size:14px;color:#A16207;line-height:1;padding:0 2px;
+}
+@keyframes presence-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
 </style>
 </head>
 <body>
@@ -1037,6 +1073,7 @@ td.td-action{white-space:nowrap;}
       <button class="btn-icon" onclick="toggleSidebar()" style="display:none;min-width:44px;min-height:44px;justify-content:center;align-items:center" id="menu-btn">☰</button>
       <div class="topbar-title" id="topbar-title">Inicio</div>
       <div class="topbar-actions" id="topbar-actions">
+        <div id="presence-bar" title="Usuarios activos"></div>
         <span id="autosave-indicator" style="font-size:10px;color:var(--text-muted);transition:opacity 1s;opacity:0;align-self:center;margin-right:4px"></span>
       <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
           <span class="sync-dot yellow" id="sync-dot"></span>
@@ -1649,6 +1686,240 @@ let state = {
 // ═══════════════════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════════════════
+
+// ══ Real-Time Presence & Conflict-Free Collaboration ═══════════════════════
+
+// ── Deterministic color palette ──────────────────────────────────────────
+const PRESENCE_COLORS = [
+  '#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6',
+  '#EC4899','#06B6D4','#84CC16','#F97316','#6366F1'
+];
+function userColor(id) {
+  let h = 0;
+  for(let i=0;i<(id||'').length;i++) h=(h*31+id.charCodeAt(i))>>>0;
+  return PRESENCE_COLORS[h % PRESENCE_COLORS.length];
+}
+function userInitials(name) {
+  if(!name) return '?';
+  const parts = name.trim().split(' ');
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+// ── In-memory maps ────────────────────────────────────────────────────────
+let presenceMap  = {};   // { userId: { userId, userName, view, editingId, color, ts } }
+let editLockMap  = {};   // { taskId: { userId, userName } }
+let _presenceIntervals = [];
+
+// ── BroadcastChannel (degrades gracefully) ────────────────────────────────
+const collabChannel = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('sorh_collab')
+  : { postMessage:()=>{}, onmessage:null, close:()=>{} };
+
+function broadcastMsg(msg) {
+  try { collabChannel.postMessage(msg); } catch(e) {}
+}
+
+collabChannel.onmessage = function(evt) {
+  const msg = evt.data;
+  if(!msg || !msg.type) return;
+  if(msg.type === 'heartbeat') {
+    if(msg.userId === state.currentUserId) return; // ignore self
+    presenceMap[msg.userId] = { ...msg, _seen: Date.now() };
+    renderPresenceBar();
+  }
+  if(msg.type === 'state_update') {
+    if(msg.senderId === state.currentUserId) return;
+    mergeRemoteState(msg.patch);
+  }
+  if(msg.type === 'edit_lock') {
+    if(msg.userId === state.currentUserId) return;
+    editLockMap[msg.taskId] = { userId: msg.userId, userName: msg.userName };
+    // Show advisory banner if we have this task open
+    if(currentTaskId === msg.taskId) showEditLockBanner(msg.userName);
+  }
+  if(msg.type === 'edit_unlock') {
+    delete editLockMap[msg.taskId];
+    hideEditLockBanner();
+  }
+};
+
+function sendHeartbeat() {
+  if(!state.currentUserId) return;
+  broadcastMsg({
+    type: 'heartbeat',
+    userId:    state.currentUserId,
+    userName:  state.currentUser  || '?',
+    view:      state.currentView  || 'home',
+    editingId: currentTaskId      || null,
+    color:     userColor(state.currentUserId),
+    ts:        Date.now()
+  });
+}
+
+function expirePresence() {
+  const cutoff = Date.now() - 30000;
+  let changed = false;
+  Object.keys(presenceMap).forEach(uid => {
+    if((presenceMap[uid]._seen || presenceMap[uid].ts) < cutoff) {
+      // Mark offline so CSS fades it out, remove after transition
+      const el = document.querySelector(`.presence-avatar[data-uid="${uid}"]`);
+      if(el) { el.classList.add('offline'); setTimeout(()=>delete presenceMap[uid],2000); }
+      else delete presenceMap[uid];
+      changed = true;
+    }
+  });
+  if(changed) renderPresenceBar();
+}
+
+function renderPresenceBar() {
+  const bar = document.getElementById('presence-bar');
+  if(!bar) return;
+  const users = Object.values(presenceMap).filter(u => u.userId !== state.currentUserId);
+  if(!users.length) { bar.innerHTML=''; return; }
+  const visible = users.slice(0, 4);
+  const overflow = users.length - 4;
+  bar.innerHTML = visible.map(u => {
+    const initials = userInitials(u.userName);
+    const color    = u.color || userColor(u.userId);
+    const isEditing = !!u.editingId;
+    const viewLabel = u.view ? u.view.charAt(0).toUpperCase()+u.view.slice(1) : '';
+    const tooltip   = `${u.userName}${viewLabel?' · '+viewLabel:''}${isEditing?' · editando':''}`; 
+    return `<div class="presence-avatar${isEditing?' editing':''}"
+      data-uid="${u.userId}"
+      style="background:${color};border-color:${color}20"
+      title="${tooltip}">${initials}</div>`;
+  }).join('') + (overflow > 0
+    ? `<div class="presence-overflow" title="${overflow} más activos">+${overflow}</div>`
+    : '');
+}
+
+// ── Edit-lock advisory banner ─────────────────────────────────────────────
+function showEditLockBanner(userName) {
+  const body = document.getElementById('modal-task-body');
+  if(!body) return;
+  hideEditLockBanner();
+  const banner = document.createElement('div');
+  banner.id = 'edit-lock-banner';
+  banner.className = 'edit-lock-banner';
+  banner.innerHTML = `⚠️ <strong>${userName}</strong> también está editando esta tarea. Los cambios se sincronizarán al guardar. <button onclick="hideEditLockBanner()" title="Cerrar">✕</button>`;
+  body.prepend(banner);
+}
+function hideEditLockBanner() {
+  const b = document.getElementById('edit-lock-banner');
+  if(b) b.remove();
+}
+
+// ── mergeRemoteState — CRDT last-write-wins per record ───────────────────
+function mergeRemoteState(remote) {
+  if(!remote) return {added:0,updated:0,skipped:0};
+  let added=0, updated=0, skipped=0;
+
+  function mergeList(localArr, remoteArr, idField='id') {
+    if(!Array.isArray(remoteArr)) return;
+    remoteArr.forEach(remoteRec => {
+      const localIdx = localArr.findIndex(r=>r[idField]===remoteRec[idField]);
+      if(localIdx === -1) { localArr.push(remoteRec); added++; }
+      else {
+        const localRec = localArr[localIdx];
+        const remoteTs = remoteRec.updated_at || remoteRec._savedAt || 0;
+        const localTs  = localRec.updated_at  || localRec._savedAt  || 0;
+        if(remoteTs > localTs) { localArr[localIdx] = remoteRec; updated++; }
+        else skipped++;
+      }
+    });
+  }
+
+  mergeList(state.requests,    remote.requests    || []);
+  mergeList(state.initiatives, remote.initiatives || []);
+  mergeList(state.areaRoadmaps,remote.areaRoadmaps|| []);
+  mergeList(state.documents,   remote.documents   || []);
+
+  // Merge config.users
+  if(remote.config && Array.isArray(remote.config.users)) {
+    if(!state.config.users) state.config.users = [];
+    mergeList(state.config.users, remote.config.users);
+  }
+
+  saveState();
+
+  // Silently refresh current view
+  const renders = {home:renderHome,backlog:renderBacklog,kanban:renderKanban,
+    roadmap:renderRoadmap,planeacion:renderPlaneacion,dashboard:renderDashboard,
+    docs:renderDocs,config:renderConfig,heatmap:renderHeatmap};
+  const fn = renders[state.currentView];
+  if(fn) try { fn(); } catch(e){}
+
+  // Refresh open task modal if it was updated
+  if(currentTaskId) {
+    const updatedReq = state.requests.find(r=>r.id===currentTaskId);
+    if(updatedReq) {
+      // Only re-render if the active element is NOT inside the modal (avoid cursor loss)
+      const active = document.activeElement;
+      const modal  = document.getElementById('modal-task');
+      if(modal && !modal.contains(active)) renderTaskDetail(updatedReq);
+    }
+  }
+
+  if(added+updated > 0) {
+    const ind = document.getElementById('autosave-indicator');
+    if(ind) {
+      ind.style.opacity='1'; ind.style.color='var(--primary)';
+      ind.textContent = `🔄 ${added+updated} cambio${added+updated>1?'s':''} sincronizado${added+updated>1?'s':''}`;
+      setTimeout(()=>{ if(ind){ind.style.opacity='0';ind.style.color='';} },4000);
+    }
+  }
+  return {added, updated, skipped};
+}
+
+// ── Tier 2: OneDrive polling every 20s ───────────────────────────────────
+let _ondrivePollingInterval = null;
+function startOneDrivePolling() {
+  if(_ondrivePollingInterval) return;
+  _ondrivePollingInterval = setInterval(async ()=>{
+    if(!_fileHandle || !state.currentUserId) return;
+    try {
+      const file = await _fileHandle.getFile();
+      if(file.lastModified <= (state._loadedAt||0)) return; // no changes
+      const text = await file.text();
+      const remote = JSON.parse(text);
+      if(!remote || remote._savedAt <= (state._loadedAt||0)) return;
+      state._loadedAt = remote._savedAt;
+      const summary = mergeRemoteState(remote);
+      if(summary.added+summary.updated > 0) {
+        broadcastMsg({type:'state_update', patch:remote, senderId:state.currentUserId});
+      }
+    } catch(e) {}
+  }, 20000);
+  _presenceIntervals.push(_ondrivePollingInterval);
+}
+
+// ── Init presence on login ────────────────────────────────────────────────
+function initPresence() {
+  if(!state.currentUserId) return;
+  // Start heartbeat every 15s
+  const hbInterval = setInterval(sendHeartbeat, 15000);
+  _presenceIntervals.push(hbInterval);
+  // Start presence expiry check every 10s
+  const expInterval = setInterval(expirePresence, 10000);
+  _presenceIntervals.push(expInterval);
+  // Start OneDrive polling
+  startOneDrivePolling();
+  // Send immediate heartbeat
+  sendHeartbeat();
+  renderPresenceBar();
+}
+
+function clearPresenceIntervals() {
+  _presenceIntervals.forEach(id=>clearInterval(id));
+  _presenceIntervals = [];
+  _ondrivePollingInterval = null;
+  presenceMap = {};
+  editLockMap = {};
+  broadcastMsg({type:'heartbeat',userId:state.currentUserId,ts:0}); // signal offline
+  collabChannel.onmessage = null;
+  renderPresenceBar();
+}
+// ═══════════════════════════════════════════════════════════════════════════
 function saveState() {
   try {
     state._savedAt = Date.now();
@@ -1662,6 +1933,13 @@ function saveState() {
   } catch(e) {}
   // Auto-sync to file (async, non-blocking)
   if (_fileHandle) saveToFile().catch(()=>{});
+  // Broadcast to other tabs
+  if(state.currentUserId) {
+    broadcastMsg({ type:'state_update', senderId: state.currentUserId,
+      patch: { requests: state.requests, initiatives: state.initiatives,
+               areaRoadmaps: state.areaRoadmaps, documents: state.documents,
+               config: { users: state.config.users }, _savedAt: state._savedAt } });
+  }
 }
 function loadState() {
   try {
@@ -2434,6 +2712,7 @@ function doLogin() {
   hideLoginScreen();
   navigate('home');
   toast('👋 Bienvenido','Hola, '+user.name+'! Sesión iniciada correctamente.','success');
+  initPresence();
 }
 
 // Shake keyframes (injected once)
@@ -2495,6 +2774,7 @@ function doAuth() {
   }
 }
 function logout() {
+  clearPresenceIntervals();
   state.isAdmin=false; state.isTeam=false; state.currentUser=null; state.currentUserId=null;
   saveState(); updateUserUI();
   toast('👋 Sesión cerrada','Has cerrado sesión correctamente.','info');
@@ -2574,6 +2854,7 @@ function navigate(view) {
   if(renders[view]) renders[view]();
   updateNavBadges();
   closeSidebar();
+  sendHeartbeat(); // update view in presence
 }
 
 function updateNavBadges() {
@@ -2764,7 +3045,7 @@ function renderHome() {
   const recentRows = recentReqs.map(r=>`
     <tr onclick="openTask('${r.id}')" style="cursor:pointer">
       <td class="td-id">${r.id}</td>
-      <td class="td-title"><span title="${r.title}">${r.title}</span>${r.linked_initiative_id?`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:10px;padding:1px 6px;margin-left:6px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,18)}</span>`:''}</td>
+      <td class="td-title">${r.is_recurring?'<span style="font-size:10px;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;border-radius:10px;padding:1px 6px;margin-right:4px">🔄</span>':''}<span title="${r.title}">${r.title}</span>${r.linked_initiative_id?`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:10px;padding:1px 6px;margin-left:6px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,18)}</span>`:''}</td>
       <td>${statusBadge(r.status)}</td>
       <td>${ownerBadge(r.assigned_owner)}</td>
       <td style="font-size:11px;color:var(--text-muted)">${fmtDateShort(r.needed_by)}</td>
@@ -3421,6 +3702,59 @@ function renderIntake() {
             <div id="links-list" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
           </div>
 
+
+          <!-- RECURRENCIA -->
+          <div style="margin-top:20px">
+            <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--primary-light)">🔄 Recurrencia</div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-primary)">
+                <input type="checkbox" id="i-recurring" style="width:16px;height:16px;cursor:pointer" onchange="toggleRecurrenceFields()">
+                Esta tarea se repite periódicamente
+              </label>
+            </div>
+            <div id="recurrence-fields" style="display:none;padding:14px;background:var(--surface2);border:1px solid var(--border-light);border-radius:var(--radius)">
+              <div class="grid-2" style="margin-bottom:10px">
+                <div class="form-group">
+                  <label class="form-label">Frecuencia</label>
+                  <select class="form-select" id="i-rec-type" onchange="toggleRecurrenceDetail()" style="font-size:13px">
+                    <option value="monthly">📅 Mensual</option>
+                    <option value="quarterly">📊 Trimestral</option>
+                    <option value="weekly">📆 Semanal</option>
+                  </select>
+                </div>
+                <div class="form-group" id="rec-monthly-group">
+                  <label class="form-label">Día del mes</label>
+                  <select class="form-select" id="i-rec-day" style="font-size:13px">
+                    ${Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+              <div id="rec-quarterly-group" style="display:none;margin-bottom:10px">
+                <div class="form-group">
+                  <label class="form-label">Entrega</label>
+                  <select class="form-select" id="i-rec-qoffset" style="font-size:13px">
+                    <option value="0-10">Día 10 del mes de cierre del Q</option>
+                    <option value="1-10">Día 10 del mes siguiente al cierre del Q</option>
+                    <option value="1-15">Día 15 del mes siguiente al cierre del Q</option>
+                    <option value="1-30">Último día del mes siguiente al cierre del Q</option>
+                  </select>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">
+                Al marcar como <strong>Concluida</strong>, se generará automáticamente la siguiente ocurrencia con la fecha correspondiente.
+              </div>
+              <!-- Quick templates -->
+              <div style="margin-top:12px;border-top:1px solid var(--border-light);padding-top:10px">
+                <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px">PLANTILLAS RÁPIDAS</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('oic')">📋 OIC Report</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('financial')">💰 Financial Metrics</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('quarterly')">📊 Quarterly Report</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ACTIONS -->
           <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
             <button class="btn btn-ghost btn-sm" onclick="navigate('home')">Cancelar</button>
@@ -3483,6 +3817,10 @@ function submitIntake() {
   const date = document.getElementById('i-date') ? document.getElementById('i-date').value : '';
   const prio = document.getElementById('i-prio') ? document.getElementById('i-prio').value : 'Media';
   const linkInput = document.getElementById('i-link');
+  const isRecurring = document.getElementById('i-recurring') ? document.getElementById('i-recurring').checked : false;
+  const recType   = document.getElementById('i-rec-type')    ? document.getElementById('i-rec-type').value    : 'monthly';
+  const recDay    = document.getElementById('i-rec-day')     ? parseInt(document.getElementById('i-rec-day').value||'1') : 1;
+  const recQOffset= document.getElementById('i-rec-qoffset') ? document.getElementById('i-rec-qoffset').value : '1-10';
   if(linkInput && linkInput.value.trim()) intakeData.support_links.push(linkInput.value.trim());
 
   if(!name) { toast('⚠️ Campo requerido','Por favor ingresa tu nombre.','warning'); return; }
@@ -3512,7 +3850,10 @@ function submitIntake() {
     additional_comments: '',
     status: 'Backlog', assigned_owner: '', admin_priority: '',
     complexity: 'Media', internal_only: false,
-    activity_log: [], files: [], milestones: []
+    activity_log: [], files: [], milestones: [],
+    is_recurring: isRecurring,
+    recurrence: isRecurring ? {type:recType, day_of_month:recDay, quarter_offset:recQOffset} : null,
+    occurrence_number: 1, recurrence_parent_id: null
   };
   state.requests.unshift(newReq);
   saveState();
@@ -4105,6 +4446,7 @@ function renderKanban() {
           <div class="kc-title">${r.title}</div>
           <div class="kc-meta">
             <span class="badge" style="background:${catInfo.bg};color:${catInfo.color};font-size:10px">${catInfo.icon} ${r.category.split(' ')[0]}</span>
+            ${r.is_recurring?`<span class="badge" style="background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;font-size:10px">🔄 Recurrente</span>`:''}
             ${r.linked_initiative_id?`<span class="badge" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-size:10px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,15)}</span>`:''}
           </div>
           <div class="kc-footer">
@@ -5375,6 +5717,13 @@ function openTask(id) {
   currentTaskId = id;
   const req = state.requests.find(r=>r.id===id);
   if(!req) { toast('⚠️ Error','No se encontró la solicitud.','error'); return; }
+  // Advisory lock broadcast
+  broadcastMsg({type:'edit_lock', taskId:id, userId:state.currentUserId, userName:state.currentUser||'?'});
+  // Check if someone else already has it locked
+  if(editLockMap[id] && editLockMap[id].userId !== state.currentUserId) {
+    // Banner will be shown after renderTaskDetail
+    setTimeout(()=>showEditLockBanner(editLockMap[id].userName), 100);
+  }
   renderTaskDetail(req);
   openModal('modal-task');
 }
@@ -5392,6 +5741,7 @@ function flushTaskFieldEdits() {
 function closeTaskModal(e) {
   if(e && e.target!==document.getElementById('modal-task')) return;
   flushTaskFieldEdits();
+  if(currentTaskId) broadcastMsg({type:'edit_unlock', taskId:currentTaskId, userId:state.currentUserId});
   closeModal('modal-task');
   currentTaskId=null;
 }
@@ -5688,6 +6038,84 @@ function renderTaskDetail(req) {
   `;
 }
 
+
+// ── Recurring Tasks ─────────────────────────────────────────
+function toggleRecurrenceFields() {
+  const checked = document.getElementById('i-recurring').checked;
+  document.getElementById('recurrence-fields').style.display = checked ? 'block' : 'none';
+}
+
+function toggleRecurrenceDetail() {
+  const type = document.getElementById('i-rec-type').value;
+  document.getElementById('rec-monthly-group').style.display  = type !== 'quarterly' ? '' : 'none';
+  document.getElementById('rec-quarterly-group').style.display = type === 'quarterly' ? '' : 'none';
+}
+
+function applyRecTemplate(tpl) {
+  const templates = {
+    oic:       {title:'OIC Report', cat:'Data & Reporting', type:'monthly',  day:4,  desc:'Reporte OIC mensual. Incluye métricas operativas, avances y alertas del período.'},
+    financial: {title:'Financial Metrics', cat:'Data & Reporting', type:'monthly', day:10, desc:'Reporte de métricas financieras mensuales para el comité directivo.'},
+    quarterly: {title:'Quarterly Report', cat:'Data & Reporting', type:'quarterly', qoffset:'1-10', desc:'Reporte trimestral consolidado. Se entrega el día 10 del mes siguiente al cierre del Q.'}
+  };
+  const t = templates[tpl];
+  if(!t) return;
+  const titleEl = document.getElementById('i-title');
+  const descEl  = document.getElementById('i-desc');
+  const catEl   = document.getElementById('i-cat');
+  if(titleEl) titleEl.value = t.title;
+  if(descEl)  descEl.value  = t.desc;
+  if(catEl) { catEl.value = t.cat; catEl.dispatchEvent(new Event('change')); }
+  document.getElementById('i-recurring').checked = true;
+  toggleRecurrenceFields();
+  document.getElementById('i-rec-type').value = t.type;
+  toggleRecurrenceDetail();
+  if(t.day) document.getElementById('i-rec-day').value = String(t.day);
+  if(t.qoffset) document.getElementById('i-rec-qoffset').value = t.qoffset;
+}
+
+function calcNextDueDate(rec) {
+  const now = new Date();
+  if(!rec) return '';
+  if(rec.type === 'monthly' || rec.type === 'weekly') {
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, rec.day_of_month || 1);
+    return next.toISOString().split('T')[0];
+  }
+  if(rec.type === 'quarterly') {
+    const [offsetMonths, offsetDay] = (rec.quarter_offset||'1-10').split('-').map(Number);
+    // Find end of current quarter
+    const qMonth = Math.floor(now.getMonth() / 3) * 3 + 2; // last month of current Q
+    const qEndYear = now.getMonth() > qMonth ? now.getFullYear() + 1 : now.getFullYear();
+    const dueMonth = qMonth + offsetMonths;
+    const dueYear  = dueMonth > 11 ? qEndYear + 1 : qEndYear;
+    const next = new Date(dueYear, dueMonth % 12, offsetDay);
+    return next.toISOString().split('T')[0];
+  }
+  return '';
+}
+
+function generateNextOccurrence(req) {
+  if(!req.is_recurring || !req.recurrence) return;
+  const nextDue = calcNextDueDate(req.recurrence);
+  const nextNum = (req.occurrence_number||1) + 1;
+  const now = new Date().toISOString();
+  const newReq = {
+    ...JSON.parse(JSON.stringify(req)),
+    id: genId(req.category),
+    created_at: now, updated_at: now,
+    status: 'Backlog',
+    needed_by: nextDue,
+    occurrence_number: nextNum,
+    recurrence_parent_id: req.recurrence_parent_id || req.id,
+    activity_log: [{type:'log', author:'Sistema', content:`Ocurrencia #${nextNum} generada automáticamente.`, created_at:now}],
+    files: [], milestones: [],
+    assigned_owner: '', admin_priority: ''
+  };
+  state.requests.push(newReq);
+  saveState();
+  toast('🔄 Nueva ocurrencia', `"${req.title}" — ocurrencia #${nextNum} creada. Entrega: ${nextDue||'por definir'}`, 'success');
+}
+// ────────────────────────────────────────────────────────────
+
 function changeTaskStatus(id, newStatus) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
@@ -5699,6 +6127,8 @@ function changeTaskStatus(id, newStatus) {
   req.change_history.push({changed_by:state.currentUser||'Sistema',changed_at:new Date().toISOString(),field_name:'status',old_value:old,new_value:newStatus});
   saveState();
   addNotification('status_change', `🔄 ${req.title}`, `${old} → ${newStatus} · ${req.id}`);
+  // Auto-generate next occurrence when a recurring task is completed
+  if(newStatus === 'Concluida' && req.is_recurring) generateNextOccurrence(req);
   renderTaskDetail(req);
   toast('✅ Estado actualizado',`→ ${newStatus}`,'success');
   updateNavBadges();
