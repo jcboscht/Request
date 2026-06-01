@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strategic Ops Request Hub</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" onerror="window._chartJsFailed=true;console.warn('Chart.js CDN failed')"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════
    VARIABLES & RESET
@@ -1658,19 +1658,11 @@ let state = {
     team: [...TEAM],
     thresholds: {green:5, yellow:12, orange:20},
     crossAreas: [...CROSS_AREAS],
-    users: [
-      {id:'u-001',name:'JC Bosch',username:'jc',password:'admin2026',role:'admin'},
-      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin'},
-      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team'},
-      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team'},
-      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team'},
-      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team'},
-      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team'}
-    ]
+    users: [...DEFAULT_USERS]
   },
   filters: {backlog:{}, kanban:{owner:'',category:'',priority:''}},
   kanbanFilter: {owner:'', category:'', priority:''},
-  backlogFilter: {status:'', category:'', owner:'', priority:'', search:''},
+  backlogFilter: {status:'', category:'', owner:'', priority:'', search:'', page:0},
   libFilter: {search:'', category:'', owner:''},
   charts: {},
   documents: [],
@@ -1821,8 +1813,8 @@ function mergeRemoteState(remote) {
       if(localIdx === -1) { localArr.push(remoteRec); added++; }
       else {
         const localRec = localArr[localIdx];
-        const remoteTs = remoteRec.updated_at || remoteRec._savedAt || 0;
-        const localTs  = localRec.updated_at  || localRec._savedAt  || 0;
+        const remoteTs = remoteRec.updated_at ? new Date(remoteRec.updated_at).getTime() : (remoteRec._savedAt||0);
+        const localTs  = localRec.updated_at  ? new Date(localRec.updated_at).getTime()  : (localRec._savedAt ||0);
         if(remoteTs > localTs) { localArr[localIdx] = remoteRec; updated++; }
         else skipped++;
       }
@@ -1856,7 +1848,8 @@ function mergeRemoteState(remote) {
       // Only re-render if the active element is NOT inside the modal (avoid cursor loss)
       const active = document.activeElement;
       const modal  = document.getElementById('modal-task');
-      if(modal && !modal.contains(active)) renderTaskDetail(updatedReq);
+      const isTyping = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT') && modal && modal.contains(active);
+      if(!isTyping) renderTaskDetail(updatedReq);
     }
   }
 
@@ -1925,7 +1918,7 @@ function saveState() {
     state._savedAt = Date.now();
     localStorage.setItem('sorh_requests', JSON.stringify(state.requests));
     localStorage.setItem('sorh_initiatives', JSON.stringify(state.initiatives));
-    localStorage.setItem('sorh_config', JSON.stringify(state.config));
+    localStorage.setItem('sorh_config', JSON.stringify(sanitizeConfigForStorage(state.config)));
     localStorage.setItem('sorh_auth', JSON.stringify({isAdmin:state.isAdmin,isTeam:state.isTeam,currentUser:state.currentUser,currentUserId:state.currentUserId||null}));
     localStorage.setItem('sorh_documents', JSON.stringify(state.documents));
     localStorage.setItem('sorh_notifications', JSON.stringify(state.notifications.slice(-50)));
@@ -1949,7 +1942,18 @@ function loadState() {
     const a = localStorage.getItem('sorh_auth');
     if(r) state.requests = JSON.parse(r);
     if(i) state.initiatives = JSON.parse(i);
-    if(c) state.config = {...state.config, ...JSON.parse(c)};
+    if(c) {
+      state.config = {...state.config, ...JSON.parse(c)};
+      // Re-hydrate passwords from seed — never stored in localStorage
+      if(Array.isArray(state.config.users)) {
+        const seedPw = {};
+        DEFAULT_USERS.forEach(u => { seedPw[u.id] = u.password; });
+        state.config.users = state.config.users.map(u => ({
+          ...u,
+          password: u.password || seedPw[u.id] || ''
+        }));
+      }
+    }
     if(a) { const auth = JSON.parse(a); state.isAdmin=auth.isAdmin; state.isTeam=auth.isTeam; state.currentUser=auth.currentUser; state.currentUserId=auth.currentUserId||null; }
     const dd = localStorage.getItem('sorh_documents');
     if(dd) state.documents = JSON.parse(dd);
@@ -2578,12 +2582,13 @@ async function manualSyncNow() {
 }
 
 async function disconnectFile() {
-  if (!confirm('¿Desconectar el archivo? Los datos quedarán solo en el navegador local.')) return;
-  _fileHandle = null;
-  await _dbOp('readwrite', (s,r) => { const p=s.delete(_FS_KEY); p.onsuccess=r; p.onerror=r; });
-  updateSyncUI();
-  closeModal('modal-filesync');
-  toast('📁 Desconectado','Archivo desvinculado. Los datos siguen en localStorage.','info');
+  showConfirm('¿Desconectar el archivo? Los datos quedarán solo en el navegador local.', async ()=>{
+    _fileHandle = null;
+    await _dbOp('readwrite', (s,r) => { const p=s.delete(_FS_KEY); p.onsuccess=r; p.onerror=r; });
+    updateSyncUI();
+    closeModal('modal-filesync');
+    toast('📁 Desconectado','Archivo desvinculado. Los datos siguen en localStorage.','info');
+  });
 }
 
 function updateSyncUI() {
@@ -2782,7 +2787,7 @@ function logout() {
 }
 function handleUserClick() {
   if(state.isAdmin||state.isTeam) {
-    if(confirm('¿Cerrar sesión de '+state.currentUser+'?')) logout();
+    showConfirm('¿Cerrar sesión de '+state.currentUser+'?', logout);
   } else {
     showLoginScreen();
   }
@@ -3454,11 +3459,12 @@ function saveNewDoc() {
   toast('✅ Documento agregado', published?`${name} — Publicado`:`${name} — Borrador (pendiente de publicación)`, 'success');
 }
 function deleteDoc(di) {
-  if(!confirm('¿Eliminar este documento?')) return;
-  state.documents.splice(di, 1);
-  saveState();
-  renderDocs();
-  toast('🗑️ Documento eliminado','','info');
+  showConfirm('¿Eliminar este documento?', ()=>{
+    state.documents.splice(di, 1);
+    saveState();
+    renderDocs();
+    toast('🗑️ Documento eliminado','','info');
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4360,6 +4366,12 @@ function renderBacklog() {
   });
   reqs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
+  const PAGE_SIZE = 50;
+  const page = state.backlogFilter.page || 0;
+  const totalReqs = reqs.length;
+  reqs = reqs.slice(0, PAGE_SIZE * (page + 1));
+  const hasMore = totalReqs > reqs.length;
+
   const statusOpts = STATUSES.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
   const catOpts = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c}</option>`).join('');
   const ownerOpts = ['Sin asignar',...state.config.team].map(o=>`<option value="${o}" ${f.owner===o?'selected':''}>${o}</option>`).join('');
@@ -4382,17 +4394,17 @@ function renderBacklog() {
 
   document.getElementById('view-backlog').innerHTML = `
     <div class="filters-bar">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;renderBacklog()">
-      <select class="filter-select" onchange="state.backlogFilter.status=this.value;renderBacklog()">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;state.backlogFilter.page=0;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.status=this.value;state.backlogFilter.page=0;renderBacklog()">
         <option value="">Todos los estados</option>${statusOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.category=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.category=this.value;state.backlogFilter.page=0;renderBacklog()">
         <option value="">Todas las categorías</option>${catOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;state.backlogFilter.page=0;renderBacklog()">
         <option value="">Todos los owners</option>${ownerOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;state.backlogFilter.page=0;renderBacklog()">
         <option value="">Todas las prioridades</option>${prioOpts}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};renderBacklog()">✕ Limpiar</button>
@@ -4404,7 +4416,7 @@ function renderBacklog() {
           <th>ID</th><th>Solicitud</th><th>Categoría</th><th>Estado</th>
           <th>Prioridad</th><th>Owner</th><th>Solicitante</th><th>Fecha req.</th><th>Actualizado</th><th></th>
         </tr></thead>
-        <tbody>${rows||`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados para los filtros seleccionados</td></tr>`}</tbody>
+        <tbody>${rows||`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados para los filtros seleccionados</td></tr>`}${hasMore?`<tr><td colspan="10" style="text-align:center;padding:14px 0"><button class="btn btn-secondary btn-sm" onclick="state.backlogFilter.page=(state.backlogFilter.page||0)+1;renderBacklog()">Ver más — ${totalReqs-reqs.length} solicitudes restantes</button></td></tr>`:''}</tbody>
       </table>
     </div>
   `;
@@ -4431,7 +4443,10 @@ function renderKanban() {
   const cols = STATUSES.map(status=>{
     const cards = reqs.filter(r=>r.status===status);
     const colorMap = {'Backlog':'#6B7280','En proceso':'#008080','Ejecutada':'#D97706','Validada':'#16A34A','Concluida':'#15803D','Requiere Cambios':'#EA580C','Cancelada':'#DC2626'};
-    const cardHtml = cards.map(r=>{
+    const cardHtml = cards.length === 0
+      ? `<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius);margin-bottom:8px">Sin tarjetas</div>`
+      : '';
+    const _cardItems = cards.map(r=>{
       const overdue = isOverdue(r.needed_by) && !['Concluida','Cancelada'].includes(r.status);
       const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📝'};
       return `
@@ -4457,6 +4472,7 @@ function renderKanban() {
         </div>
       `;
     }).join('');
+    const cardHtmlAll = (cards.length===0?`<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius);margin-bottom:8px">Sin tarjetas</div>`:'')+_cardItems;
     const isAddable = (state.isTeam||state.isAdmin) && status==='Backlog';
     return `
       <div class="kanban-col">
@@ -4644,6 +4660,10 @@ function initCharts(statusCounts, catCounts) {
   const statusCanvas = document.getElementById('chart-status');
   const catCanvas = document.getElementById('chart-cat');
   if(!statusCanvas||!catCanvas) return;
+  if(typeof Chart === 'undefined') {
+    [statusCanvas, catCanvas].forEach(el=>{ if(el) el.parentElement.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">📊 Las gráficas no cargaron. Verifica tu conexión a internet y recarga la página.</div>'; });
+    return;
+  }
 
   state.charts.status = new Chart(statusCanvas, {
     type:'bar',
@@ -5635,6 +5655,7 @@ function submitUser() {
       state.config.users[idx] = {
         ...state.config.users[idx],
         name, username, role, area,
+        updated_at: new Date().toISOString(),
         ...(password ? {password} : {})
       };
     }
@@ -5643,7 +5664,7 @@ function submitUser() {
     // Create
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
-    state.config.users.push({id:newId, name, username, password, role, area});
+    state.config.users.push({id:newId, name, username, password, role, area, updated_at: new Date().toISOString()});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -5659,11 +5680,12 @@ function deleteUser(id) {
   // Prevent deleting last admin
   const adminCount = (state.config.users||[]).filter(u=>u.role==='admin').length;
   if(user.role==='admin' && adminCount<=1) { toast('⚠️ Sin acceso','Debe haber al menos un administrador.','warning'); return; }
-  if(!confirm('¿Eliminar al usuario "'+user.name+'"? Esta acción no se puede deshacer.')) return;
-  state.config.users = state.config.users.filter(u=>u.id!==id);
-  saveState();
-  renderConfig();
-  toast('🗑 Usuario eliminado','"'+user.name+'" ha sido eliminado del sistema.','info');
+  showConfirm('¿Eliminar al usuario "'+user.name+'"? Esta acción no se puede deshacer.', ()=>{
+    state.config.users = state.config.users.filter(u=>u.id!==id);
+    saveState();
+    renderConfig();
+    toast('🗑 Usuario eliminado','"'+user.name+'" ha sido eliminado del sistema.','info');
+  });
 }
 
 function addCrossArea() {
@@ -5672,10 +5694,11 @@ function addCrossArea() {
   renderConfig();
 }
 function removeCrossArea(i) {
-  if(!confirm('¿Eliminar esta área transversal? Las iniciativas existentes de esta área no se borran.')) return;
-  if(!state.config.crossAreas) state.config.crossAreas = [...CROSS_AREAS];
-  state.config.crossAreas.splice(i, 1);
-  renderConfig();
+  showConfirm('¿Eliminar esta área transversal? Las iniciativas existentes no se borran.', ()=>{
+    if(!state.config.crossAreas) state.config.crossAreas = [...CROSS_AREAS];
+    state.config.crossAreas.splice(i, 1);
+    renderConfig();
+  });
 }
 function saveCrossAreas() {
   const inputs = document.querySelectorAll('.cross-area-input');
@@ -6022,6 +6045,11 @@ function renderTaskDetail(req) {
     </div>
   `;
 
+  // Pre-populate milestone dropdown if task already linked to an initiative
+  if(req.linked_initiative_id) {
+    setTimeout(()=>populateLinkMilestones(req.id), 50);
+  }
+
   // Mobile: single column
   if(window.innerWidth<=768) {
     const grid = document.querySelector('.task-detail-grid');
@@ -6039,6 +6067,25 @@ function renderTaskDetail(req) {
 }
 
 
+// ── Password security: DEFAULT_USERS + sanitizeConfigForStorage ─────────
+const DEFAULT_USERS = [
+  {id:'u-001',name:'JC Bosch',  username:'jc',      password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-002',name:'Claudia',   username:'clau',     password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-003',name:'César',     username:'cesar',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-004',name:'Charlie',   username:'charlie',  password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-005',name:'Ciceli',    username:'ciceli',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-006',name:'Jorge',     username:'jorge',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-007',name:'Sergio',    username:'sergio',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'}
+];
+function sanitizeConfigForStorage(cfg) {
+  if(!cfg) return cfg;
+  const safe = {...cfg};
+  if(Array.isArray(safe.users)) {
+    safe.users = safe.users.map(u => { const {password, ...rest} = u; return rest; });
+  }
+  return safe;
+}
+// ─────────────────────────────────────────────────────────────────────────
 // ── Recurring Tasks ─────────────────────────────────────────
 function toggleRecurrenceFields() {
   const checked = document.getElementById('i-recurring').checked;
@@ -6077,18 +6124,33 @@ function calcNextDueDate(rec) {
   const now = new Date();
   if(!rec) return '';
   if(rec.type === 'monthly' || rec.type === 'weekly') {
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, rec.day_of_month || 1);
+    const day = rec.day_of_month || 1;
+    let y = now.getFullYear(), m = now.getMonth();
+    // If today is on or past the due day this month, push to next month
+    if(now.getDate() >= day) m++;
+    if(m > 11) { m = 0; y++; }
+    const next = new Date(y, m, day);
     return next.toISOString().split('T')[0];
   }
   if(rec.type === 'quarterly') {
     const [offsetMonths, offsetDay] = (rec.quarter_offset||'1-10').split('-').map(Number);
-    // Find end of current quarter
-    const qMonth = Math.floor(now.getMonth() / 3) * 3 + 2; // last month of current Q
-    const qEndYear = now.getMonth() > qMonth ? now.getFullYear() + 1 : now.getFullYear();
-    const dueMonth = qMonth + offsetMonths;
-    const dueYear  = dueMonth > 11 ? qEndYear + 1 : qEndYear;
-    const next = new Date(dueYear, dueMonth % 12, offsetDay);
-    return next.toISOString().split('T')[0];
+    // Current quarter's last month (0-indexed): Q1=2, Q2=5, Q3=8, Q4=11
+    let qLastMonth = Math.floor(now.getMonth() / 3) * 3 + 2;
+    let qLastYear  = now.getFullYear();
+    let dueMonth = qLastMonth + offsetMonths;
+    let dueYear  = qLastYear;
+    if(dueMonth > 11) { dueMonth -= 12; dueYear++; }
+    let candidate = new Date(dueYear, dueMonth, offsetDay);
+    // If candidate is in the past or today, advance by one quarter
+    if(candidate <= now) {
+      qLastMonth += 3;
+      if(qLastMonth > 11) { qLastMonth -= 12; qLastYear++; }
+      dueMonth = qLastMonth + offsetMonths;
+      dueYear  = qLastYear;
+      if(dueMonth > 11) { dueMonth -= 12; dueYear++; }
+      candidate = new Date(dueYear, dueMonth, offsetDay);
+    }
+    return candidate.toISOString().split('T')[0];
   }
   return '';
 }
@@ -6392,6 +6454,12 @@ function init() {
       closeModal('modal-auth');
       closeModal('modal-quick');
       closeModal('modal-confirm');
+      closeModal('modal-docs');
+      closeModal('modal-filesync');
+      closeModal('modal-milestone');
+      closeModal('modal-new-initiative');
+      closeModal('modal-planeacion');
+      closeModal('modal-user');
       closeSidebar();
     }
   });
