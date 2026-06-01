@@ -1641,6 +1641,25 @@ const WORKFLOW_TEMPLATES = {
   'Nuevas Iniciativas / Special Projects':['Discovery','Business case','Evaluación de impacto','Priorización','Diseño de piloto','Ejecución de piloto','Medición de resultados','Decisión de escalamiento','Implementación']
 };
 
+// ── Password security: DEFAULT_USERS + sanitizeConfigForStorage ─────────
+const DEFAULT_USERS = [
+  {id:'u-001',name:'JC Bosch',  username:'jc',      password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-002',name:'Claudia',   username:'clau',     password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-003',name:'César',     username:'cesar',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-004',name:'Charlie',   username:'charlie',  password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-005',name:'Ciceli',    username:'ciceli',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-006',name:'Jorge',     username:'jorge',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
+  {id:'u-007',name:'Sergio',    username:'sergio',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'}
+];
+function sanitizeConfigForStorage(cfg) {
+  if(!cfg) return cfg;
+  const safe = {...cfg};
+  if(Array.isArray(safe.users)) {
+    safe.users = safe.users.map(u => { const {password, ...rest} = u; return rest; });
+  }
+  return safe;
+}
+// ─────────────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
@@ -6067,25 +6086,6 @@ function renderTaskDetail(req) {
 }
 
 
-// ── Password security: DEFAULT_USERS + sanitizeConfigForStorage ─────────
-const DEFAULT_USERS = [
-  {id:'u-001',name:'JC Bosch',  username:'jc',      password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-002',name:'Claudia',   username:'clau',     password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-003',name:'César',     username:'cesar',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-004',name:'Charlie',   username:'charlie',  password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-005',name:'Ciceli',    username:'ciceli',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-006',name:'Jorge',     username:'jorge',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-007',name:'Sergio',    username:'sergio',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'}
-];
-function sanitizeConfigForStorage(cfg) {
-  if(!cfg) return cfg;
-  const safe = {...cfg};
-  if(Array.isArray(safe.users)) {
-    safe.users = safe.users.map(u => { const {password, ...rest} = u; return rest; });
-  }
-  return safe;
-}
-// ─────────────────────────────────────────────────────────────────────────
 // ── Recurring Tasks ─────────────────────────────────────────
 function toggleRecurrenceFields() {
   const checked = document.getElementById('i-recurring').checked;
