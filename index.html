@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strategic Ops Request Hub</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" onerror="window._chartJsFailed=true;console.warn('Chart.js CDN failed')"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════
    VARIABLES & RESET
@@ -925,42 +925,6 @@ td.td-action{white-space:nowrap;}
   background:rgba(0,0,0,0.4);backdrop-filter:blur(2px);
 }
 #sidebar-overlay.open{display:block;}
-/* ── Presence Avatars ─────────────────────────────────── */
-#presence-bar{display:flex;align-items:center;gap:0;margin-right:4px}
-.presence-avatar{
-  width:28px;height:28px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:500;color:#fff;cursor:default;
-  border:2px solid var(--bg,#fff);position:relative;
-  margin-left:-6px;transition:transform .15s, opacity .4s;
-  flex-shrink:0;z-index:1;
-}
-.presence-avatar:first-child{margin-left:0}
-.presence-avatar:hover{transform:scale(1.18);z-index:10}
-.presence-avatar.editing::after{
-  content:'✏️';font-size:8px;position:absolute;
-  bottom:-2px;right:-2px;line-height:1;
-}
-.presence-avatar.editing{animation:presence-pulse 1.2s infinite}
-.presence-avatar.offline{opacity:0;pointer-events:none}
-.presence-overflow{
-  width:28px;height:28px;border-radius:50%;
-  background:var(--surface2);border:2px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:600;color:var(--text-secondary);
-  margin-left:-6px;flex-shrink:0;
-}
-.edit-lock-banner{
-  display:flex;align-items:center;gap:8px;padding:8px 12px;
-  background:#FEFCE8;border:1px solid #FDE047;border-radius:6px;
-  font-size:12px;color:#854D0E;margin-bottom:10px;
-}
-.edit-lock-banner button{
-  margin-left:auto;background:none;border:none;cursor:pointer;
-  font-size:14px;color:#A16207;line-height:1;padding:0 2px;
-}
-@keyframes presence-pulse{0%,100%{opacity:1}50%{opacity:.55}}
-
 </style>
 </head>
 <body>
@@ -1007,7 +971,7 @@ td.td-action{white-space:nowrap;}
   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- ─── SIDEBAR ─────────────────────────────────────────── -->
-  <nav id="sidebar" ontouchstart="if(event.target===this)closeSidebar()">
+  <nav id="sidebar">
     <div class="sidebar-logo">
       <div class="logo-text">⚡ Strategic Ops</div>
       <div class="logo-sub">Request Hub v1.0</div>
@@ -1070,12 +1034,10 @@ td.td-action{white-space:nowrap;}
   <div id="main">
     <!-- Top bar -->
     <header id="topbar">
-      <button class="btn-icon" onclick="toggleSidebar()" style="display:none;min-width:44px;min-height:44px;justify-content:center;align-items:center" id="menu-btn">☰</button>
+      <button class="btn-icon" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
       <div class="topbar-title" id="topbar-title">Inicio</div>
       <div class="topbar-actions" id="topbar-actions">
-        <div id="presence-bar" title="Usuarios activos"></div>
-        <span id="autosave-indicator" style="font-size:10px;color:var(--text-muted);transition:opacity 1s;opacity:0;align-self:center;margin-right:4px"></span>
-      <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
+        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
           <span class="sync-dot yellow" id="sync-dot"></span>
           <span id="sync-label">Sin archivo</span>
         </div>
@@ -1137,7 +1099,7 @@ td.td-action{white-space:nowrap;}
         <div class="modal-title" id="modal-task-title">Detalle de Tarea</div>
         <div id="modal-task-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
       </div>
-      <button class="modal-close" onclick="flushTaskFieldEdits();closeTaskModal()">✕</button>
+      <button class="modal-close" onclick="closeTaskModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-task-body"></div>
     <div class="modal-footer" id="modal-task-footer"></div>
@@ -1153,21 +1115,14 @@ td.td-action{white-space:nowrap;}
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Tipo de acceso</label>
-        <select class="form-select" id="auth-type">
-          <option value="admin">Administrador</option>
-          <option value="team">Miembro del Equipo</option>
-        </select>
-      </div>
-      <div class="form-group" id="auth-name-group" style="display:none">
-        <label class="form-label">Tu nombre</label>
-        <select class="form-select" id="auth-name"></select>
+        <label class="form-label">Usuario</label>
+        <input type="text" class="form-input" id="auth-username" placeholder="Tu nombre de usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
       </div>
       <div class="form-group">
         <label class="form-label">Contraseña</label>
-        <input type="password" class="form-input" id="auth-password" placeholder="Ingresa la contraseña" onkeydown="if(event.key==='Enter')doAuth()">
+        <input type="password" class="form-input" id="auth-password" placeholder="Ingresa la contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
       </div>
-      <div id="auth-error" class="form-error hidden">Contraseña incorrecta</div>
+      <div id="auth-error" class="form-error hidden">Usuario o contraseña incorrectos</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeAuthModal()">Cancelar</button>
@@ -1468,13 +1423,6 @@ td.td-action{white-space:nowrap;}
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Deja vacío para mantener la contraseña actual (al editar)</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Área / Equipo</label>
-        <select class="form-select" id="user-modal-area">
-          <option value="">— Sin área asignada —</option>
-        </select>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Se autocargará al crear solicitudes y tareas</div>
-      </div>
-      <div class="form-group">
         <label class="form-label form-required">Rol</label>
         <select class="form-select" id="user-modal-role">
           <option value="admin">🔑 Administrador — acceso completo</option>
@@ -1511,7 +1459,7 @@ td.td-action{white-space:nowrap;}
 <div id="modal-milestone" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-milestone')">
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">📌 Nuevo Milestone</div>
+      <div class="modal-title" id="modal-milestone-title">📌 Nuevo Milestone</div>
       <button class="modal-close" onclick="closeModal('modal-milestone')">✕</button>
     </div>
     <div class="modal-body">
@@ -1641,25 +1589,6 @@ const WORKFLOW_TEMPLATES = {
   'Nuevas Iniciativas / Special Projects':['Discovery','Business case','Evaluación de impacto','Priorización','Diseño de piloto','Ejecución de piloto','Medición de resultados','Decisión de escalamiento','Implementación']
 };
 
-// ── Password security: DEFAULT_USERS + sanitizeConfigForStorage ─────────
-const DEFAULT_USERS = [
-  {id:'u-001',name:'JC Bosch',  username:'jc',      password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-002',name:'Claudia',   username:'clau',     password:'admin2026',role:'admin',area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-003',name:'César',     username:'cesar',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-004',name:'Charlie',   username:'charlie',  password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-005',name:'Ciceli',    username:'ciceli',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-006',name:'Jorge',     username:'jorge',    password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'},
-  {id:'u-007',name:'Sergio',    username:'sergio',   password:'team2026', role:'team', area:'',updated_at:'2026-01-01T00:00:00.000Z'}
-];
-function sanitizeConfigForStorage(cfg) {
-  if(!cfg) return cfg;
-  const safe = {...cfg};
-  if(Array.isArray(safe.users)) {
-    safe.users = safe.users.map(u => { const {password, ...rest} = u; return rest; });
-  }
-  return safe;
-}
-// ─────────────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
@@ -1677,11 +1606,19 @@ let state = {
     team: [...TEAM],
     thresholds: {green:5, yellow:12, orange:20},
     crossAreas: [...CROSS_AREAS],
-    users: [...DEFAULT_USERS]
+    users: [
+      {id:'u-001',name:'JC Bosch',username:'jc',password:'admin2026',role:'admin'},
+      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin'},
+      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team'},
+      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team'},
+      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team'},
+      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team'},
+      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team'}
+    ]
   },
   filters: {backlog:{}, kanban:{owner:'',category:'',priority:''}},
   kanbanFilter: {owner:'', category:'', priority:''},
-  backlogFilter: {status:'', category:'', owner:'', priority:'', search:'', page:0},
+  backlogFilter: {status:'', category:'', owner:'', priority:'', search:''},
   libFilter: {search:'', category:'', owner:''},
   charts: {},
   documents: [],
@@ -1697,247 +1634,11 @@ let state = {
 // ═══════════════════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════════════════
-
-// ══ Real-Time Presence & Conflict-Free Collaboration ═══════════════════════
-
-// ── Deterministic color palette ──────────────────────────────────────────
-const PRESENCE_COLORS = [
-  '#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6',
-  '#EC4899','#06B6D4','#84CC16','#F97316','#6366F1'
-];
-function userColor(id) {
-  let h = 0;
-  for(let i=0;i<(id||'').length;i++) h=(h*31+id.charCodeAt(i))>>>0;
-  return PRESENCE_COLORS[h % PRESENCE_COLORS.length];
-}
-function userInitials(name) {
-  if(!name) return '?';
-  const parts = name.trim().split(' ');
-  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
-}
-
-// ── In-memory maps ────────────────────────────────────────────────────────
-let presenceMap  = {};   // { userId: { userId, userName, view, editingId, color, ts } }
-let editLockMap  = {};   // { taskId: { userId, userName } }
-let _presenceIntervals = [];
-
-// ── BroadcastChannel (degrades gracefully) ────────────────────────────────
-const collabChannel = typeof BroadcastChannel !== 'undefined'
-  ? new BroadcastChannel('sorh_collab')
-  : { postMessage:()=>{}, onmessage:null, close:()=>{} };
-
-function broadcastMsg(msg) {
-  try { collabChannel.postMessage(msg); } catch(e) {}
-}
-
-collabChannel.onmessage = function(evt) {
-  const msg = evt.data;
-  if(!msg || !msg.type) return;
-  if(msg.type === 'heartbeat') {
-    if(msg.userId === state.currentUserId) return; // ignore self
-    presenceMap[msg.userId] = { ...msg, _seen: Date.now() };
-    renderPresenceBar();
-  }
-  if(msg.type === 'state_update') {
-    if(msg.senderId === state.currentUserId) return;
-    mergeRemoteState(msg.patch);
-  }
-  if(msg.type === 'edit_lock') {
-    if(msg.userId === state.currentUserId) return;
-    editLockMap[msg.taskId] = { userId: msg.userId, userName: msg.userName };
-    // Show advisory banner if we have this task open
-    if(currentTaskId === msg.taskId) showEditLockBanner(msg.userName);
-  }
-  if(msg.type === 'edit_unlock') {
-    delete editLockMap[msg.taskId];
-    hideEditLockBanner();
-  }
-};
-
-function sendHeartbeat() {
-  if(!state.currentUserId) return;
-  broadcastMsg({
-    type: 'heartbeat',
-    userId:    state.currentUserId,
-    userName:  state.currentUser  || '?',
-    view:      state.currentView  || 'home',
-    editingId: currentTaskId      || null,
-    color:     userColor(state.currentUserId),
-    ts:        Date.now()
-  });
-}
-
-function expirePresence() {
-  const cutoff = Date.now() - 30000;
-  let changed = false;
-  Object.keys(presenceMap).forEach(uid => {
-    if((presenceMap[uid]._seen || presenceMap[uid].ts) < cutoff) {
-      // Mark offline so CSS fades it out, remove after transition
-      const el = document.querySelector(`.presence-avatar[data-uid="${uid}"]`);
-      if(el) { el.classList.add('offline'); setTimeout(()=>delete presenceMap[uid],2000); }
-      else delete presenceMap[uid];
-      changed = true;
-    }
-  });
-  if(changed) renderPresenceBar();
-}
-
-function renderPresenceBar() {
-  const bar = document.getElementById('presence-bar');
-  if(!bar) return;
-  const users = Object.values(presenceMap).filter(u => u.userId !== state.currentUserId);
-  if(!users.length) { bar.innerHTML=''; return; }
-  const visible = users.slice(0, 4);
-  const overflow = users.length - 4;
-  bar.innerHTML = visible.map(u => {
-    const initials = userInitials(u.userName);
-    const color    = u.color || userColor(u.userId);
-    const isEditing = !!u.editingId;
-    const viewLabel = u.view ? u.view.charAt(0).toUpperCase()+u.view.slice(1) : '';
-    const tooltip   = `${u.userName}${viewLabel?' · '+viewLabel:''}${isEditing?' · editando':''}`; 
-    return `<div class="presence-avatar${isEditing?' editing':''}"
-      data-uid="${u.userId}"
-      style="background:${color};border-color:${color}20"
-      title="${tooltip}">${initials}</div>`;
-  }).join('') + (overflow > 0
-    ? `<div class="presence-overflow" title="${overflow} más activos">+${overflow}</div>`
-    : '');
-}
-
-// ── Edit-lock advisory banner ─────────────────────────────────────────────
-function showEditLockBanner(userName) {
-  const body = document.getElementById('modal-task-body');
-  if(!body) return;
-  hideEditLockBanner();
-  const banner = document.createElement('div');
-  banner.id = 'edit-lock-banner';
-  banner.className = 'edit-lock-banner';
-  banner.innerHTML = `⚠️ <strong>${userName}</strong> también está editando esta tarea. Los cambios se sincronizarán al guardar. <button onclick="hideEditLockBanner()" title="Cerrar">✕</button>`;
-  body.prepend(banner);
-}
-function hideEditLockBanner() {
-  const b = document.getElementById('edit-lock-banner');
-  if(b) b.remove();
-}
-
-// ── mergeRemoteState — CRDT last-write-wins per record ───────────────────
-function mergeRemoteState(remote) {
-  if(!remote) return {added:0,updated:0,skipped:0};
-  let added=0, updated=0, skipped=0;
-
-  function mergeList(localArr, remoteArr, idField='id') {
-    if(!Array.isArray(remoteArr)) return;
-    remoteArr.forEach(remoteRec => {
-      const localIdx = localArr.findIndex(r=>r[idField]===remoteRec[idField]);
-      if(localIdx === -1) { localArr.push(remoteRec); added++; }
-      else {
-        const localRec = localArr[localIdx];
-        const remoteTs = remoteRec.updated_at ? new Date(remoteRec.updated_at).getTime() : (remoteRec._savedAt||0);
-        const localTs  = localRec.updated_at  ? new Date(localRec.updated_at).getTime()  : (localRec._savedAt ||0);
-        if(remoteTs > localTs) { localArr[localIdx] = remoteRec; updated++; }
-        else skipped++;
-      }
-    });
-  }
-
-  mergeList(state.requests,    remote.requests    || []);
-  mergeList(state.initiatives, remote.initiatives || []);
-  mergeList(state.areaRoadmaps,remote.areaRoadmaps|| []);
-  mergeList(state.documents,   remote.documents   || []);
-
-  // Merge config.users
-  if(remote.config && Array.isArray(remote.config.users)) {
-    if(!state.config.users) state.config.users = [];
-    mergeList(state.config.users, remote.config.users);
-  }
-
-  saveState();
-
-  // Silently refresh current view
-  const renders = {home:renderHome,backlog:renderBacklog,kanban:renderKanban,
-    roadmap:renderRoadmap,planeacion:renderPlaneacion,dashboard:renderDashboard,
-    docs:renderDocs,config:renderConfig,heatmap:renderHeatmap};
-  const fn = renders[state.currentView];
-  if(fn) try { fn(); } catch(e){}
-
-  // Refresh open task modal if it was updated
-  if(currentTaskId) {
-    const updatedReq = state.requests.find(r=>r.id===currentTaskId);
-    if(updatedReq) {
-      // Only re-render if the active element is NOT inside the modal (avoid cursor loss)
-      const active = document.activeElement;
-      const modal  = document.getElementById('modal-task');
-      const isTyping = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT') && modal && modal.contains(active);
-      if(!isTyping) renderTaskDetail(updatedReq);
-    }
-  }
-
-  if(added+updated > 0) {
-    const ind = document.getElementById('autosave-indicator');
-    if(ind) {
-      ind.style.opacity='1'; ind.style.color='var(--primary)';
-      ind.textContent = `🔄 ${added+updated} cambio${added+updated>1?'s':''} sincronizado${added+updated>1?'s':''}`;
-      setTimeout(()=>{ if(ind){ind.style.opacity='0';ind.style.color='';} },4000);
-    }
-  }
-  return {added, updated, skipped};
-}
-
-// ── Tier 2: OneDrive polling every 20s ───────────────────────────────────
-let _ondrivePollingInterval = null;
-function startOneDrivePolling() {
-  if(_ondrivePollingInterval) return;
-  _ondrivePollingInterval = setInterval(async ()=>{
-    if(!_fileHandle || !state.currentUserId) return;
-    try {
-      const file = await _fileHandle.getFile();
-      if(file.lastModified <= (state._loadedAt||0)) return; // no changes
-      const text = await file.text();
-      const remote = JSON.parse(text);
-      if(!remote || remote._savedAt <= (state._loadedAt||0)) return;
-      state._loadedAt = remote._savedAt;
-      const summary = mergeRemoteState(remote);
-      if(summary.added+summary.updated > 0) {
-        broadcastMsg({type:'state_update', patch:remote, senderId:state.currentUserId});
-      }
-    } catch(e) {}
-  }, 20000);
-  _presenceIntervals.push(_ondrivePollingInterval);
-}
-
-// ── Init presence on login ────────────────────────────────────────────────
-function initPresence() {
-  if(!state.currentUserId) return;
-  // Start heartbeat every 15s
-  const hbInterval = setInterval(sendHeartbeat, 15000);
-  _presenceIntervals.push(hbInterval);
-  // Start presence expiry check every 10s
-  const expInterval = setInterval(expirePresence, 10000);
-  _presenceIntervals.push(expInterval);
-  // Start OneDrive polling
-  startOneDrivePolling();
-  // Send immediate heartbeat
-  sendHeartbeat();
-  renderPresenceBar();
-}
-
-function clearPresenceIntervals() {
-  _presenceIntervals.forEach(id=>clearInterval(id));
-  _presenceIntervals = [];
-  _ondrivePollingInterval = null;
-  presenceMap = {};
-  editLockMap = {};
-  broadcastMsg({type:'heartbeat',userId:state.currentUserId,ts:0}); // signal offline
-  collabChannel.onmessage = null;
-  renderPresenceBar();
-}
-// ═══════════════════════════════════════════════════════════════════════════
 function saveState() {
   try {
-    state._savedAt = Date.now();
     localStorage.setItem('sorh_requests', JSON.stringify(state.requests));
     localStorage.setItem('sorh_initiatives', JSON.stringify(state.initiatives));
-    localStorage.setItem('sorh_config', JSON.stringify(sanitizeConfigForStorage(state.config)));
+    localStorage.setItem('sorh_config', JSON.stringify(state.config));
     localStorage.setItem('sorh_auth', JSON.stringify({isAdmin:state.isAdmin,isTeam:state.isTeam,currentUser:state.currentUser,currentUserId:state.currentUserId||null}));
     localStorage.setItem('sorh_documents', JSON.stringify(state.documents));
     localStorage.setItem('sorh_notifications', JSON.stringify(state.notifications.slice(-50)));
@@ -1945,13 +1646,6 @@ function saveState() {
   } catch(e) {}
   // Auto-sync to file (async, non-blocking)
   if (_fileHandle) saveToFile().catch(()=>{});
-  // Broadcast to other tabs
-  if(state.currentUserId) {
-    broadcastMsg({ type:'state_update', senderId: state.currentUserId,
-      patch: { requests: state.requests, initiatives: state.initiatives,
-               areaRoadmaps: state.areaRoadmaps, documents: state.documents,
-               config: { users: state.config.users }, _savedAt: state._savedAt } });
-  }
 }
 function loadState() {
   try {
@@ -1961,18 +1655,7 @@ function loadState() {
     const a = localStorage.getItem('sorh_auth');
     if(r) state.requests = JSON.parse(r);
     if(i) state.initiatives = JSON.parse(i);
-    if(c) {
-      state.config = {...state.config, ...JSON.parse(c)};
-      // Re-hydrate passwords from seed — never stored in localStorage
-      if(Array.isArray(state.config.users)) {
-        const seedPw = {};
-        DEFAULT_USERS.forEach(u => { seedPw[u.id] = u.password; });
-        state.config.users = state.config.users.map(u => ({
-          ...u,
-          password: u.password || seedPw[u.id] || ''
-        }));
-      }
-    }
+    if(c) state.config = {...state.config, ...JSON.parse(c)};
     if(a) { const auth = JSON.parse(a); state.isAdmin=auth.isAdmin; state.isTeam=auth.isTeam; state.currentUser=auth.currentUser; state.currentUserId=auth.currentUserId||null; }
     const dd = localStorage.getItem('sorh_documents');
     if(dd) state.documents = JSON.parse(dd);
@@ -2464,7 +2147,39 @@ function seedData() {
 // ═══════════════════════════════════════════════════════════
 const _FS_DB = 'sorh-file-db', _FS_STORE = 'handles', _FS_KEY = 'data-file';
 let _fileHandle = null;
+let _editingIniId = null; // tracks initiative being edited
 let _lastSaved = null;
+let _lastFileTimestamp = null; // for conflict detection
+let _isSaving = false;         // guard against concurrent autosave
+
+// ─── Session timeout ───────────────────────────────────────
+const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
+function touchSession() {
+  localStorage.setItem('sorh_last_activity', Date.now().toString());
+}
+function checkSessionTimeout() {
+  const last = parseInt(localStorage.getItem('sorh_last_activity') || '0');
+  if (last && Date.now() - last > SESSION_TIMEOUT_MS) {
+    localStorage.removeItem('sorh_last_activity');
+    state.isAdmin = false; state.isTeam = false;
+    state.currentUser = null; state.currentUserId = null;
+    saveState();
+    updateUserUI();
+    toast('⏰ Sesión expirada', 'Tu sesión expiró por inactividad. Inicia sesión de nuevo.', 'warning');
+    showLoginScreen();
+    return true;
+  }
+  touchSession();
+  return false;
+}
+
+// ─── SHA-256 password hashing ──────────────────────────────
+async function hashPwd(pwd) {
+  const salt = 'sorh2026_';
+  const msgBuf = new TextEncoder().encode(salt + pwd);
+  const hashBuf = await crypto.subtle.digest('SHA-256', msgBuf);
+  return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 const _FS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
 async function _dbOp(mode, fn) {
@@ -2500,6 +2215,23 @@ async function initFileSync() {
   updateSyncUI();
 }
 
+// ─── Multi-user merge: prefer the item with newer updated_at ──
+function mergeById(existing, incoming) {
+  const map = new Map();
+  (existing || []).forEach(item => map.set(item.id, item));
+  (incoming || []).forEach(item => {
+    const cur = map.get(item.id);
+    if (!cur) {
+      map.set(item.id, item);
+    } else {
+      const curTs = cur.updated_at || cur.created_at || '0';
+      const incTs = item.updated_at || item.created_at || '0';
+      if (incTs > curTs) map.set(item.id, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
 async function loadFromFile(notify=true) {
   if (!_fileHandle) return;
   try {
@@ -2511,11 +2243,12 @@ async function loadFromFile(notify=true) {
     const file = await _fileHandle.getFile();
     const text = await file.text();
     const data = JSON.parse(text);
-    if (data.requests)      state.requests      = data.requests;
-    if (data.initiatives)   state.initiatives   = data.initiatives;
-    if (data.documents)     state.documents     = data.documents;
-    if (data.areaRoadmaps)  state.areaRoadmaps  = data.areaRoadmaps;
-    if (data.notifications) state.notifications = data.notifications;
+    if (data.saved_at) _lastFileTimestamp = data.saved_at;
+    if (data.requests)      state.requests      = mergeById(state.requests, data.requests);
+    if (data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
+    if (data.documents)     state.documents     = mergeById(state.documents, data.documents);
+    if (data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+    if (data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
     if (data.config) state.config = { ...state.config, ...data.config };
     _lastSaved = new Date();
     updateSyncUI();
@@ -2527,28 +2260,43 @@ async function loadFromFile(notify=true) {
 }
 
 async function saveToFile() {
-  // Conflict guard: if file is newer than our last load, warn user
-  if(fileHandle && state._loadedAt && state._savedAt) {
-    try {
-      const fileData = await fileHandle.getFile();
-      if(fileData.lastModified > state._loadedAt + 5000) {
-        const el = document.getElementById('autosave-indicator');
-        if(el){ el.style.opacity='1'; el.style.color='var(--error)';
-          el.textContent='⚠️ Conflicto: otro usuario guardó cambios. Recarga para sincronizar.';
-          setTimeout(()=>{ if(el){el.style.opacity='0';el.style.color='';} },8000);
-        }
-      }
-    } catch(e) {}
-  }
   if (!_fileHandle) return;
+  if (_isSaving) return;   // prevent concurrent saves
+  _isSaving = true;
   try {
     const perm = await _fileHandle.queryPermission({mode:'readwrite'});
     if (perm !== 'granted') {
       const granted = await _fileHandle.requestPermission({mode:'readwrite'});
       if (granted !== 'granted') return;
     }
+    // Conflict detection: re-read file to check if another user saved since our last read
+    const currentFile = await _fileHandle.getFile();
+    const currentText = await currentFile.text();
+    let conflict = false;
+    try {
+      const currentData = JSON.parse(currentText);
+      if (currentData.saved_at && _lastFileTimestamp && currentData.saved_at !== _lastFileTimestamp) {
+        conflict = true;
+      }
+    } catch(e) {}
+    if (conflict) {
+      const proceed = confirm(
+        '⚠️ Conflicto detectado: Otro usuario guardó cambios desde tu última sincronización.\n\n' +
+        '¿Deseas continuar guardando? Esto fusionará los cambios automáticamente.'
+      );
+      if (!proceed) return;
+      // Merge before saving
+      try {
+        const remoteData = JSON.parse(currentText);
+        if (remoteData.requests)     state.requests     = mergeById(state.requests, remoteData.requests);
+        if (remoteData.initiatives)  state.initiatives  = mergeById(state.initiatives, remoteData.initiatives);
+        if (remoteData.documents)    state.documents    = mergeById(state.documents, remoteData.documents);
+        if (remoteData.areaRoadmaps) state.areaRoadmaps = mergeById(state.areaRoadmaps, remoteData.areaRoadmaps);
+      } catch(e) {}
+    }
+    const nowTs = new Date().toISOString();
     const data = {
-      v: 2, saved_at: new Date().toISOString(), saved_by: state.currentUser||'system',
+      v: 2, saved_at: nowTs, saved_by: state.currentUser||'system',
       requests: state.requests, initiatives: state.initiatives,
       config: state.config, documents: state.documents,
       notifications: (state.notifications||[]).slice(-100),
@@ -2557,9 +2305,11 @@ async function saveToFile() {
     const writable = await _fileHandle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
+    _lastFileTimestamp = nowTs;
     _lastSaved = new Date();
     updateSyncUI();
   } catch(e) { console.warn('saveToFile:', e); }
+  finally { _isSaving = false; }
 }
 
 async function connectExistingFile() {
@@ -2601,13 +2351,12 @@ async function manualSyncNow() {
 }
 
 async function disconnectFile() {
-  showConfirm('¿Desconectar el archivo? Los datos quedarán solo en el navegador local.', async ()=>{
-    _fileHandle = null;
-    await _dbOp('readwrite', (s,r) => { const p=s.delete(_FS_KEY); p.onsuccess=r; p.onerror=r; });
-    updateSyncUI();
-    closeModal('modal-filesync');
-    toast('📁 Desconectado','Archivo desvinculado. Los datos siguen en localStorage.','info');
-  });
+  if (!confirm('¿Desconectar el archivo? Los datos quedarán solo en el navegador local.')) return;
+  _fileHandle = null;
+  await _dbOp('readwrite', (s,r) => { const p=s.delete(_FS_KEY); p.onsuccess=r; p.onerror=r; });
+  updateSyncUI();
+  closeModal('modal-filesync');
+  toast('📁 Desconectado','Archivo desvinculado. Los datos siguen en localStorage.','info');
 }
 
 function updateSyncUI() {
@@ -2661,11 +2410,11 @@ function importDataJSON(input) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.requests)      state.requests      = data.requests;
-      if(data.initiatives)   state.initiatives   = data.initiatives;
-      if(data.documents)     state.documents     = data.documents;
-      if(data.areaRoadmaps)  state.areaRoadmaps  = data.areaRoadmaps;
-      if(data.notifications) state.notifications = data.notifications;
+      if(data.requests)      state.requests      = mergeById(state.requests, data.requests);
+      if(data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
+      if(data.documents)     state.documents     = mergeById(state.documents, data.documents);
+      if(data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+      if(data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
       if(data.config) state.config = {...state.config, ...data.config};
       saveState(); updateNavBadges(); updateUserUI();
       if(state.isAdmin||state.isTeam) navigate(state.currentView||'home');
@@ -2706,37 +2455,51 @@ function toggleLoginPwd() {
   else { inp.type='password'; if(btn) btn.textContent='👁'; }
 }
 
-function doLogin() {
+async function doLogin() {
   const username = (document.getElementById('login-username').value||'').trim().toLowerCase();
   const password = document.getElementById('login-password').value||'';
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   if(!username || !password) { if(errEl) errEl.style.display='block'; return; }
-  // Find user
+  if(btn) { btn.disabled=true; btn.textContent='Verificando…'; }
   const users = state.config.users || [];
-  const user = users.find(u => u.username.toLowerCase()===username && u.password===password);
-  if(!user) {
+  const candidate = users.find(u => u.username.toLowerCase()===username);
+  let matched = false;
+  if(candidate) {
+    if(candidate.password_hashed) {
+      const h = await hashPwd(password);
+      matched = h === candidate.password;
+    } else {
+      // Legacy plaintext — migrate on success
+      if(password === candidate.password) {
+        matched = true;
+        candidate.password = await hashPwd(password);
+        candidate.password_hashed = true;
+      }
+    }
+  }
+  if(btn) { btn.disabled=false; btn.textContent='Ingresar'; }
+  if(!matched) {
     if(errEl) errEl.style.display='block';
     document.getElementById('login-password').value='';
     document.getElementById('login-password').focus();
-    // Shake animation
     const card = document.querySelector('.login-card');
     if(card) { card.style.animation='shake 0.4s ease'; setTimeout(()=>card.style.animation='',400); }
     return;
   }
-  // Auth success
+  const user = candidate;
   if(errEl) errEl.style.display='none';
   state.isAdmin = user.role === 'admin';
   state.isTeam  = user.role === 'admin' || user.role === 'team';
   state.currentUser = user.name;
   state.currentUserId = user.id;
+  touchSession();
   saveState();
   updateUserUI();
   updateNavBadges();
   hideLoginScreen();
   navigate('home');
   toast('👋 Bienvenido','Hola, '+user.name+'! Sesión iniciada correctamente.','success');
-  initPresence();
 }
 
 // Shake keyframes (injected once)
@@ -2747,6 +2510,8 @@ function doLogin() {
 })();
 
 function openAuthModal() {
+  const uEl = document.getElementById('auth-username');
+  if(uEl) uEl.value='';
   populateAuthSelects();
   document.getElementById('auth-password').value = '';
   document.getElementById('auth-error').classList.add('hidden');
@@ -2771,23 +2536,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   const at = document.getElementById('auth-type');
   if(at) at.addEventListener('change', handleAuthTypeChange);
 });
-function doAuth() {
-  const type = document.getElementById('auth-type').value;
+async function doAuth() {
+  const username = (document.getElementById('auth-username').value||'').trim().toLowerCase();
   const pass = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
+  if(!username || !pass) { errEl.classList.remove('hidden'); return; }
+  const users = state.config.users || [];
+  const candidate = users.find(u => u.username.toLowerCase()===username);
   let ok = false;
-  if(type==='admin' && pass===state.config.adminPassword) {
-    state.isAdmin=true; state.isTeam=true;
-    state.currentUser='Admin (JC)';
-    ok=true;
-  } else if(type==='team' && pass===state.config.teamPassword) {
-    state.isAdmin=false; state.isTeam=true;
-    state.currentUser=document.getElementById('auth-name').value;
-    ok=true;
+  if(candidate) {
+    if(candidate.password_hashed) {
+      const h = await hashPwd(pass);
+      ok = h === candidate.password;
+    } else {
+      if(pass === candidate.password) {
+        ok = true;
+        candidate.password = await hashPwd(pass);
+        candidate.password_hashed = true;
+      }
+    }
   }
   if(ok) {
+    state.isAdmin = candidate.role === 'admin';
+    state.isTeam  = candidate.role === 'admin' || candidate.role === 'team';
+    state.currentUser = candidate.name;
+    state.currentUserId = candidate.id;
+    touchSession();
     closeModal('modal-auth');
     updateUserUI();
+    updateNavBadges();
     saveState();
     toast('✅ Acceso concedido','Bienvenido, '+state.currentUser,'success');
     navigate(state.currentView);
@@ -2798,15 +2575,15 @@ function doAuth() {
   }
 }
 function logout() {
-  clearPresenceIntervals();
   state.isAdmin=false; state.isTeam=false; state.currentUser=null; state.currentUserId=null;
+  localStorage.removeItem('sorh_last_activity');
   saveState(); updateUserUI();
   toast('👋 Sesión cerrada','Has cerrado sesión correctamente.','info');
   showLoginScreen();
 }
 function handleUserClick() {
   if(state.isAdmin||state.isTeam) {
-    showConfirm('¿Cerrar sesión de '+state.currentUser+'?', logout);
+    if(confirm('¿Cerrar sesión de '+state.currentUser+'?')) logout();
   } else {
     showLoginScreen();
   }
@@ -2844,10 +2621,7 @@ const VIEW_TITLES = {
   planeacion:'📅 Planeación Q — Roadmaps Transversales'
 };
 function navigate(view) {
-  if(view === 'config' && !state.isAdmin) {
-    toast('🔒 Sin acceso','Solo administradores pueden acceder a configuración.','warning');
-    view = 'home';
-  }
+  if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
   const adminViews = ['dashboard','heatmap','library','reports','config'];
   if(adminViews.includes(view) && !state.isAdmin) {
     toast('🔒 Acceso restringido','Esta sección requiere acceso de administrador.','warning');
@@ -2878,7 +2652,6 @@ function navigate(view) {
   if(renders[view]) renders[view]();
   updateNavBadges();
   closeSidebar();
-  sendHeartbeat(); // update view in presence
 }
 
 function updateNavBadges() {
@@ -3069,7 +2842,7 @@ function renderHome() {
   const recentRows = recentReqs.map(r=>`
     <tr onclick="openTask('${r.id}')" style="cursor:pointer">
       <td class="td-id">${r.id}</td>
-      <td class="td-title">${r.is_recurring?'<span style="font-size:10px;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;border-radius:10px;padding:1px 6px;margin-right:4px">🔄</span>':''}<span title="${r.title}">${r.title}</span>${r.linked_initiative_id?`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:10px;padding:1px 6px;margin-left:6px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,18)}</span>`:''}</td>
+      <td class="td-title"><span title="${r.title}">${r.title}</span>${r.linked_initiative_id?`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:10px;padding:1px 6px;margin-left:6px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,18)}</span>`:''}</td>
       <td>${statusBadge(r.status)}</td>
       <td>${ownerBadge(r.assigned_owner)}</td>
       <td style="font-size:11px;color:var(--text-muted)">${fmtDateShort(r.needed_by)}</td>
@@ -3478,12 +3251,11 @@ function saveNewDoc() {
   toast('✅ Documento agregado', published?`${name} — Publicado`:`${name} — Borrador (pendiente de publicación)`, 'success');
 }
 function deleteDoc(di) {
-  showConfirm('¿Eliminar este documento?', ()=>{
-    state.documents.splice(di, 1);
-    saveState();
-    renderDocs();
-    toast('🗑️ Documento eliminado','','info');
-  });
+  if(!confirm('¿Eliminar este documento?')) return;
+  state.documents.splice(di, 1);
+  saveState();
+  renderDocs();
+  toast('🗑️ Documento eliminado','','info');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3634,15 +3406,12 @@ let intakeData = { category:'', request_type:'', title:'', description:'',
 function startIntakeWithCategory(cat) {
   intakeData.category = cat;
   intakeData.requester_name = state.currentUser || intakeData.requester_name;
-  // Auto-fill area from user profile
-  if(state.currentUserId) {
-    const u = (state.config.users||[]).find(x=>x.id===state.currentUserId);
-    if(u && u.area) intakeData.requester_area = u.area;
-  }
   navigate('intake');
 }
 
 function renderIntake() {
+  // Pre-fill name from logged-in user if not already set
+  if(!intakeData.requester_name && state.currentUser) intakeData.requester_name = state.currentUser;
   const catOptions = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${intakeData.category===c?'selected':''}>${CATEGORIES[c].icon} ${c}</option>`).join('');
   const areaOptions = AREAS.map(a=>`<option value="${a}" ${intakeData.requester_area===a?'selected':''}>${a}</option>`).join('');
 
@@ -3727,59 +3496,6 @@ function renderIntake() {
             <div id="links-list" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
           </div>
 
-
-          <!-- RECURRENCIA -->
-          <div style="margin-top:20px">
-            <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--primary-light)">🔄 Recurrencia</div>
-            <div class="form-group" style="margin-bottom:10px">
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-primary)">
-                <input type="checkbox" id="i-recurring" style="width:16px;height:16px;cursor:pointer" onchange="toggleRecurrenceFields()">
-                Esta tarea se repite periódicamente
-              </label>
-            </div>
-            <div id="recurrence-fields" style="display:none;padding:14px;background:var(--surface2);border:1px solid var(--border-light);border-radius:var(--radius)">
-              <div class="grid-2" style="margin-bottom:10px">
-                <div class="form-group">
-                  <label class="form-label">Frecuencia</label>
-                  <select class="form-select" id="i-rec-type" onchange="toggleRecurrenceDetail()" style="font-size:13px">
-                    <option value="monthly">📅 Mensual</option>
-                    <option value="quarterly">📊 Trimestral</option>
-                    <option value="weekly">📆 Semanal</option>
-                  </select>
-                </div>
-                <div class="form-group" id="rec-monthly-group">
-                  <label class="form-label">Día del mes</label>
-                  <select class="form-select" id="i-rec-day" style="font-size:13px">
-                    ${Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div id="rec-quarterly-group" style="display:none;margin-bottom:10px">
-                <div class="form-group">
-                  <label class="form-label">Entrega</label>
-                  <select class="form-select" id="i-rec-qoffset" style="font-size:13px">
-                    <option value="0-10">Día 10 del mes de cierre del Q</option>
-                    <option value="1-10">Día 10 del mes siguiente al cierre del Q</option>
-                    <option value="1-15">Día 15 del mes siguiente al cierre del Q</option>
-                    <option value="1-30">Último día del mes siguiente al cierre del Q</option>
-                  </select>
-                </div>
-              </div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">
-                Al marcar como <strong>Concluida</strong>, se generará automáticamente la siguiente ocurrencia con la fecha correspondiente.
-              </div>
-              <!-- Quick templates -->
-              <div style="margin-top:12px;border-top:1px solid var(--border-light);padding-top:10px">
-                <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px">PLANTILLAS RÁPIDAS</div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('oic')">📋 OIC Report</button>
-                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('financial')">💰 Financial Metrics</button>
-                  <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="applyRecTemplate('quarterly')">📊 Quarterly Report</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- ACTIONS -->
           <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
             <button class="btn btn-ghost btn-sm" onclick="navigate('home')">Cancelar</button>
@@ -3842,10 +3558,6 @@ function submitIntake() {
   const date = document.getElementById('i-date') ? document.getElementById('i-date').value : '';
   const prio = document.getElementById('i-prio') ? document.getElementById('i-prio').value : 'Media';
   const linkInput = document.getElementById('i-link');
-  const isRecurring = document.getElementById('i-recurring') ? document.getElementById('i-recurring').checked : false;
-  const recType   = document.getElementById('i-rec-type')    ? document.getElementById('i-rec-type').value    : 'monthly';
-  const recDay    = document.getElementById('i-rec-day')     ? parseInt(document.getElementById('i-rec-day').value||'1') : 1;
-  const recQOffset= document.getElementById('i-rec-qoffset') ? document.getElementById('i-rec-qoffset').value : '1-10';
   if(linkInput && linkInput.value.trim()) intakeData.support_links.push(linkInput.value.trim());
 
   if(!name) { toast('⚠️ Campo requerido','Por favor ingresa tu nombre.','warning'); return; }
@@ -3875,10 +3587,7 @@ function submitIntake() {
     additional_comments: '',
     status: 'Backlog', assigned_owner: '', admin_priority: '',
     complexity: 'Media', internal_only: false,
-    activity_log: [], files: [], milestones: [],
-    is_recurring: isRecurring,
-    recurrence: isRecurring ? {type:recType, day_of_month:recDay, quarter_offset:recQOffset} : null,
-    occurrence_number: 1, recurrence_parent_id: null
+    activity_log: [], files: [], milestones: []
   };
   state.requests.unshift(newReq);
   saveState();
@@ -4294,12 +4003,11 @@ function submitPlaneacionItem() {
 }
 
 function deletePlaneacionItem(id) {
-  showConfirm('¿Eliminar esta iniciativa del roadmap? Esta acción no se puede deshacer.', ()=>{
-    state.areaRoadmaps = state.areaRoadmaps.filter(i=>i.id!==id);
-    saveState();
-    renderPlaneacion();
-    toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
-  });
+  if(!confirm('¿Eliminar esta iniciativa del roadmap?')) return;
+  state.areaRoadmaps = state.areaRoadmaps.filter(i=>i.id!==id);
+  saveState();
+  renderPlaneacion();
+  toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
 }
 
 function saveTaskField(id, field, value) {
@@ -4337,37 +4045,25 @@ function populateLinkMilestones(reqId) {
     milestones.map(m=>`<option value="${m.id||m.name}">${m.name}</option>`).join('');
 }
 
-function showConfirm(message, onConfirm) {
-  document.getElementById('confirm-title').textContent = 'Confirmar acción';
-  document.getElementById('confirm-msg').textContent = message;
-  document.getElementById('confirm-ok').onclick = () => {
-    closeModal('modal-confirm');
-    onConfirm();
-  };
-  openModal('modal-confirm');
-}
-
 function deleteRequest(id) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
-  showConfirm(`¿Eliminar la solicitud "${req.title}"? Esta acción no se puede deshacer.`, ()=>{
-    state.requests = state.requests.filter(r=>r.id!==id);
-    saveState();
-    if(state.currentView==='backlog') renderBacklog();
-    else if(state.currentView==='kanban') renderKanban();
-    toast('🗑 Eliminada','Solicitud eliminada correctamente.','info');
-  });
+  if(!confirm(`¿Eliminar la solicitud "${req.title}"?\nEsta acción no se puede deshacer.`)) return;
+  state.requests = state.requests.filter(r=>r.id!==id);
+  saveState();
+  if(state.currentView==='backlog') renderBacklog();
+  else if(state.currentView==='kanban') renderKanban();
+  toast('🗑 Eliminada','Solicitud eliminada correctamente.','info');
 }
 
 function deleteInitiative(id) {
   const ini = state.initiatives.find(i=>i.id===id);
   if(!ini) return;
-  showConfirm(`¿Eliminar la iniciativa "${ini.name}"? Esta acción no se puede deshacer.`, ()=>{
-    state.initiatives = state.initiatives.filter(i=>i.id!==id);
-    saveState();
-    renderRoadmap();
-    toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
-  });
+  if(!confirm(`¿Eliminar la iniciativa "${ini.name}"?\nEsta acción no se puede deshacer.`)) return;
+  state.initiatives = state.initiatives.filter(i=>i.id!==id);
+  saveState();
+  renderRoadmap();
+  toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
 }
 
 function renderBacklog() {
@@ -4384,12 +4080,6 @@ function renderBacklog() {
     return true;
   });
   reqs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-
-  const PAGE_SIZE = 50;
-  const page = state.backlogFilter.page || 0;
-  const totalReqs = reqs.length;
-  reqs = reqs.slice(0, PAGE_SIZE * (page + 1));
-  const hasMore = totalReqs > reqs.length;
 
   const statusOpts = STATUSES.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
   const catOpts = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c}</option>`).join('');
@@ -4413,17 +4103,17 @@ function renderBacklog() {
 
   document.getElementById('view-backlog').innerHTML = `
     <div class="filters-bar">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;state.backlogFilter.page=0;renderBacklog()">
-      <select class="filter-select" onchange="state.backlogFilter.status=this.value;state.backlogFilter.page=0;renderBacklog()">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.status=this.value;renderBacklog()">
         <option value="">Todos los estados</option>${statusOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.category=this.value;state.backlogFilter.page=0;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.category=this.value;renderBacklog()">
         <option value="">Todas las categorías</option>${catOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;state.backlogFilter.page=0;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;renderBacklog()">
         <option value="">Todos los owners</option>${ownerOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;state.backlogFilter.page=0;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;renderBacklog()">
         <option value="">Todas las prioridades</option>${prioOpts}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};renderBacklog()">✕ Limpiar</button>
@@ -4435,7 +4125,7 @@ function renderBacklog() {
           <th>ID</th><th>Solicitud</th><th>Categoría</th><th>Estado</th>
           <th>Prioridad</th><th>Owner</th><th>Solicitante</th><th>Fecha req.</th><th>Actualizado</th><th></th>
         </tr></thead>
-        <tbody>${rows||`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados para los filtros seleccionados</td></tr>`}${hasMore?`<tr><td colspan="10" style="text-align:center;padding:14px 0"><button class="btn btn-secondary btn-sm" onclick="state.backlogFilter.page=(state.backlogFilter.page||0)+1;renderBacklog()">Ver más — ${totalReqs-reqs.length} solicitudes restantes</button></td></tr>`:''}</tbody>
+        <tbody>${rows||`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">Sin resultados para los filtros seleccionados</td></tr>`}</tbody>
       </table>
     </div>
   `;
@@ -4452,20 +4142,35 @@ function renderKanban() {
   const catOpts = ['', ...Object.keys(CATEGORIES)].map(c=>`<option value="${c}" ${kf.category===c?'selected':''}>${c||'Todas las categorías'}</option>`).join('');
   const prioOpts = ['', ...PRIORITIES].map(p=>`<option value="${p}" ${kf.priority===p?'selected':''}>${p||'Todas las prioridades'}</option>`).join('');
 
+  // Resolve milestone name for banner
+  let msBannerHtml = '';
+  if(kf.milestone) {
+    let msName = kf.milestone;
+    if(kf._milestoneIniId) {
+      const ini = state.initiatives.find(x=>x.id===kf._milestoneIniId);
+      if(ini) {
+        const ms = ini.milestones.find(m=>(m.id||m.name)===kf.milestone);
+        if(ms) msName = ms.name + (ini ? ` — ${ini.name}` : '');
+      }
+    }
+    msBannerHtml = `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:12px;color:#1D4ED8">🔗 Filtrando por milestone: <strong>${msName}</strong></span>
+      <button onclick="state.kanbanFilter.milestone=null;state.kanbanFilter._milestoneIniId=null;renderKanban()" style="background:none;border:none;cursor:pointer;color:#1D4ED8;font-size:12px;padding:0;margin-left:auto">✕ Quitar filtro</button>
+    </div>`;
+  }
+
   let reqs = state.requests.filter(r=>{
     if(kf.owner && r.assigned_owner!==kf.owner) return false;
     if(kf.category && r.category!==kf.category) return false;
     if(kf.priority && r.requester_priority!==kf.priority && r.admin_priority!==kf.priority) return false;
+    if(kf.milestone && r.linked_milestone_id !== kf.milestone) return false;
     return true;
   });
 
   const cols = STATUSES.map(status=>{
     const cards = reqs.filter(r=>r.status===status);
     const colorMap = {'Backlog':'#6B7280','En proceso':'#008080','Ejecutada':'#D97706','Validada':'#16A34A','Concluida':'#15803D','Requiere Cambios':'#EA580C','Cancelada':'#DC2626'};
-    const cardHtml = cards.length === 0
-      ? `<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius);margin-bottom:8px">Sin tarjetas</div>`
-      : '';
-    const _cardItems = cards.map(r=>{
+    const cardHtml = cards.map(r=>{
       const overdue = isOverdue(r.needed_by) && !['Concluida','Cancelada'].includes(r.status);
       const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📝'};
       return `
@@ -4480,8 +4185,8 @@ function renderKanban() {
           <div class="kc-title">${r.title}</div>
           <div class="kc-meta">
             <span class="badge" style="background:${catInfo.bg};color:${catInfo.color};font-size:10px">${catInfo.icon} ${r.category.split(' ')[0]}</span>
-            ${r.is_recurring?`<span class="badge" style="background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;font-size:10px">🔄 Recurrente</span>`:''}
-            ${r.linked_initiative_id?`<span class="badge" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-size:10px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,15)}</span>`:''}
+            ${r.linked_initiative_id?`<span class="badge" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-size:10px">🗺️ ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,15)}</span>`:''}
+            ${(()=>{if(!r.linked_milestone_id) return '';const ini=state.initiatives.find(x=>x.id===r.linked_initiative_id);const ms=ini?(ini.milestones||[]).find(m=>(m.id||m.name)===r.linked_milestone_id):null;return ms?`<span class="badge" style="background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;font-size:10px">◆ ${ms.name.substring(0,18)}</span>`:''})()}
           </div>
           <div class="kc-footer">
             <span class="kc-owner">${r.assigned_owner||'—'}</span>
@@ -4491,7 +4196,6 @@ function renderKanban() {
         </div>
       `;
     }).join('');
-    const cardHtmlAll = (cards.length===0?`<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius);margin-bottom:8px">Sin tarjetas</div>`:'')+_cardItems;
     const isAddable = (state.isTeam||state.isAdmin) && status==='Backlog';
     return `
       <div class="kanban-col">
@@ -4511,6 +4215,7 @@ function renderKanban() {
   }).join('');
 
   document.getElementById('view-kanban').innerHTML = `
+    ${msBannerHtml}
     <div class="filters-bar" style="margin-bottom:16px">
       <select class="filter-select" onchange="state.kanbanFilter.owner=this.value;renderKanban()">
         ${ownerOpts}
@@ -4521,7 +4226,7 @@ function renderKanban() {
       <select class="filter-select" onchange="state.kanbanFilter.priority=this.value;renderKanban()">
         ${prioOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:''};renderKanban()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:'',milestone:null,_milestoneIniId:null};renderKanban()">✕ Limpiar</button>
       ${state.isTeam?`<button class="btn btn-primary btn-sm" onclick="openQuickModal()" style="margin-left:auto">⚡ Tarea Interna</button>`:''}
     </div>
     <div id="kanban-board">${cols}</div>
@@ -4679,10 +4384,6 @@ function initCharts(statusCounts, catCounts) {
   const statusCanvas = document.getElementById('chart-status');
   const catCanvas = document.getElementById('chart-cat');
   if(!statusCanvas||!catCanvas) return;
-  if(typeof Chart === 'undefined') {
-    [statusCanvas, catCanvas].forEach(el=>{ if(el) el.parentElement.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">📊 Las gráficas no cargaron. Verifica tu conexión a internet y recarga la página.</div>'; });
-    return;
-  }
 
   state.charts.status = new Chart(statusCanvas, {
     type:'bar',
@@ -4959,7 +4660,12 @@ function renderRoadmap() {
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ini.description}</div>
             ${(()=>{const linked=state.requests.filter(r=>r.linked_initiative_id===ini.id);return linked.length?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${linked.map(r=>`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${r.title.substring(0,25)}${r.title.length>25?'…':''}</span>`).join('')}</div>`:'';})()}
           </div>
-          ${state.isAdmin?`<button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C;flex-shrink:0;align-self:flex-start" title="Eliminar iniciativa">🗑 Eliminar</button>`:''}
+          ${state.isAdmin?`
+            <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
+              <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
+              <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
+            </div>
+          `:''}
         </div>
         <div class="card-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -4968,8 +4674,8 @@ function renderRoadmap() {
               <div style="font-size:13px;font-weight:600">${ini.primary_owner}</div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">FECHA OBJETIVO</div>
-              <div style="font-size:13px;font-weight:600">${fmtDate(ini.target_close_date)}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">INICIO → CIERRE</div>
+              <div style="font-size:13px;font-weight:600">${ini.start_date?fmtDate(ini.start_date)+' → ':''}${fmtDate(ini.target_close_date)}</div>
             </div>
             <div>
               <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px">PRÓXIMO PASO</div>
@@ -5048,7 +4754,12 @@ function renderRoadmap() {
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ini.description}</div>
           ${linkedTasks.length?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${linkedTasks.map(r=>`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${r.title.substring(0,22)}${r.title.length>22?'…':''}</span>`).join('')}</div>`:''}
         </div>
-        ${state.isAdmin?`<button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>`:''}
+        ${state.isAdmin?`
+          <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
+            <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
+            <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
+          </div>
+        `:''}
       </div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -5151,7 +4862,10 @@ function renderRoadmapGantt() {
     return;
   }
 
-  // Compute time range across all initiatives + milestones
+  // Init expand state (plain object, not persisted)
+  if(!state.ganttExpanded) state.ganttExpanded = {};
+
+  // Compute time range
   const allDates = inits.flatMap(ini=>{
     const dates = [ini.start_date, ini.target_close_date].filter(Boolean);
     ini.milestones.forEach(ms=>{ if(ms.target_date) dates.push(ms.target_date); });
@@ -5159,13 +4873,13 @@ function renderRoadmapGantt() {
   });
   const minDate = new Date(allDates.reduce((a,b)=>a<b?a:b));
   const maxDate = new Date(allDates.reduce((a,b)=>a>b?a:b));
-  // Pad 1 month each side
   minDate.setDate(1);
   maxDate.setMonth(maxDate.getMonth()+1); maxDate.setDate(1);
   const totalDays = (maxDate-minDate)/(1000*86400);
 
-  const ROW_H = 52;
-  const LABEL_W = 200;
+  const ROW_H = 56;
+  const MS_ROW_H = 42;
+  const LABEL_W = 210;
   const CHART_W = Math.max(600, totalDays * 3.2);
   const HEADER_H = 48;
   const statusCol = {'En planeación':'#00CC99','En ejecución':'#008080','Concluida':'#22C55E','En pausa':'#EAB308','Cancelada':'#DC2626','Backlog':'#9CA3AF','En revisión':'#D97706'};
@@ -5176,86 +4890,143 @@ function renderRoadmapGantt() {
     return Math.max(0, Math.min(100, ((dd-minDate)/(maxDate-minDate))*100));
   }
 
-  // Build month columns for header
+  // Month columns
   const months = [];
   const cur = new Date(minDate);
   while(cur < maxDate) {
-    months.push({ label: cur.toLocaleDateString('es-MX',{month:'short',year:'2-digit'}), pctStart: pct(cur.toISOString().split('T')[0]) });
+    months.push({ label: cur.toLocaleDateString('es-MX',{month:'short',year:'2-digit'}), p: pct(cur.toISOString().split('T')[0]) });
     cur.setMonth(cur.getMonth()+1);
   }
-
-  const monthLines = months.map(m=>`
-    <line x1="${LABEL_W + m.pctStart/100*CHART_W}" y1="0" x2="${LABEL_W + m.pctStart/100*CHART_W}" y2="${HEADER_H + inits.length*ROW_H}" stroke="#e5e7eb" stroke-width="1"/>
-    <text x="${LABEL_W + m.pctStart/100*CHART_W + 6}" y="20" font-size="10" fill="#9CA3AF" font-family="Helvetica,Arial,sans-serif">${m.label}</text>
-  `).join('');
-
-  // Today line
   const todayPct = pct(new Date().toISOString().split('T')[0]);
-  const todayLine = `
-    <line x1="${LABEL_W + todayPct/100*CHART_W}" y1="0" x2="${LABEL_W + todayPct/100*CHART_W}" y2="${HEADER_H + inits.length*ROW_H}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
-    <text x="${LABEL_W + todayPct/100*CHART_W + 4}" y="36" font-size="9" fill="#EF4444" font-family="Helvetica,Arial,sans-serif" font-weight="700">HOY</text>
-  `;
+
+  // Grid lines SVG string (reused per row)
+  const gridLinesSvg = (h) => months.map(m=>`<line x1="${m.p/100*CHART_W}" y1="0" x2="${m.p/100*CHART_W}" y2="${h}" stroke="#f0f0f0" stroke-width="1"/>`).join('') +
+    `<line x1="${todayPct/100*CHART_W}" y1="0" x2="${todayPct/100*CHART_W}" y2="${h}" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>`;
 
   // Apply grouping
   let sortedInits = [...inits];
   if(state.ganttGroupBy === 'category') sortedInits.sort((a,b)=>a.category.localeCompare(b.category));
   if(state.ganttGroupBy === 'status') sortedInits.sort((a,b)=>a.status.localeCompare(b.status));
 
-  // Build rows with optional group headers
-  let currentGroup = null;
-  let rowIndex = 0;
-  const rows = sortedInits.flatMap((ini)=>{
-    const ri = rowIndex;
-    const y = HEADER_H + ri*ROW_H;
+  // Build initiative rows (hybrid HTML + SVG)
+  const rowsHtml = sortedInits.map((ini, ri)=>{
     const color = statusCol[ini.status] || '#6B7280';
     const startPct = pct(ini.start_date || ini.target_close_date);
     const endPct = pct(ini.target_close_date);
-    const barX = LABEL_W + startPct/100*CHART_W;
+    const barX = startPct/100*CHART_W;
     const barW = Math.max(4, (endPct-startPct)/100*CHART_W);
 
-    // Progress overlay
+    // Duration in days
+    const durDays = ini.start_date && ini.target_close_date
+      ? Math.round((new Date(ini.target_close_date) - new Date(ini.start_date)) / 86400000) : null;
+
+    // Progress from milestones
     const totalMs = ini.milestones.length;
     const doneMs = ini.milestones.filter(m=>m.status==='Completado'||m.status==='Validada').length;
-    const progress = totalMs>0?doneMs/totalMs:0;
+    const progress = totalMs>0 ? doneMs/totalMs : 0;
 
-    // Milestone diamonds
+    // Diamonds for each milestone
     const diamonds = ini.milestones.map(ms=>{
-      const mx = LABEL_W + pct(ms.target_date)/100*CHART_W;
+      if(!ms.target_date) return '';
+      const mx = pct(ms.target_date)/100*CHART_W;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
-      return `
-        <g>
-          <polygon points="${mx},${y+18} ${mx+7},${y+26} ${mx},${y+34} ${mx-7},${y+26}" fill="${mc}" stroke="#fff" stroke-width="1.5"/>
-          <title>${ms.name} — ${ms.status} (${ms.target_date})</title>
-        </g>
-      `;
+      return `<g><polygon points="${mx},${ROW_H/2-8} ${mx+7},${ROW_H/2} ${mx},${ROW_H/2+8} ${mx-7},${ROW_H/2}" fill="${mc}" stroke="#fff" stroke-width="1.5"><title>${ms.name} — ${ms.status} (${ms.target_date})</title></polygon></g>`;
     }).join('');
 
-    // Label truncated
-    const labelMaxChars = 28;
-    const labelText = ini.name.length > labelMaxChars ? ini.name.slice(0,labelMaxChars)+'…' : ini.name;
+    // Duration label inside bar
+    const durBarLabel = durDays && barW > 50
+      ? `<text x="${barX+barW/2}" y="${ROW_H/2+4}" font-size="10" fill="white" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" font-weight="700">${durDays}d</text>` : '';
+
+    const isExpanded = !!state.ganttExpanded[ini.id];
+    const labelText = ini.name.length > 26 ? ini.name.slice(0,26)+'…' : ini.name;
+
+    // Milestone sub-rows when expanded
+    let expandHtml = '';
+    if(isExpanded) {
+      if(!ini.milestones.length) {
+        expandHtml = `<div style="display:flex;background:#fafafa;border-bottom:1px solid #e5e7eb">
+          <div style="width:${LABEL_W}px;flex-shrink:0;padding:8px 12px 8px 24px;border-right:1px solid #e5e7eb;font-size:12px;color:var(--text-muted)">Sin milestones definidos</div>
+          <div style="flex:1"></div>
+        </div>`;
+      } else {
+        expandHtml = ini.milestones.map(ms=>{
+          const msc = msStatusCol[ms.status]||'#9CA3AF';
+          const linkedTasks = state.requests.filter(r=>r.linked_milestone_id === (ms.id||ms.name));
+          const overdue = ms.target_date && isOverdue(ms.target_date) && ms.status!=='Completado' && ms.status!=='Validada';
+          const mxPos = ms.target_date ? pct(ms.target_date)/100*CHART_W : null;
+          const msNameShort = ms.name.length > 28 ? ms.name.slice(0,28)+'…' : ms.name;
+
+          // Task status breakdown
+          const taskStatusCounts = {};
+          linkedTasks.forEach(r=>{ taskStatusCounts[r.status] = (taskStatusCounts[r.status]||0)+1; });
+          const taskBreakdown = Object.entries(taskStatusCounts).map(([s,n])=>`<span style="font-size:9px;background:${STATUS_BG[s]||'#F3F4F6'};color:${STATUS_COLORS[s]||'#6B7280'};border-radius:8px;padding:1px 5px">${s} ${n}</span>`).join('');
+
+          const tasksBadge = linkedTasks.length
+            ? `<button onclick="event.stopPropagation();filterKanbanByMilestone('${ms.id||ms.name}','${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:2px 7px;font-size:10px;cursor:pointer;color:#1D4ED8;font-weight:600">🔗 ${linkedTasks.length} tarea${linkedTasks.length>1?'s':''}</button>`
+            : `<span style="font-size:10px;color:var(--text-muted);font-style:italic">Sin tareas</span>`;
+
+          return `<div style="display:flex;align-items:stretch;background:#f8f9fb;border-bottom:1px solid #eef0f3">
+            <div style="width:${LABEL_W}px;flex-shrink:0;padding:6px 8px 6px 24px;border-right:1px solid #e5e7eb;border-left:3px solid ${msc}">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                <div style="width:7px;height:7px;border-radius:50%;background:${msc};flex-shrink:0"></div>
+                <span style="font-size:11px;font-weight:600;color:var(--text-primary)" title="${ms.name}">${msNameShort}</span>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);padding-left:12px;margin-bottom:3px">${ms.owner||'—'} · <span style="color:${overdue?'#EF4444':'inherit'};font-weight:${overdue?'700':'400'}">${fmtDateShort(ms.target_date)}</span></div>
+              <div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${tasksBadge}${taskBreakdown?`<span style="color:#ccc">|</span>${taskBreakdown}`:''}</div>
+            </div>
+            <div style="flex:1;overflow:hidden;position:relative;height:${MS_ROW_H}px">
+              <svg width="${CHART_W}" height="${MS_ROW_H}" style="display:block">
+                ${gridLinesSvg(MS_ROW_H)}
+                ${mxPos!==null ? `
+                  <polygon points="${mxPos},${MS_ROW_H/2-7} ${mxPos+7},${MS_ROW_H/2} ${mxPos},${MS_ROW_H/2+7} ${mxPos-7},${MS_ROW_H/2}" fill="${msc}" stroke="#fff" stroke-width="1.5"/>
+                  <text x="${mxPos+10}" y="${MS_ROW_H/2+4}" font-size="9" fill="${msc}" font-family="Helvetica,Arial,sans-serif" font-weight="600">${ms.status}</text>
+                ` : ''}
+              </svg>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
 
     return `
-      <g>
-        <!-- Row bg -->
-        <rect x="0" y="${y}" width="${LABEL_W + CHART_W}" height="${ROW_H}" fill="${ri%2===0?'#f9fafb':'#fff'}"/>
-        <!-- Label -->
-        <text x="8" y="${y+20}" font-size="11" font-weight="700" fill="#1f2937" font-family="Helvetica,Arial,sans-serif" clip-path="url(#label-clip)">${labelText}</text>
-        <text x="8" y="${y+35}" font-size="10" fill="#6B7280" font-family="Helvetica,Arial,sans-serif">${ini.primary_owner} · ${ini.status}</text>
-        <line x1="${LABEL_W}" y1="${y}" x2="${LABEL_W + CHART_W}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
-        <!-- Bar background -->
-        <rect x="${barX}" y="${y+14}" width="${barW}" height="16" rx="8" fill="${color}30"/>
-        <!-- Bar fill (progress) -->
-        <rect x="${barX}" y="${y+14}" width="${barW*progress}" height="16" rx="8" fill="${color}"/>
-        <!-- Bar border -->
-        <rect x="${barX}" y="${y+14}" width="${barW}" height="16" rx="8" fill="none" stroke="${color}" stroke-width="1.5"/>
-        <!-- Milestone diamonds -->
-        ${diamonds}
-      </g>
+      <div style="display:flex;align-items:center;background:${ri%2===0?'#f9fafb':'#fff'};border-bottom:1px solid #e5e7eb;min-height:${ROW_H}px">
+        <div style="width:${LABEL_W}px;flex-shrink:0;padding:7px 8px;border-right:1px solid #d1d5db">
+          <div style="font-size:11px;font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${ini.name}">${labelText}</div>
+          <div style="font-size:10px;color:#6B7280;margin-top:1px">${ini.primary_owner} · ${ini.status}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+            ${durDays ? `<span style="font-size:10px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;padding:1px 5px;color:#374151;font-weight:600">⏱ ${durDays}d</span>` : ''}
+            <button onclick="toggleGanttRow('${ini.id}')" style="font-size:10px;background:${isExpanded?'#EFF6FF':'var(--surface)'};border:1px solid ${isExpanded?'#BFDBFE':'var(--border)'};border-radius:4px;padding:1px 7px;cursor:pointer;color:${isExpanded?'#1D4ED8':'var(--text-secondary)'};">${isExpanded ? '▲ ocultar' : '▼ ver más'}</button>
+            ${totalMs>0?`<span style="font-size:10px;color:var(--text-muted)">${doneMs}/${totalMs} ms</span>`:''}
+          </div>
+        </div>
+        <div style="flex:1;overflow:hidden;position:relative;height:${ROW_H}px">
+          <svg width="${CHART_W}" height="${ROW_H}" style="display:block">
+            ${gridLinesSvg(ROW_H)}
+            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="${color}30"/>
+            <rect x="${barX}" y="${ROW_H/2-8}" width="${Math.max(0,barW*progress)}" height="16" rx="8" fill="${color}"/>
+            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="none" stroke="${color}" stroke-width="1.5"/>
+            ${durBarLabel}
+            ${diamonds}
+          </svg>
+        </div>
+      </div>
+      ${isExpanded ? expandHtml : ''}
     `;
   }).join('');
 
-  const svgH = HEADER_H + inits.length * ROW_H + 20;
-  const svgW = LABEL_W + CHART_W;
+  // Header SVG
+  const headerSvg = `<svg width="${LABEL_W + CHART_W}" height="${HEADER_H}" style="display:block;border-bottom:2px solid #d1d5db">
+    <rect x="0" y="0" width="${LABEL_W + CHART_W}" height="${HEADER_H}" fill="#f3f4f6"/>
+    <rect x="0" y="0" width="${LABEL_W}" height="${HEADER_H}" fill="#f3f4f6"/>
+    <text x="8" y="30" font-size="11" font-weight="700" fill="#4B5563" font-family="Helvetica,Arial,sans-serif">INICIATIVA</text>
+    <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#d1d5db" stroke-width="1.5"/>
+    ${months.map(m=>`
+      <line x1="${LABEL_W + m.p/100*CHART_W}" y1="0" x2="${LABEL_W + m.p/100*CHART_W}" y2="${HEADER_H}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${LABEL_W + m.p/100*CHART_W + 5}" y="20" font-size="10" fill="#9CA3AF" font-family="Helvetica,Arial,sans-serif">${m.label}</text>
+    `).join('')}
+    <line x1="${LABEL_W + todayPct/100*CHART_W}" y1="0" x2="${LABEL_W + todayPct/100*CHART_W}" y2="${HEADER_H}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text x="${LABEL_W + todayPct/100*CHART_W + 4}" y="36" font-size="9" fill="#EF4444" font-family="Helvetica,Arial,sans-serif" font-weight="700">HOY</text>
+  </svg>`;
 
   const legendItems = Object.entries(statusCol).map(([s,c])=>`
     <div style="display:flex;align-items:center;gap:4px">
@@ -5282,8 +5053,6 @@ function renderRoadmapGantt() {
         </div>
       </div>
     </div>
-
-    <!-- Legend -->
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius)">
       ${legendItems}
       <div style="display:flex;align-items:center;gap:4px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-light)">
@@ -5295,34 +5064,34 @@ function renderRoadmapGantt() {
         <span style="font-size:11px;color:var(--text-secondary)">Hoy</span>
       </div>
     </div>
-
-    <!-- Gantt SVG -->
     <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff">
-      <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <clipPath id="label-clip"><rect x="0" y="0" width="${LABEL_W-8}" height="${svgH}"/></clipPath>
-        </defs>
-        <!-- Header bg -->
-        <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#f3f4f6"/>
-        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#d1d5db" stroke-width="1.5"/>
-        <rect x="0" y="0" width="${LABEL_W}" height="${HEADER_H}" fill="#f3f4f6"/>
-        <text x="8" y="30" font-size="11" font-weight="700" fill="#4B5563" font-family="Helvetica,Arial,sans-serif">INICIATIVA</text>
-        <!-- Month lines & labels -->
-        ${monthLines}
-        <!-- Today -->
-        ${todayLine}
-        <!-- Rows -->
-        ${rows}
-        <!-- Bottom border -->
-        <line x1="0" y1="${svgH-1}" x2="${svgW}" y2="${svgH-1}" stroke="#e5e7eb" stroke-width="1"/>
-      </svg>
+      <div style="min-width:${LABEL_W + CHART_W}px">
+        ${headerSvg}
+        ${rowsHtml}
+      </div>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Las barras muestran avance % de milestones. Los diamantes ◆ indican fechas objetivo de milestones.</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">⏱ duración en días · ▼ ver más despliega milestones · 🔗 vincula al Kanban</div>
   `;
+}
+
+function toggleGanttRow(iniId) {
+  if(!state.ganttExpanded) state.ganttExpanded = {};
+  state.ganttExpanded[iniId] = !state.ganttExpanded[iniId];
+  renderRoadmapGantt();
+}
+
+function filterKanbanByMilestone(msId, iniId) {
+  if(!state.kanbanFilter) state.kanbanFilter = {};
+  state.kanbanFilter.milestone = msId;
+  state.kanbanFilter._milestoneIniId = iniId || null;
+  navigate('kanban');
 }
 
 // ─── INITIATIVE / MILESTONE MODAL ────────────────────────
 function openNewInitiativeModal() {
+  _editingIniId = null;
+  const titleEl = document.querySelector('#modal-new-initiative .modal-title');
+  if(titleEl) titleEl.textContent = '🗺️ Agregar al Roadmap';
   // Populate selects
   const catSel = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
@@ -5347,6 +5116,42 @@ function switchIniTab(t) {
     if(form) form.style.display = i===t?'block':'none';
   });
 }
+function editInitiative(iniId) {
+  const ini = state.initiatives.find(i=>i.id===iniId);
+  if(!ini) return;
+  _editingIniId = iniId;
+  // Populate dropdowns first (same logic as openNewInitiativeModal)
+  const catSel   = document.getElementById('ini-cat');
+  const ownerSel = document.getElementById('ini-owner');
+  const msOwnerSel = document.getElementById('ms-owner');
+  const msIniSel   = document.getElementById('ms-ini-select');
+  if(catSel) catSel.innerHTML = '<option value="">Selecciona categoría</option>' +
+    Object.keys(CATEGORIES).map(c=>`<option value="${c}">${CATEGORIES[c].icon} ${c}</option>`).join('');
+  const teamOpts = ['<option value="">Sin asignar</option>',
+    ...state.config.team.map(m=>`<option value="${m}">${m}</option>`)].join('');
+  if(ownerSel)   ownerSel.innerHTML   = teamOpts;
+  if(msOwnerSel) msOwnerSel.innerHTML = teamOpts;
+  if(msIniSel)   msIniSel.innerHTML   = '<option value="">Selecciona la iniciativa</option>' +
+    state.initiatives.map((i,idx)=>`<option value="${idx}">${i.name}</option>`).join('');
+  // Populate text fields
+  document.getElementById('ini-name').value  = ini.name || '';
+  document.getElementById('ini-start').value = ini.start_date || '';
+  document.getElementById('ini-end').value   = ini.target_close_date || '';
+  document.getElementById('ini-desc').value  = ini.description || '';
+  const nextEl  = document.getElementById('ini-next');  if(nextEl)  nextEl.value  = ini.next_step || '';
+  const risksEl = document.getElementById('ini-risks'); if(risksEl) risksEl.value = ini.risks || '';
+  // Now set select values (dropdowns are already populated)
+  if(catSel)    catSel.value    = ini.category || '';
+  if(ownerSel)  ownerSel.value  = ini.primary_owner || '';
+  const statusSel = document.getElementById('ini-status');
+  if(statusSel) statusSel.value = ini.status || 'En planeación';
+  // Update modal title and open
+  const titleEl = document.querySelector('#modal-new-initiative .modal-title');
+  if(titleEl) titleEl.textContent = '✏️ Editar Iniciativa';
+  switchIniTab(0);
+  openModal('modal-new-initiative');
+}
+
 function submitNewRoadmapItem() {
   const activeTab = document.getElementById('ini-form-0').style.display!=='none' ? 0 : 1;
   if(activeTab === 0) {
@@ -5364,13 +5169,27 @@ function submitNewRoadmapItem() {
     if(!cat) { toast('⚠️ Requerido','Selecciona una categoría.','warning'); return; }
     if(!end) { toast('⚠️ Requerido','Indica la fecha objetivo de cierre.','warning'); return; }
     const newIni = {
-      id:`INI-${String(state.initiatives.length+1).padStart('3','0')}`,
+      id:`INI-${Date.now().toString().slice(-6)}`,
       name, category:cat, primary_owner:owner||'TBD', stakeholders:[],
       start_date:start||new Date().toISOString().split('T')[0],
       target_close_date:end, status:status||'En planeación',
       description:desc, next_step:next, risks:risks, request_ids:[],
       milestones:[]
     };
+    if(_editingIniId) {
+      // Edit mode: merge into existing
+      const existingIdx = state.initiatives.findIndex(i=>i.id===_editingIniId);
+      if(existingIdx >= 0) {
+        state.initiatives[existingIdx] = { ...state.initiatives[existingIdx], ...newIni, id:_editingIniId, milestones:state.initiatives[existingIdx].milestones||[] };
+        _editingIniId = null;
+        saveState();
+        closeModal('modal-new-initiative');
+        renderRoadmap();
+        toast('✅ Iniciativa actualizada', name, 'success');
+        return;
+      }
+      _editingIniId = null;
+    }
     state.initiatives.push(newIni);
     saveState();
     addNotification('new_request','🗺️ Nueva iniciativa añadida', `${name} — ${status}`);
@@ -5645,23 +5464,16 @@ function openUserModal(id) {
   document.getElementById('user-modal-username').value = user ? user.username : '';
   document.getElementById('user-modal-password').value = '';
   document.getElementById('user-modal-role').value = user ? user.role : 'team';
-  // Populate area dropdown from CROSS_AREAS
-  const areaSel = document.getElementById('user-modal-area');
-  const crossAreas = (state.config && state.config.crossAreas) || CROSS_AREAS;
-  areaSel.innerHTML = '<option value="">— Sin área asignada —</option>' +
-    crossAreas.map(a=>`<option value="${a}">${a}</option>`).join('');
-  areaSel.value = user ? (user.area||'') : '';
   openModal('modal-user');
   setTimeout(()=>document.getElementById('user-modal-name').focus(), 200);
 }
 
-function submitUser() {
+async function submitUser() {
   const id       = document.getElementById('user-modal-id').value;
   const name     = document.getElementById('user-modal-name').value.trim();
   const username = document.getElementById('user-modal-username').value.trim().toLowerCase();
   const password = document.getElementById('user-modal-password').value;
   const role     = document.getElementById('user-modal-role').value;
-  const area     = document.getElementById('user-modal-area').value;
   if(!name || !username) { toast('⚠️ Campos requeridos','Nombre y usuario son obligatorios.','warning'); return; }
   if(!state.config.users) state.config.users = [];
   // Check duplicate username (excluding self)
@@ -5671,19 +5483,23 @@ function submitUser() {
     // Edit
     const idx = state.config.users.findIndex(u=>u.id===id);
     if(idx>=0) {
-      state.config.users[idx] = {
+      const updatedUser = {
         ...state.config.users[idx],
-        name, username, role, area,
-        updated_at: new Date().toISOString(),
-        ...(password ? {password} : {})
+        name, username, role
       };
+      if(password) {
+        updatedUser.password = await hashPwd(password);
+        updatedUser.password_hashed = true;
+      }
+      state.config.users[idx] = updatedUser;
     }
     toast('✅ Usuario actualizado','Los cambios han sido guardados.','success');
   } else {
     // Create
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
-    state.config.users.push({id:newId, name, username, password, role, area, updated_at: new Date().toISOString()});
+    const hashedPwd = await hashPwd(password);
+    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:true, role});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -5699,12 +5515,11 @@ function deleteUser(id) {
   // Prevent deleting last admin
   const adminCount = (state.config.users||[]).filter(u=>u.role==='admin').length;
   if(user.role==='admin' && adminCount<=1) { toast('⚠️ Sin acceso','Debe haber al menos un administrador.','warning'); return; }
-  showConfirm('¿Eliminar al usuario "'+user.name+'"? Esta acción no se puede deshacer.', ()=>{
-    state.config.users = state.config.users.filter(u=>u.id!==id);
-    saveState();
-    renderConfig();
-    toast('🗑 Usuario eliminado','"'+user.name+'" ha sido eliminado del sistema.','info');
-  });
+  if(!confirm('¿Eliminar al usuario "'+user.name+'"? Esta acción no se puede deshacer.')) return;
+  state.config.users = state.config.users.filter(u=>u.id!==id);
+  saveState();
+  renderConfig();
+  toast('🗑 Usuario eliminado','"'+user.name+'" ha sido eliminado del sistema.','info');
 }
 
 function addCrossArea() {
@@ -5713,11 +5528,10 @@ function addCrossArea() {
   renderConfig();
 }
 function removeCrossArea(i) {
-  showConfirm('¿Eliminar esta área transversal? Las iniciativas existentes no se borran.', ()=>{
-    if(!state.config.crossAreas) state.config.crossAreas = [...CROSS_AREAS];
-    state.config.crossAreas.splice(i, 1);
-    renderConfig();
-  });
+  if(!confirm('¿Eliminar esta área transversal? Las iniciativas existentes de esta área no se borran.')) return;
+  if(!state.config.crossAreas) state.config.crossAreas = [...CROSS_AREAS];
+  state.config.crossAreas.splice(i, 1);
+  renderConfig();
 }
 function saveCrossAreas() {
   const inputs = document.querySelectorAll('.cross-area-input');
@@ -5741,13 +5555,13 @@ function saveConfig() {
   toast('💾 Configuración guardada','Los cambios se han guardado correctamente.','success');
 }
 function confirmReset() {
-  showConfirm('¿Reiniciar TODOS los datos? Esta acción no se puede deshacer.', ()=>{
+  if(confirm('¿Estás seguro de que deseas reiniciar todos los datos? Esta acción no se puede deshacer.')) {
     localStorage.removeItem('sorh_requests');
     localStorage.removeItem('sorh_initiatives');
     state.requests=[];state.initiatives=[];
     seedData(); navigate('home');
     toast('🔄 Datos reiniciados','Se cargaron los datos de muestra.','info');
-  });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5759,31 +5573,12 @@ function openTask(id) {
   currentTaskId = id;
   const req = state.requests.find(r=>r.id===id);
   if(!req) { toast('⚠️ Error','No se encontró la solicitud.','error'); return; }
-  // Advisory lock broadcast
-  broadcastMsg({type:'edit_lock', taskId:id, userId:state.currentUserId, userName:state.currentUser||'?'});
-  // Check if someone else already has it locked
-  if(editLockMap[id] && editLockMap[id].userId !== state.currentUserId) {
-    // Banner will be shown after renderTaskDetail
-    setTimeout(()=>showEditLockBanner(editLockMap[id].userName), 100);
-  }
   renderTaskDetail(req);
   openModal('modal-task');
 }
 
-function flushTaskFieldEdits() {
-  if(!currentTaskId) return;
-  const req = state.requests.find(r=>r.id===currentTaskId);
-  if(!req) return;
-  const descEl = document.querySelector('#modal-task-body textarea[onblur*="description"]');
-  const objEl  = document.querySelector('#modal-task-body textarea[onblur*="objective"]');
-  if(descEl && descEl.value.trim() !== (req.description||'').trim()) saveTaskField(currentTaskId,'description',descEl.value);
-  if(objEl  && objEl.value.trim()  !== (req.objective||'').trim())  saveTaskField(currentTaskId,'objective', objEl.value);
-}
-
 function closeTaskModal(e) {
   if(e && e.target!==document.getElementById('modal-task')) return;
-  flushTaskFieldEdits();
-  if(currentTaskId) broadcastMsg({type:'edit_unlock', taskId:currentTaskId, userId:state.currentUserId});
   closeModal('modal-task');
   currentTaskId=null;
 }
@@ -5853,6 +5648,8 @@ function renderTaskDetail(req) {
             <select style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--surface)" onchange="updateMilestone('${req.id}',${i},'status',this.value)">
               ${MS_STATUSES.map(s=>`<option value="${s}" ${ms.status===s?'selected':''}>${s}</option>`).join('')}
             </select>
+            <button onclick="editMilestone('${req.id}',${i})" title="Editar" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--text-muted)" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">✏️</button>
+            <button onclick="deleteMilestone('${req.id}',${i})" title="Eliminar" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--text-muted)" onmouseover="this.style.color='var(--error)'" onmouseout="this.style.color='var(--text-muted)'">🗑</button>
           `:''}
         </div>
       </div>
@@ -6064,11 +5861,6 @@ function renderTaskDetail(req) {
     </div>
   `;
 
-  // Pre-populate milestone dropdown if task already linked to an initiative
-  if(req.linked_initiative_id) {
-    setTimeout(()=>populateLinkMilestones(req.id), 50);
-  }
-
   // Mobile: single column
   if(window.innerWidth<=768) {
     const grid = document.querySelector('.task-detail-grid');
@@ -6085,99 +5877,6 @@ function renderTaskDetail(req) {
   `;
 }
 
-
-// ── Recurring Tasks ─────────────────────────────────────────
-function toggleRecurrenceFields() {
-  const checked = document.getElementById('i-recurring').checked;
-  document.getElementById('recurrence-fields').style.display = checked ? 'block' : 'none';
-}
-
-function toggleRecurrenceDetail() {
-  const type = document.getElementById('i-rec-type').value;
-  document.getElementById('rec-monthly-group').style.display  = type !== 'quarterly' ? '' : 'none';
-  document.getElementById('rec-quarterly-group').style.display = type === 'quarterly' ? '' : 'none';
-}
-
-function applyRecTemplate(tpl) {
-  const templates = {
-    oic:       {title:'OIC Report', cat:'Data & Reporting', type:'monthly',  day:4,  desc:'Reporte OIC mensual. Incluye métricas operativas, avances y alertas del período.'},
-    financial: {title:'Financial Metrics', cat:'Data & Reporting', type:'monthly', day:10, desc:'Reporte de métricas financieras mensuales para el comité directivo.'},
-    quarterly: {title:'Quarterly Report', cat:'Data & Reporting', type:'quarterly', qoffset:'1-10', desc:'Reporte trimestral consolidado. Se entrega el día 10 del mes siguiente al cierre del Q.'}
-  };
-  const t = templates[tpl];
-  if(!t) return;
-  const titleEl = document.getElementById('i-title');
-  const descEl  = document.getElementById('i-desc');
-  const catEl   = document.getElementById('i-cat');
-  if(titleEl) titleEl.value = t.title;
-  if(descEl)  descEl.value  = t.desc;
-  if(catEl) { catEl.value = t.cat; catEl.dispatchEvent(new Event('change')); }
-  document.getElementById('i-recurring').checked = true;
-  toggleRecurrenceFields();
-  document.getElementById('i-rec-type').value = t.type;
-  toggleRecurrenceDetail();
-  if(t.day) document.getElementById('i-rec-day').value = String(t.day);
-  if(t.qoffset) document.getElementById('i-rec-qoffset').value = t.qoffset;
-}
-
-function calcNextDueDate(rec) {
-  const now = new Date();
-  if(!rec) return '';
-  if(rec.type === 'monthly' || rec.type === 'weekly') {
-    const day = rec.day_of_month || 1;
-    let y = now.getFullYear(), m = now.getMonth();
-    // If today is on or past the due day this month, push to next month
-    if(now.getDate() >= day) m++;
-    if(m > 11) { m = 0; y++; }
-    const next = new Date(y, m, day);
-    return next.toISOString().split('T')[0];
-  }
-  if(rec.type === 'quarterly') {
-    const [offsetMonths, offsetDay] = (rec.quarter_offset||'1-10').split('-').map(Number);
-    // Current quarter's last month (0-indexed): Q1=2, Q2=5, Q3=8, Q4=11
-    let qLastMonth = Math.floor(now.getMonth() / 3) * 3 + 2;
-    let qLastYear  = now.getFullYear();
-    let dueMonth = qLastMonth + offsetMonths;
-    let dueYear  = qLastYear;
-    if(dueMonth > 11) { dueMonth -= 12; dueYear++; }
-    let candidate = new Date(dueYear, dueMonth, offsetDay);
-    // If candidate is in the past or today, advance by one quarter
-    if(candidate <= now) {
-      qLastMonth += 3;
-      if(qLastMonth > 11) { qLastMonth -= 12; qLastYear++; }
-      dueMonth = qLastMonth + offsetMonths;
-      dueYear  = qLastYear;
-      if(dueMonth > 11) { dueMonth -= 12; dueYear++; }
-      candidate = new Date(dueYear, dueMonth, offsetDay);
-    }
-    return candidate.toISOString().split('T')[0];
-  }
-  return '';
-}
-
-function generateNextOccurrence(req) {
-  if(!req.is_recurring || !req.recurrence) return;
-  const nextDue = calcNextDueDate(req.recurrence);
-  const nextNum = (req.occurrence_number||1) + 1;
-  const now = new Date().toISOString();
-  const newReq = {
-    ...JSON.parse(JSON.stringify(req)),
-    id: genId(req.category),
-    created_at: now, updated_at: now,
-    status: 'Backlog',
-    needed_by: nextDue,
-    occurrence_number: nextNum,
-    recurrence_parent_id: req.recurrence_parent_id || req.id,
-    activity_log: [{type:'log', author:'Sistema', content:`Ocurrencia #${nextNum} generada automáticamente.`, created_at:now}],
-    files: [], milestones: [],
-    assigned_owner: '', admin_priority: ''
-  };
-  state.requests.push(newReq);
-  saveState();
-  toast('🔄 Nueva ocurrencia', `"${req.title}" — ocurrencia #${nextNum} creada. Entrega: ${nextDue||'por definir'}`, 'success');
-}
-// ────────────────────────────────────────────────────────────
-
 function changeTaskStatus(id, newStatus) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
@@ -6189,8 +5888,6 @@ function changeTaskStatus(id, newStatus) {
   req.change_history.push({changed_by:state.currentUser||'Sistema',changed_at:new Date().toISOString(),field_name:'status',old_value:old,new_value:newStatus});
   saveState();
   addNotification('status_change', `🔄 ${req.title}`, `${old} → ${newStatus} · ${req.id}`);
-  // Auto-generate next occurrence when a recurring task is completed
-  if(newStatus === 'Concluida' && req.is_recurring) generateNextOccurrence(req);
   renderTaskDetail(req);
   toast('✅ Estado actualizado',`→ ${newStatus}`,'success');
   updateNavBadges();
@@ -6317,8 +6014,11 @@ function addFile(id) {
 function addMilestone(id) {
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
-  // Store target request id on modal
-  document.getElementById('modal-milestone').dataset.reqId = id;
+  // Store target request id on modal — clear msIdx to indicate add mode
+  const modal = document.getElementById('modal-milestone');
+  modal.dataset.reqId = id;
+  delete modal.dataset.msIdx;
+  document.getElementById('modal-milestone-title') && (document.getElementById('modal-milestone-title').textContent = '📌 Agregar Milestone');
   document.getElementById('ms-modal-name').value = '';
   document.getElementById('ms-modal-date').value = '';
   document.getElementById('ms-modal-desc').value = '';
@@ -6329,8 +6029,38 @@ function addMilestone(id) {
   setTimeout(()=>document.getElementById('ms-modal-name').focus(), 150);
 }
 
+function editMilestone(reqId, idx) {
+  const req = state.requests.find(r=>r.id===reqId);
+  if(!req || !req.milestones || !req.milestones[idx]) return;
+  const ms = req.milestones[idx];
+  const modal = document.getElementById('modal-milestone');
+  modal.dataset.reqId = reqId;
+  modal.dataset.msIdx = String(idx);
+  document.getElementById('modal-milestone-title') && (document.getElementById('modal-milestone-title').textContent = '✏️ Editar Milestone');
+  document.getElementById('ms-modal-name').value = ms.name || '';
+  document.getElementById('ms-modal-date').value = ms.target_date || '';
+  document.getElementById('ms-modal-desc').value = ms.description || '';
+  const ownerSel = document.getElementById('ms-modal-owner');
+  if(ownerSel) ownerSel.value = ms.owner || '';
+  openModal('modal-milestone');
+}
+
+function deleteMilestone(reqId, idx) {
+  const req = state.requests.find(r=>r.id===reqId);
+  if(!req || !req.milestones || !req.milestones[idx]) return;
+  const ms = req.milestones[idx];
+  if(!confirm(`¿Eliminar el milestone "${ms.name}"?`)) return;
+  req.milestones.splice(idx, 1);
+  req.updated_at = new Date().toISOString();
+  saveState();
+  renderTaskDetail(req);
+  toast('🗑 Milestone eliminado', ms.name, 'info');
+}
+
 function submitMilestoneModal() {
-  const id = document.getElementById('modal-milestone').dataset.reqId;
+  const modal = document.getElementById('modal-milestone');
+  const id = modal.dataset.reqId;
+  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const name = document.getElementById('ms-modal-name').value.trim();
@@ -6339,12 +6069,19 @@ function submitMilestoneModal() {
   const owner = document.getElementById('ms-modal-owner').value;
   const desc = document.getElementById('ms-modal-desc').value.trim();
   if(!req.milestones) req.milestones = [];
-  req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
+  if(msIdx >= 0 && req.milestones[msIdx]) {
+    // Edit mode: preserve id and status
+    req.milestones[msIdx] = { ...req.milestones[msIdx], name, owner, target_date:date, description:desc };
+    toast('✅ Milestone actualizado', name, 'success');
+  } else {
+    // Add mode
+    req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
+    toast('📌 Milestone agregado', name, 'success');
+  }
   req.updated_at = new Date().toISOString();
   saveState();
   closeModal('modal-milestone');
   renderTaskDetail(req);
-  toast('📌 Milestone agregado', name, 'success');
 }
 
 function loadTemplate(id, templateKey) {
@@ -6390,9 +6127,7 @@ function submitQuickTask() {
   const types = CATEGORIES[cat]?.types||['General'];
   const newReq = {
     id:genId(cat), created_at:now, updated_at:now,
-    requester_name:state.currentUser||'Equipo',
-    requester_area:(()=>{ const u=(state.config.users||[]).find(x=>x.id===state.currentUserId); return u&&u.area?u.area:'VCN Strategic Ops'; })(),
-    requester_business_line:'VCN',
+    requester_name:state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
     category:cat, request_type:types[0], title, description:desc, objective:desc,
     needed_by:'', requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
     status:'Backlog', assigned_owner:owner, admin_priority:prio, complexity:'Media', internal_only:true,
@@ -6439,6 +6174,7 @@ function init() {
 
   // Render initial view or show login
   if(state.isAdmin || state.isTeam) {
+    touchSession(); // refresh activity timestamp on page reload
     navigate('home');
   } else {
     showLoginScreen();
@@ -6447,6 +6183,29 @@ function init() {
   // Init file sync (async — loads from OneDrive file if connected)
   initFileSync().catch(e => console.warn('File sync init:', e));
 
+  // Browser compatibility banner
+  if(typeof window !== 'undefined') {
+    const isChromium = !!(window.chrome || navigator.userAgent.indexOf('Edg') > -1 || navigator.userAgent.indexOf('Chrome') > -1);
+    if(!isChromium) {
+      const banner = document.createElement('div');
+      banner.innerHTML = '⚠️ <strong>Compatibilidad:</strong> La sincronización automática con archivos solo funciona en Chrome o Edge. Otras funciones están disponibles.';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#FEF3C7;color:#92400E;padding:8px 16px;font-size:13px;text-align:center;border-bottom:1px solid #F59E0B';
+      document.body.prepend(banner);
+      setTimeout(()=>banner.remove(), 8000);
+    }
+  }
+
+  // Autosave every 60 seconds
+  setInterval(async () => {
+    if(state.isAdmin || state.isTeam) {
+      if(_fileHandle) {
+        await saveToFile();
+      } else {
+        saveState();
+      }
+    }
+  }, 60000);
+
   // Keyboard shortcuts
   document.addEventListener('keydown', e=>{
     if(e.key==='Escape') {
@@ -6454,18 +6213,13 @@ function init() {
       closeModal('modal-auth');
       closeModal('modal-quick');
       closeModal('modal-confirm');
-      closeModal('modal-docs');
-      closeModal('modal-filesync');
-      closeModal('modal-milestone');
-      closeModal('modal-new-initiative');
-      closeModal('modal-planeacion');
-      closeModal('modal-user');
       closeSidebar();
+      if(aiPanelOpen) toggleAIPanel();
     }
   });
 
   console.log('%c⚡ Strategic Ops Request Hub v1.0', 'font-size:16px;font-weight:bold;color:#008080;background:#E0F5F0;padding:8px 16px;border-radius:8px');
-  console.log('%c🔑 Admin: admin2026 | 👥 Equipo: team2026', 'font-size:12px;color:#6B7280');
+  // credentials removed from console
 }
 
 
@@ -6475,13 +6229,19 @@ let aiGreeted = false;
 
 function toggleAIPanel() {
   aiPanelOpen = !aiPanelOpen;
-  const panel = document.getElementById('ai-panel');
+  const panel   = document.getElementById('ai-panel');
+  const overlay = document.getElementById('ai-overlay');
+  const fab     = document.getElementById('ai-fab');
   if(aiPanelOpen) {
     panel.classList.add('open');
+    if(overlay) overlay.classList.add('open');
+    if(fab) fab.style.display = 'none';          // hide FAB behind drawer
     if(!aiGreeted) { aiGreeted=true; aiBot(aiGreeting()); }
-    document.getElementById('ai-input').focus();
+    setTimeout(()=>{ const inp = document.getElementById('ai-input'); if(inp) inp.focus(); }, 300);
   } else {
     panel.classList.remove('open');
+    if(overlay) overlay.classList.remove('open');
+    if(fab) fab.style.display = '';              // restore FAB
   }
 }
 
@@ -6490,8 +6250,7 @@ function aiGreeting() {
   const active = req.filter(r=>!['Concluida','Cancelada'].includes(r.status)).length;
   const overdue = req.filter(r=>isOverdue(r.needed_by)&&!['Concluida','Cancelada'].includes(r.status)).length;
   const name = state.currentUser ? state.currentUser.split(' ')[0] : '';
-  if(active === 0) return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Todavía no hay solicitudes activas en el hub. ¿Empezamos creando una?`;
-  return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Tu copiloto de Ops.\n\nTienes **${active}** solicitud${active!==1?'es':''} activa${active!==1?'s':''}.${overdue>0?` ⚠️ **${overdue}** vencida${overdue!==1?'s':''}.`:''} ¿Qué quieres revisar hoy?`;
+  return `¡Hola${name?' '+name:''}! Soy Jason 🐎 Tu copiloto para dudas, seguimiento a solicitudes, iniciativas y pendientes del área.\n\nTienes **${active}** solicitud${active!==1?'es':''} activa${active!==1?'s':''}.${overdue>0?` ⚠️ **${overdue}** vencida${overdue!==1?'s':''}.`:''} ¿Qué quieres revisar hoy?`;
 }
 
 function aiBot(msg) {
@@ -6575,18 +6334,6 @@ function aiRespond(q) {
 }
 // ═══════════════════════════════════════════════════════════
 
-// ── Auto-save every 60 seconds ──────────────────────────────
-setInterval(()=>{
-  if(!state.currentUserId) return; // only when logged in
-  saveState();
-  const el = document.getElementById('autosave-indicator');
-  if(el){
-    el.textContent = '✓ Auto-guardado ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    el.style.opacity='1';
-    setTimeout(()=>{ if(el) el.style.opacity='0'; }, 3000);
-  }
-}, 60000);
-
 document.addEventListener('DOMContentLoaded', init);
 </script>
 
@@ -6595,15 +6342,17 @@ document.addEventListener('DOMContentLoaded', init);
 #ai-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:52px;height:52px;border-radius:50%;background:#1a1a2e;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
 #ai-fab:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(0,0,0,0.45)}
 #ai-fab .ai-q{font-size:22px;font-weight:800;color:#fff;line-height:1;font-family:var(--font-sans)}
-#ai-panel{position:fixed;bottom:92px;right:28px;z-index:9000;width:340px;max-height:520px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:none;flex-direction:column;overflow:hidden}
-#ai-panel.open{display:flex}
+#ai-overlay{position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,0.35);display:none}
+#ai-overlay.open{display:block}
+#ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:9000;width:360px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 32px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+#ai-panel.open{transform:translateX(0)}
 #ai-panel-header{padding:14px 16px;background:#1a1a2e;display:flex;align-items:center;gap:10px}
 #ai-panel-header svg{flex-shrink:0}
 #ai-panel-htxt{flex:1}
 #ai-panel-htxt .ai-name{font-size:14px;font-weight:700;color:#fff}
 #ai-panel-htxt .ai-sub{font-size:11px;color:#94a3b8}
-#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
-#ai-close-btn:hover{color:#fff}
+#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px}
+#ai-close-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
 #ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:160px;max-height:340px}
 .ai-msg{padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.5;max-width:92%}
 .ai-msg.bot{background:var(--surface2);color:var(--text-primary);border:1px solid var(--border-light);align-self:flex-start;border-bottom-left-radius:4px}
@@ -6627,6 +6376,7 @@ document.addEventListener('DOMContentLoaded', init);
 </button>
 
 <!-- AI Panel -->
+<div id="ai-overlay" onclick="toggleAIPanel()"></div>
 <div id="ai-panel">
   <div id="ai-panel-header">
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
