@@ -1133,7 +1133,7 @@ td.td-action{white-space:nowrap;}
 
 <!-- Quick task modal -->
 <div class="modal-overlay" id="modal-quick" onclick="closeQuickModal(event)">
-  <div class="modal modal-sm" onclick="event.stopPropagation()">
+  <div class="modal" style="max-width:460px" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">⚡ Tarea Interna Rápida</div>
       <button class="modal-close" onclick="closeQuickModal()">✕</button>
@@ -4658,11 +4658,16 @@ function renderRoadmap() {
     const catInfo = CATEGORIES[ini.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
     const msHtml = ini.milestones.map(ms=>{
       const msStatusColor = {'No iniciado':'#9CA3AF','En proceso':'#3B82F6','En revisión':'#7C3AED','Completado':'#22C55E','Reprogramado':'#EAB308','Bloqueado':'#EF4444','Validada':'#16A34A'};
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light)">
+      const msId = ms.id||ms.name;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-light)">
         <div style="width:8px;height:8px;border-radius:50%;background:${msStatusColor[ms.status]||'#9CA3AF'};flex-shrink:0"></div>
         <div style="flex:1;font-size:12px;color:var(--text-secondary)">${ms.name}</div>
         <div style="font-size:10px;color:var(--text-muted)">${ms.owner}</div>
         <div style="font-size:10px;color:${isOverdue(ms.target_date)&&ms.status!=='Completado'?'var(--error)':'var(--text-muted)'}">${fmtDateShort(ms.target_date)}</div>
+        ${state.isAdmin?`
+          <button onclick="event.stopPropagation();editInitiativeMilestone('${ini.id}','${msId}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#1D4ED8" title="Editar milestone">✏️</button>
+          <button onclick="event.stopPropagation();deleteInitiativeMilestone('${ini.id}','${msId}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#B91C1C" title="Eliminar milestone">🗑</button>
+        `:''}
       </div>`;
     }).join('');
     return `
@@ -4753,11 +4758,16 @@ function renderRoadmap() {
     const catInfo=CATEGORIES[ini.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
     const msHtml2=ini.milestones.map(ms=>{
       const msc={'No iniciado':'#9CA3AF','En proceso':'#3B82F6','En revisión':'#7C3AED','Completado':'#22C55E','Reprogramado':'#EAB308','Bloqueado':'#EF4444','Validada':'#16A34A'};
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light)">
+      const msId2 = ms.id||ms.name;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-light)">
         <div style="width:8px;height:8px;border-radius:50%;background:${msc[ms.status]||'#9CA3AF'};flex-shrink:0"></div>
         <div style="flex:1;font-size:12px;color:var(--text-secondary)">${ms.name}</div>
         <div style="font-size:10px;color:var(--text-muted)">${ms.owner}</div>
         <div style="font-size:10px;color:${isOverdue(ms.target_date)&&ms.status!=='Completado'?'var(--error)':'var(--text-muted)'}">${fmtDateShort(ms.target_date)}</div>
+        ${state.isAdmin?`
+          <button onclick="event.stopPropagation();editInitiativeMilestone('${ini.id}','${msId2}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#1D4ED8" title="Editar milestone">✏️</button>
+          <button onclick="event.stopPropagation();deleteInitiativeMilestone('${ini.id}','${msId2}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#B91C1C" title="Eliminar milestone">🗑</button>
+        `:''}
       </div>`;
     }).join('');
     const linkedTasks=state.requests.filter(r=>r.linked_initiative_id===ini.id);
@@ -5020,9 +5030,24 @@ function renderRoadmapGantt() {
         </div>
         <div style="flex:1;overflow:hidden;position:relative;height:${ROW_H}px">
           <svg width="${CHART_W}" height="${ROW_H}" style="display:block">
+            <defs>
+              <linearGradient id="grad-${ini.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="${Math.round(progress*100)}%" stop-color="${color}" stop-opacity="1"/>
+                <stop offset="${Math.round(progress*100)}%" stop-color="${color}" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0.18"/>
+              </linearGradient>
+              <clipPath id="clip-${ini.id}">
+                <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8"/>
+              </clipPath>
+            </defs>
             ${gridLinesSvg(ROW_H)}
-            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="${color}30"/>
-            <rect x="${barX}" y="${ROW_H/2-8}" width="${Math.max(0,barW*progress)}" height="16" rx="8" fill="${color}"/>
+            <!-- Bar bg track -->
+            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="${color}18"/>
+            <!-- Gradient fill -->
+            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="url(#grad-${ini.id})"/>
+            <!-- Sharp progress divider line -->
+            ${progress > 0 && progress < 1 ? `<line x1="${barX + barW*progress}" y1="${ROW_H/2-8}" x2="${barX + barW*progress}" y2="${ROW_H/2+8}" stroke="${color}" stroke-width="2" clip-path="url(#clip-${ini.id})"/>` : ''}
+            <!-- Border -->
             <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="none" stroke="${color}" stroke-width="1.5"/>
             ${durBarLabel}
             ${diamonds}
@@ -5178,6 +5203,62 @@ function editInitiative(iniId) {
   if(saveBtn) saveBtn.textContent = '💾 Guardar cambios';
   switchIniTab(0);
   openModal('modal-new-initiative');
+}
+
+function editInitiativeMilestone(iniId, msId) {
+  const ini = state.initiatives.find(i=>i.id===iniId);
+  if(!ini) return;
+  const ms = ini.milestones.find(m=>(m.id||m.name)===msId);
+  if(!ms) return;
+  // Populate the milestone modal
+  const titleEl = document.getElementById('modal-milestone-title');
+  if(titleEl) titleEl.textContent = '✏️ Editar Milestone';
+  const nameEl = document.getElementById('ms-modal-name');
+  const dateEl = document.getElementById('ms-modal-date');
+  const ownerEl = document.getElementById('ms-modal-owner');
+  const descEl = document.getElementById('ms-modal-desc');
+  if(nameEl) nameEl.value = ms.name || '';
+  if(dateEl) dateEl.value = ms.target_date || '';
+  if(descEl) descEl.value = ms.description || '';
+  // Populate owner options
+  if(ownerEl) {
+    ownerEl.innerHTML = ['<option value="">Sin asignar</option>', ...state.config.team.map(m=>`<option value="${m}">${m}</option>`)].join('');
+    ownerEl.value = ms.owner || '';
+  }
+  // Add status selector if not present
+  let statusRow = document.getElementById('ms-modal-status-row');
+  if(!statusRow) {
+    statusRow = document.createElement('div');
+    statusRow.id = 'ms-modal-status-row';
+    statusRow.className = 'form-group';
+    statusRow.style.marginBottom = '4px';
+    statusRow.innerHTML = `<label class="form-label">Estado</label><select class="form-select" id="ms-modal-status" style="font-size:13px">${['No iniciado','En proceso','En revisión','Completado','Reprogramado','Bloqueado','Validada'].map(s=>`<option value="${s}">${s}</option>`).join('')}</select>`;
+    const descGroup = descEl?.closest('.form-group');
+    if(descGroup) descGroup.parentNode.insertBefore(statusRow, descGroup);
+  }
+  const statusEl = document.getElementById('ms-modal-status');
+  if(statusEl) statusEl.value = ms.status || 'No iniciado';
+  // Store refs and update save button
+  const modal = document.getElementById('modal-milestone');
+  modal.dataset.iniId = iniId;
+  modal.dataset.msMsId = msId;
+  modal.removeAttribute('data-req-id');
+  modal.removeAttribute('data-ms-idx');
+  const saveBtn = document.querySelector('#modal-milestone .modal-footer .btn-primary');
+  if(saveBtn) saveBtn.textContent = '💾 Guardar cambios';
+  openModal('modal-milestone');
+}
+
+function deleteInitiativeMilestone(iniId, msId) {
+  const ini = state.initiatives.find(i=>i.id===iniId);
+  if(!ini) return;
+  const ms = ini.milestones.find(m=>(m.id||m.name)===msId);
+  if(!ms) return;
+  if(!confirm(`¿Eliminar el milestone "${ms.name}"?`)) return;
+  ini.milestones = ini.milestones.filter(m=>(m.id||m.name)!==msId);
+  saveState();
+  renderRoadmap();
+  toast('🗑 Milestone eliminado', ms.name, 'info');
 }
 
 function duplicateInitiative(iniId) {
@@ -6103,22 +6184,44 @@ function deleteMilestone(reqId, idx) {
 
 function submitMilestoneModal() {
   const modal = document.getElementById('modal-milestone');
-  const id = modal.dataset.reqId;
-  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
-  const req = state.requests.find(r=>r.id===id);
-  if(!req) return;
   const name = document.getElementById('ms-modal-name').value.trim();
   if(!name) { toast('⚠️','Escribe un nombre para el milestone.','warning'); return; }
   const date = document.getElementById('ms-modal-date').value;
   const owner = document.getElementById('ms-modal-owner').value;
   const desc = document.getElementById('ms-modal-desc').value.trim();
+  const statusEl = document.getElementById('ms-modal-status');
+
+  // — Initiative milestone edit mode —
+  if(modal.dataset.iniId && modal.dataset.msMsId) {
+    const ini = state.initiatives.find(i=>i.id===modal.dataset.iniId);
+    if(!ini) return;
+    const msIdx = ini.milestones.findIndex(m=>(m.id||m.name)===modal.dataset.msMsId);
+    if(msIdx >= 0) {
+      ini.milestones[msIdx] = { ...ini.milestones[msIdx], name, owner, target_date:date, description:desc, status:statusEl?.value||ini.milestones[msIdx].status };
+      saveState();
+      closeModal('modal-milestone');
+      // Reset modal
+      modal.removeAttribute('data-ini-id'); modal.removeAttribute('data-ms-ms-id');
+      const titleEl = document.getElementById('modal-milestone-title');
+      if(titleEl) titleEl.textContent = '📌 Nuevo Milestone';
+      const saveBtn = document.querySelector('#modal-milestone .modal-footer .btn-primary');
+      if(saveBtn) saveBtn.textContent = '📌 Agregar milestone';
+      renderRoadmap();
+      toast('✅ Milestone actualizado', name, 'success');
+    }
+    return;
+  }
+
+  // — Request milestone mode (original) —
+  const id = modal.dataset.reqId;
+  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
+  const req = state.requests.find(r=>r.id===id);
+  if(!req) return;
   if(!req.milestones) req.milestones = [];
   if(msIdx >= 0 && req.milestones[msIdx]) {
-    // Edit mode: preserve id and status
     req.milestones[msIdx] = { ...req.milestones[msIdx], name, owner, target_date:date, description:desc };
     toast('✅ Milestone actualizado', name, 'success');
   } else {
-    // Add mode
     req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
     toast('📌 Milestone agregado', name, 'success');
   }
