@@ -925,6 +925,68 @@ td.td-action{white-space:nowrap;}
   background:rgba(0,0,0,0.4);backdrop-filter:blur(2px);
 }
 #sidebar-overlay.open{display:block;}
+
+/* ═══════════════════════════════════════════════════════════
+   SYNC INDICATOR (Upgrade 1)
+═══════════════════════════════════════════════════════════ */
+#autosave-indicator{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:all 0.3s ease;white-space:nowrap;}
+#autosave-indicator.state-saved{background:#F0FDF4;color:#15803D;border-color:#BBF7D0;}
+#autosave-indicator.state-saving{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE;}
+#autosave-indicator.state-dirty{background:#FEFCE8;color:#854D0E;border-color:#FDE047;}
+#autosave-indicator.state-error{background:#FEF2F2;color:#B91C1C;border-color:#FECACA;}
+#autosave-indicator.state-conflict{background:#FFF7ED;color:#9A3412;border-color:#FDBA74;}
+#autosave-indicator.state-offline{background:#F3F4F6;color:#6B7280;border-color:#D1D5DB;}
+#autosave-indicator .sync-pulse{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+#autosave-indicator.state-saved .sync-pulse{background:#22C55E;}
+#autosave-indicator.state-saving .sync-pulse{background:#3B82F6;animation:pulse-s 1s infinite;}
+#autosave-indicator.state-dirty .sync-pulse{background:#EAB308;animation:pulse-d 2s infinite;}
+#autosave-indicator.state-error .sync-pulse{background:#EF4444;}
+#autosave-indicator.state-conflict .sync-pulse{background:#F97316;animation:pulse-d 1s infinite;}
+#autosave-indicator.state-offline .sync-pulse{background:#9CA3AF;}
+@keyframes pulse-s{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes pulse-d{0%,100%{opacity:1}50%{opacity:0.5}}
+.conflict-diff-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.conflict-diff-table th{background:var(--surface2);padding:6px 10px;text-align:left;border:1px solid var(--border);font-weight:700;color:var(--text-muted);}
+.conflict-diff-table td{padding:6px 10px;border:1px solid var(--border-light);vertical-align:top;}
+.td-local{background:#FFFBEB;}.td-remote{background:#EFF6FF;}
+/* ═══════════════════════════════════════════════════════════
+   CALENDAR VIEW (Upgrade 3)
+═══════════════════════════════════════════════════════════ */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.cal-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);}
+.cal-nav-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+.cal-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.cal-toggle button{padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary);}
+.cal-toggle button.active{background:var(--primary);color:#fff;}
+.cal-week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cal-day-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);min-height:120px;overflow:hidden;}
+.cal-day-col.today{border-color:var(--primary);border-width:2px;}
+.cal-day-header{padding:6px 8px;border-bottom:1px solid var(--border-light);background:var(--surface2);text-align:center;}
+.cal-day-header .day-num{font-size:18px;font-weight:800;color:var(--text-primary);display:block;}
+.cal-day-header .day-name{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
+.cal-day-events{padding:4px;}
+.cal-event{border-radius:6px;padding:4px 6px;margin-bottom:3px;font-size:11px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;}
+.cal-event:hover{filter:brightness(0.9);transform:translateY(-1px);}
+.cal-event .ev-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-event .ev-meta{font-size:10px;opacity:0.85;margin-top:1px;}
+.cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-month-cell{background:var(--surface);border:1px solid var(--border-light);border-radius:8px;min-height:80px;overflow:hidden;}
+.cal-month-cell.today{border-color:var(--primary);border-width:2px;}
+.cal-month-cell.other-month{background:var(--surface2);opacity:0.55;}
+.cal-month-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.cal-month-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);padding:6px 0;text-transform:uppercase;}
+.cal-month-day-num{font-size:12px;font-weight:700;padding:4px 6px;color:var(--text-secondary);}
+.cal-month-cell.today .cal-month-day-num{color:var(--primary);}
+.cal-more-badge{font-size:10px;color:var(--primary);font-weight:700;padding:2px 6px;cursor:pointer;text-align:center;}
+.cal-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.cal-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;}
+.cal-stat-card .stat-num{font-size:22px;font-weight:800;color:var(--text-primary);}
+.cal-stat-card .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.cal-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);}
+@media(max-width:768px){.cal-week-grid{grid-template-columns:1fr;}.cal-event .ev-meta{display:none;}}
+/* Roadmap task groups (Upgrade 2) */
+.rm-task-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border-light);border-radius:7px;margin-bottom:4px;cursor:pointer;transition:var(--transition-fast);}
+.rm-task-item:hover{border-color:var(--primary);background:var(--primary-lighter);}
 </style>
 </head>
 <body>
@@ -992,6 +1054,9 @@ td.td-action{white-space:nowrap;}
         <div class="nav-item" data-view="roadmap" onclick="navigate('roadmap')">
           <span class="nav-icon">🗺️</span><span>Roadmap</span>
         </div>
+        <div class="nav-item" data-view="calendar" onclick="navigate('calendar')">
+          <span class="nav-icon">📆</span><span>Calendario</span>
+        </div>
         <div class="nav-item" data-view="planeacion" onclick="navigate('planeacion')">
           <span class="nav-icon">📅</span><span>Planeación Q</span>
         </div>
@@ -1037,7 +1102,11 @@ td.td-action{white-space:nowrap;}
       <button class="btn-icon" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
       <div class="topbar-title" id="topbar-title">Inicio</div>
       <div class="topbar-actions" id="topbar-actions">
-        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
+        <div id="autosave-indicator" class="state-saved" title="Estado de guardado" onclick="openFileSyncPanel()">
+          <div class="sync-pulse"></div>
+          <span id="autosave-label">Guardado</span>
+        </div>
+        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive" style="display:none">
           <span class="sync-dot yellow" id="sync-dot"></span>
           <span id="sync-label">Sin archivo</span>
         </div>
@@ -1061,6 +1130,7 @@ td.td-action{white-space:nowrap;}
       <div id="view-reports" class="hidden"></div>
       <div id="view-config" class="hidden"></div>
       <div id="view-planeacion" class="hidden"></div>
+      <div id="view-calendar" class="hidden"></div>
     </div>
   </div>
 
@@ -1078,6 +1148,9 @@ td.td-action{white-space:nowrap;}
       </div>
       <div class="bnav-item" data-view="roadmap" onclick="navigate('roadmap')">
         <span class="bnav-icon">🗺️</span><span>Roadmap</span>
+      </div>
+      <div class="bnav-item" data-view="calendar" onclick="navigate('calendar')">
+        <span class="bnav-icon">📆</span><div>Calendario</div>
       </div>
       <div class="bnav-item" data-view="docs" onclick="navigate('docs')">
         <span class="bnav-icon">📚</span><span>Docs</span>
@@ -1645,13 +1718,21 @@ let state = {
   areaRoadmaps: [],
   areaFilter: '',
   quarterFilter: '',
-  planeacionView: 'cards'
+  planeacionView: 'cards',
+  // Upgrade 1
+  auditLog: [],
+  // Upgrade 3
+  calendarView: 'week',
+  calendarDate: null,
+  calendarFilter: {owner:'',category:'',status:'',priority:'',initiative:'',eventType:''}
 };
 
 // ═══════════════════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════════════════
 function saveState() {
+  // Legacy sync function — now delegates to DataProvider.local + markDirty
+  markDirty('state', 'global');
   try {
     localStorage.setItem('sorh_requests', JSON.stringify(state.requests));
     localStorage.setItem('sorh_initiatives', JSON.stringify(state.initiatives));
@@ -1679,7 +1760,10 @@ function loadState() {
     const nn = localStorage.getItem('sorh_notifications');
     if(nn) state.notifications = JSON.parse(nn);
     const ar = localStorage.getItem('sorh_area_roadmaps');
+    const al = localStorage.getItem('sorh_audit_log');
     if(ar) state.areaRoadmaps = JSON.parse(ar);
+    if(al) state.auditLog = JSON.parse(al);
+    if(!state.auditLog) state.auditLog = [];
   } catch(e) {}
 }
 
@@ -2631,7 +2715,7 @@ function updateUserUI() {
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 const VIEW_TITLES = {
-  home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',
+  home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',calendar:'📆 Calendario',
   dashboard:'Dashboard Ejecutivo',heatmap:'Bandwidth del Equipo',library:'Biblioteca Documental',
   roadmap:'Roadmap',reports:'Reporte Semanal',config:'Configuración',
   docs:'Documentos para Consulta',
@@ -2660,7 +2744,7 @@ function navigate(view) {
   document.getElementById('topbar-title').innerHTML = VIEW_TITLES[view]||view;
   // Render
   const renders = {
-    home:renderHome, intake:renderIntake, backlog:renderBacklog,
+    home:renderHome, intake:renderIntake, backlog:renderBacklog, calendar:renderCalendar,
     kanban:renderKanban, dashboard:renderDashboard, heatmap:renderHeatmap,
     library:renderLibrary, roadmap:renderRoadmap, reports:renderReports, config:renderConfig,
     docs:renderDocs,
@@ -4275,9 +4359,14 @@ function dropCard(e, newStatus) {
   if(req && req.status!==newStatus) {
     const oldStatus = req.status;
     req.status = newStatus;
-    req.updated_at = new Date().toISOString();
-    req.activity_log.push({type:'status', author:state.currentUser||'Sistema', content:`Cambio de estado: ${oldStatus} → ${newStatus}`, created_at:new Date().toISOString()});
-    saveState();
+    const now_dc = new Date().toISOString();
+    req.updated_at = now_dc;
+    req.updated_by = state.currentUser || 'Sistema';
+    req.version = (req.version||1) + 1;
+    req.activity_log.push({type:'status', author:state.currentUser||'Sistema', content:`Cambio de estado: ${oldStatus} → ${newStatus}`, created_at:now_dc});
+    addAuditLog('request', req.id, 'status', oldStatus, newStatus);
+    markDirty('request', req.id);
+    saveNow('kanban-drop');
     renderKanban();
     toast('✅ Estado actualizado',`${req.title.slice(0,40)}... → ${newStatus}`,'success');
   }
@@ -4803,6 +4892,48 @@ function renderRoadmap() {
             ${msHtml2||'<div style="font-size:12px;color:var(--text-muted)">Sin milestones definidos</div>'}
           </div>
         </div>
+        ${(()=>{
+          // Upgrade 2: tasks grouped by status
+          if (!linkedTasks.length) return `<div style="border-top:1px solid var(--border-light);padding-top:12px;margin-top:4px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:700;color:var(--text-muted)">📋 Tareas vinculadas</span>
+              <div style="display:flex;gap:6px">
+                ${state.isAdmin?`<button onclick="openCreateTaskFromInitiative('${ini.id}')" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">⚡ Nueva tarea</button>`:''}
+                ${state.isAdmin?`<button onclick="openLinkTaskToInitiative('${ini.id}')" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔗 Vincular existente</button>`:''}
+              </div>
+            </div>
+            <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:8px 0">Sin tareas vinculadas</div>
+          </div>`;
+          const byStatus = {};
+          STATUSES.forEach(s=>byStatus[s]=[]);
+          linkedTasks.forEach(r=>{ if(byStatus[r.status]) byStatus[r.status].push(r); else { if(!byStatus['Backlog']) byStatus['Backlog']=[]; byStatus['Backlog'].push(r); } });
+          const taskGroupsHtml = STATUSES.filter(s=>byStatus[s]&&byStatus[s].length).map(s=>{
+            const sc = STATUS_COLORS[s]||'#6B7280';
+            const sb = STATUS_BG[s]||'#F9FAFB';
+            const items = byStatus[s].map(r=>{
+              const ci = CATEGORIES[r.category]||{icon:'📋',color:'#6B7280',bg:'#F9FAFB'};
+              return `<div class="rm-task-item" onclick="openTask('${r.id}')">
+                <span style="font-size:14px">${ci.icon}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
+                  <div style="font-size:10px;color:var(--text-muted)">${r.id} · ${r.assigned_owner||'Sin owner'} · ${r.needed_by?'📅 '+fmtDateShort(r.needed_by):''}</div>
+                </div>
+                ${state.isAdmin?`<button onclick="event.stopPropagation();unlinkTaskFromInitiative('${r.id}')" title="Desvincular" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:5px;padding:2px 5px;font-size:10px;cursor:pointer;color:#B91C1C;flex-shrink:0">✕</button>`:''}
+              </div>`;
+            }).join('');
+            return `<div style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:${sb};border-radius:5px;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:${sc}">${s.toUpperCase()}</span><span style="font-size:10px;color:${sc};font-weight:600">(${byStatus[s].length})</span></div>${items}</div>`;
+          }).join('');
+          return `<div style="border-top:1px solid var(--border-light);padding-top:12px;margin-top:4px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:12px;font-weight:700;color:var(--text-primary)">📋 Tareas vinculadas <span style="font-size:11px;font-weight:400;color:var(--text-muted)">(${linkedTasks.length})</span></span>
+              <div style="display:flex;gap:6px">
+                ${state.isAdmin?`<button onclick="openCreateTaskFromInitiative('${ini.id}')" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">⚡ Nueva tarea</button>`:''}
+                ${state.isAdmin?`<button onclick="openLinkTaskToInitiative('${ini.id}')" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔗 Vincular existente</button>`:''}
+              </div>
+            </div>
+            ${taskGroupsHtml}
+          </div>`;
+        })()}
       </div>
     </div>`;
   }).join('');
@@ -6286,8 +6417,12 @@ function submitQuickTask() {
     activity_log:[{type:'log',author:state.currentUser||'Equipo',content:'Tarea interna creada.',created_at:now}],
     files:[], milestones:[]
   };
+  normalizeRequest(newReq);
+  warnCriticalTaskNoOwner(newReq);
   state.requests.unshift(newReq);
-  saveState();
+  markDirty('request', newReq.id);
+  addAuditLog('request', newReq.id, 'created', null, {title:newReq.title, status:'Backlog'});
+  saveNow('quick-task');
   closeModal('modal-quick');
   document.getElementById('qt-title').value='';
   document.getElementById('qt-desc').value='';
@@ -6319,6 +6454,9 @@ function init() {
   // Load state from localStorage (fast, synchronous)
   loadState();
 
+  // Normalize all entities (Upgrade 4)
+  normalizeState();
+
   // Seed if needed
   seedData();
 
@@ -6349,16 +6487,11 @@ function init() {
     }
   }
 
-  // Autosave every 60 seconds
-  setInterval(async () => {
-    if(state.isAdmin || state.isTeam) {
-      if(_fileHandle) {
-        await saveToFile();
-      } else {
-        saveState();
-      }
-    }
-  }, 60000);
+  // Autosave every 60 seconds (Upgrade 1 — dirty-state aware)
+  startAutoSave();
+
+  // Mark initial state as clean
+  setSyncStatus('saved');
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e=>{
@@ -6488,6 +6621,828 @@ function aiRespond(q) {
 }
 // ═══════════════════════════════════════════════════════════
 
+
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 4 — NORMALIZATION HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function normalizeRequest(req) {
+  const now = new Date().toISOString();
+  if (!req.id) req.id = genId(req.category||'General');
+  if (!req.created_at) req.created_at = now;
+  if (!req.updated_at) req.updated_at = now;
+  if (!req.updated_by) req.updated_by = state.currentUser || 'Sistema';
+  if (req.version === undefined) req.version = 1;
+  if (!req.activity_log) req.activity_log = [];
+  if (!req.files) req.files = [];
+  if (!req.milestones) req.milestones = [];
+  if (!req.support_links) req.support_links = [];
+  return req;
+}
+function normalizeInitiative(ini) {
+  const now = new Date().toISOString();
+  if (!ini.id) ini.id = `INI-${Date.now().toString().slice(-6)}`;
+  if (!ini.created_at) ini.created_at = now;
+  if (!ini.updated_at) ini.updated_at = now;
+  if (!ini.updated_by) ini.updated_by = state.currentUser || 'Sistema';
+  if (ini.version === undefined) ini.version = 1;
+  if (!ini.milestones) ini.milestones = [];
+  if (!ini.primary_owner && ini.owner) ini.primary_owner = ini.owner;
+  if (!ini.primary_owner) ini.primary_owner = 'TBD';
+  return ini;
+}
+function normalizeMilestone(ms) {
+  const now = new Date().toISOString();
+  if (!ms.id) ms.id = `ms-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+  if (!ms.created_at) ms.created_at = now;
+  if (!ms.updated_at) ms.updated_at = now;
+  if (!ms.updated_by) ms.updated_by = state.currentUser || 'Sistema';
+  if (ms.version === undefined) ms.version = 1;
+  if (!ms.status) ms.status = 'No iniciado';
+  if (!ms.owner) ms.owner = '';
+  return ms;
+}
+function normalizeState() {
+  state.requests = (state.requests||[]).map(normalizeRequest);
+  state.initiatives = (state.initiatives||[]).map(ini => {
+    normalizeInitiative(ini);
+    ini.milestones = (ini.milestones||[]).map(normalizeMilestone);
+    return ini;
+  });
+  // Normalize area roadmaps milestones
+  (state.areaRoadmaps||[]).forEach(item => {
+    if (!item.id) item.id = `ar-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    if (!item.milestones) item.milestones = [];
+    item.milestones = item.milestones.map(normalizeMilestone);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 4 — AUDIT LOG
+// ═══════════════════════════════════════════════════════════════════
+function addAuditLog(entityType, entityId, field, oldValue, newValue) {
+  if (!state.auditLog) state.auditLog = [];
+  state.auditLog.push({
+    ts: new Date().toISOString(),
+    user: state.currentUser || 'Sistema',
+    entityType, entityId, field,
+    oldValue: JSON.stringify(oldValue),
+    newValue: JSON.stringify(newValue)
+  });
+  // Keep last 200 audit entries
+  if (state.auditLog.length > 200) state.auditLog = state.auditLog.slice(-200);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 4 — VALIDATIONS
+// ═══════════════════════════════════════════════════════════════════
+function validateDate(dateStr, fieldLabel) {
+  if (!dateStr) return true;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) {
+    toast('⚠️ Fecha inválida', `${fieldLabel}: "${dateStr}" no es una fecha válida.`, 'warning');
+    return false;
+  }
+  return true;
+}
+function warnMilestoneDateExceedsInitiative(ms, ini) {
+  if (!ms.target_date || !ini.target_close_date) return;
+  if (ms.target_date > ini.target_close_date) {
+    toast('⚠️ Alerta de fecha', `El milestone "${ms.name}" tiene fecha (${fmtDateShort(ms.target_date)}) posterior al cierre de la iniciativa (${fmtDateShort(ini.target_close_date)}).`, 'warning');
+  }
+}
+function warnCriticalTaskNoOwner(req) {
+  if ((req.admin_priority === 'Crítica' || req.requester_priority === 'Crítica') && !req.assigned_owner) {
+    toast('⚠️ Tarea crítica sin owner', `"${req.title.substring(0,40)}" es Crítica pero no tiene owner asignado.`, 'warning');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 1 — DIRTY STATE & AUTOSAVE ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════════
+let _dirtyEntities = {};   // { 'request:ID': true, 'initiative:ID': true }
+let _isDirty = false;
+let _autoSaveTimer = null;
+let _conflictPending = null; // { entityType, entityId, local, remote }
+let _syncStatus = 'saved';   // saved | saving | dirty | error | conflict | offline
+
+// — DataProvider abstraction —
+const DataProvider = {
+  // LocalStorage implementation (always available)
+  local: {
+    save(data) {
+      try {
+        localStorage.setItem('sorh_requests',    JSON.stringify(data.requests));
+        localStorage.setItem('sorh_initiatives', JSON.stringify(data.initiatives));
+        localStorage.setItem('sorh_config',      JSON.stringify(data.config));
+        localStorage.setItem('sorh_auth',        JSON.stringify({isAdmin:data.isAdmin,isTeam:data.isTeam,currentUser:data.currentUser,currentUserId:data.currentUserId||null}));
+        localStorage.setItem('sorh_documents',   JSON.stringify(data.documents));
+        localStorage.setItem('sorh_notifications',JSON.stringify((data.notifications||[]).slice(-50)));
+        localStorage.setItem('sorh_area_roadmaps',JSON.stringify(data.areaRoadmaps));
+        localStorage.setItem('sorh_audit_log',   JSON.stringify((data.auditLog||[]).slice(-200)));
+        return true;
+      } catch(e) { console.warn('LocalStorage save error:', e); return false; }
+    },
+    load() {
+      try {
+        return {
+          requests:    JSON.parse(localStorage.getItem('sorh_requests')||'[]'),
+          initiatives: JSON.parse(localStorage.getItem('sorh_initiatives')||'[]'),
+          config:      JSON.parse(localStorage.getItem('sorh_config')||'null'),
+          auth:        JSON.parse(localStorage.getItem('sorh_auth')||'null'),
+          documents:   JSON.parse(localStorage.getItem('sorh_documents')||'[]'),
+          notifications:JSON.parse(localStorage.getItem('sorh_notifications')||'[]'),
+          areaRoadmaps:JSON.parse(localStorage.getItem('sorh_area_roadmaps')||'[]'),
+          auditLog:    JSON.parse(localStorage.getItem('sorh_audit_log')||'[]'),
+        };
+      } catch(e) { return null; }
+    }
+  },
+  // RemoteJsonProvider (File System API) — connects to shared JSON on OneDrive/network
+  remote: {
+    async save(data) {
+      if (!_fileHandle) return false;
+      try {
+        const perm = await _fileHandle.queryPermission({mode:'readwrite'});
+        if (perm !== 'granted') {
+          const granted = await _fileHandle.requestPermission({mode:'readwrite'});
+          if (granted !== 'granted') return false;
+        }
+        const writable = await _fileHandle.createWritable();
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+        _lastFileTimestamp = new Date().toISOString();
+        return true;
+      } catch(e) { console.warn('RemoteJsonProvider save error:', e); return false; }
+    },
+    async load() {
+      if (!_fileHandle) return null;
+      try {
+        const perm = await _fileHandle.queryPermission({mode:'readwrite'});
+        if (perm !== 'granted') return null;
+        const file = await _fileHandle.getFile();
+        return JSON.parse(await file.text());
+      } catch(e) { return null; }
+    }
+  }
+  // ApiProvider stub — ready to connect to Supabase/Firebase/REST API
+  // api: {
+  //   async save(data) { return await fetch('/api/state', {method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(r=>r.ok); },
+  //   async load()     { return await fetch('/api/state').then(r=>r.json()).catch(()=>null); }
+  // }
+};
+
+function setSyncStatus(status, label) {
+  _syncStatus = status;
+  const el = document.getElementById('autosave-indicator');
+  const lbl = document.getElementById('autosave-label');
+  if (!el) return;
+  el.className = 'state-' + status;
+  if (lbl) lbl.textContent = label || {
+    saved:'Guardado', saving:'Guardando…', dirty:'Cambios pendientes',
+    error:'Error al guardar', conflict:'Conflicto detectado', offline:'Sin conexión'
+  }[status] || status;
+}
+
+function markDirty(entityType, entityId) {
+  _isDirty = true;
+  if (entityType && entityId) _dirtyEntities[`${entityType}:${entityId}`] = true;
+  setSyncStatus('dirty');
+}
+
+async function saveNow(reason) {
+  if (!_isDirty && reason !== 'force') return;
+  if (_isSaving) return;
+  _isSaving = true;
+  setSyncStatus('saving');
+  try {
+    const data = {
+      version: '1.0',
+      saved_at: new Date().toISOString(),
+      saved_by: state.currentUser || 'Sistema',
+      requests: state.requests,
+      initiatives: state.initiatives,
+      config: state.config,
+      documents: state.documents,
+      notifications: (state.notifications||[]).slice(-50),
+      areaRoadmaps: state.areaRoadmaps,
+      auditLog: (state.auditLog||[]).slice(-200),
+      isAdmin: state.isAdmin, isTeam: state.isTeam,
+      currentUser: state.currentUser, currentUserId: state.currentUserId||null
+    };
+    // Always save to localStorage (offline fallback)
+    const localOk = DataProvider.local.save(data);
+    // If remote file connected, sync there too
+    let remoteOk = true;
+    if (_fileHandle) {
+      // Check for remote conflicts before writing
+      const remoteData = await DataProvider.remote.load();
+      if (remoteData && remoteData.saved_at > (_lastFileTimestamp||'0')) {
+        const conflicts = detectConflictsInBatch(remoteData);
+        if (conflicts.length > 0) {
+          _isSaving = false;
+          setSyncStatus('conflict');
+          showConflictModal(conflicts[0], remoteData);
+          return;
+        }
+        // Merge non-conflicting remote changes
+        mergeRemoteState(remoteData);
+      }
+      remoteOk = await DataProvider.remote.save(data);
+    }
+    _isDirty = false;
+    _dirtyEntities = {};
+    _lastSaved = new Date();
+    setSyncStatus(remoteOk ? 'saved' : 'saved', remoteOk ? 'Guardado' : 'Guardado (local)');
+  } catch(e) {
+    console.error('saveNow error:', e);
+    setSyncStatus('error');
+  } finally {
+    _isSaving = false;
+  }
+}
+
+function startAutoSave() {
+  stopAutoSave();
+  _autoSaveTimer = setInterval(async () => {
+    if ((state.isAdmin || state.isTeam) && _isDirty) {
+      await saveNow('autosave');
+    }
+  }, 60000); // 60 seconds
+}
+
+function stopAutoSave() {
+  if (_autoSaveTimer) { clearInterval(_autoSaveTimer); _autoSaveTimer = null; }
+}
+
+function detectConflict(localEntity, remoteEntity) {
+  if (!localEntity || !remoteEntity) return false;
+  const localV  = localEntity.version  || 1;
+  const remoteV = remoteEntity.version || 1;
+  const localTs = localEntity.updated_at  || localEntity.created_at  || '0';
+  const remoteTs = remoteEntity.updated_at || remoteEntity.created_at || '0';
+  return remoteV > localV || (remoteTs > localTs && remoteEntity.updated_by !== (state.currentUser||'Sistema'));
+}
+
+function detectConflictsInBatch(remoteData) {
+  const conflicts = [];
+  (remoteData.requests||[]).forEach(remote => {
+    const local = state.requests.find(r => r.id === remote.id);
+    if (local && detectConflict(local, remote)) conflicts.push({entityType:'request',entityId:remote.id,local,remote});
+  });
+  (remoteData.initiatives||[]).forEach(remote => {
+    const local = state.initiatives.find(i => i.id === remote.id);
+    if (local && detectConflict(local, remote)) conflicts.push({entityType:'initiative',entityId:remote.id,local,remote});
+  });
+  return conflicts;
+}
+
+function showConflictModal(conflict, remoteData) {
+  _conflictPending = { ...conflict, remoteData };
+  const el = document.getElementById('conflict-entity-info');
+  if (el) {
+    const name = conflict.local.title || conflict.local.name || conflict.entityId;
+    el.innerHTML = `<strong>Entidad:</strong> ${conflict.entityType} — <strong>${name}</strong><br>
+      <strong>Mi versión:</strong> v${conflict.local.version||1} · ${fmtDateTime(conflict.local.updated_at||'')} por ${conflict.local.updated_by||'—'}<br>
+      <strong>Versión remota:</strong> v${conflict.remote.version||1} · ${fmtDateTime(conflict.remote.updated_at||'')} por ${conflict.remote.updated_by||'—'}`;
+  }
+  const body = document.getElementById('conflict-diff-body');
+  if (body) {
+    const diffFields = ['title','name','status','description','assigned_owner','needed_by','admin_priority'];
+    const rows = diffFields.filter(f => JSON.stringify(conflict.local[f]) !== JSON.stringify(conflict.remote[f]))
+      .map(f => `<tr><td><strong>${f}</strong></td><td class="td-local">${conflict.local[f]||'—'}</td><td class="td-remote">${conflict.remote[f]||'—'}</td></tr>`)
+      .join('');
+    body.innerHTML = rows || '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:12px">No se detectaron diferencias en campos clave.</td></tr>';
+  }
+  openModal('modal-conflict');
+}
+
+function _resolveConflictNow(strategy) {
+  if (!_conflictPending) { closeModal('modal-conflict'); return; }
+  resolveConflict(_conflictPending.entityType, _conflictPending.entityId, strategy, _conflictPending);
+  closeModal('modal-conflict');
+}
+
+function resolveConflict(entityType, entityId, strategy, conflictData) {
+  const c = conflictData || _conflictPending;
+  if (!c) return;
+  const now = new Date().toISOString();
+  if (entityType === 'request' || c.entityType === 'request') {
+    const idx = state.requests.findIndex(r => r.id === (entityId||c.entityId));
+    if (idx < 0) return;
+    if (strategy === 'mine') {
+      state.requests[idx].version = (c.remote.version||1) + 1;
+      state.requests[idx].updated_at = now;
+      state.requests[idx].updated_by = state.currentUser || 'Sistema';
+    } else if (strategy === 'theirs') {
+      state.requests[idx] = { ...c.remote, version:(c.remote.version||1)+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
+    } else { // merge
+      state.requests[idx] = {
+        ...c.remote, ...state.requests[idx],
+        status: c.remote.status || state.requests[idx].status, // prefer remote status
+        version: (Math.max(c.local.version||1, c.remote.version||1)) + 1,
+        updated_at: now, updated_by: state.currentUser || 'Sistema'
+      };
+    }
+  } else if (entityType === 'initiative' || c.entityType === 'initiative') {
+    const idx = state.initiatives.findIndex(i => i.id === (entityId||c.entityId));
+    if (idx < 0) return;
+    if (strategy === 'mine') {
+      state.initiatives[idx].version = (c.remote.version||1) + 1;
+      state.initiatives[idx].updated_at = now;
+    } else if (strategy === 'theirs') {
+      state.initiatives[idx] = { ...c.remote, version:(c.remote.version||1)+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
+    } else {
+      state.initiatives[idx] = { ...c.remote, ...state.initiatives[idx], version:(Math.max(c.local.version||1,c.remote.version||1))+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
+    }
+  }
+  _conflictPending = null;
+  toast('✅ Conflicto resuelto', `Estrategia: ${strategy==='mine'?'Mi versión':strategy==='theirs'?'Versión remota':'Fusión'}`, 'success');
+  _isDirty = true;
+  saveNow('conflict-resolved');
+  if (state.currentView === 'kanban') renderKanban();
+  if (state.currentView === 'roadmap') renderRoadmap();
+}
+
+function mergeRemoteState(remoteData) {
+  if (!remoteData) return;
+  // Non-conflicting merges (new items from remote not in local)
+  if (remoteData.requests) {
+    const localIds = new Set(state.requests.map(r => r.id));
+    (remoteData.requests).forEach(remote => {
+      if (!localIds.has(remote.id)) state.requests.push(normalizeRequest(remote));
+    });
+  }
+  if (remoteData.initiatives) {
+    const localIds = new Set(state.initiatives.map(i => i.id));
+    (remoteData.initiatives).forEach(remote => {
+      if (!localIds.has(remote.id)) state.initiatives.push(normalizeInitiative(remote));
+    });
+  }
+}
+
+function syncStateFromRemote() {
+  saveNow('manual-sync');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 2 — ROADMAP TASKS: helper functions
+// ═══════════════════════════════════════════════════════════════════
+function openCreateTaskFromInitiative(iniId) {
+  const ini = state.initiatives.find(i => i.id === iniId);
+  if (!ini) return;
+  document.getElementById('task-from-ini-title').textContent = `⚡ Nueva tarea — ${ini.name.substring(0,40)}`;
+  document.getElementById('tfi-ini-id').value = iniId;
+  document.getElementById('tfi-title').value = '';
+  document.getElementById('tfi-desc').value = '';
+  document.getElementById('tfi-needed-by').value = '';
+  const ownerSel = document.getElementById('tfi-owner');
+  ownerSel.innerHTML = '<option value="">Sin asignar</option>' + state.config.team.map(m=>`<option value="${m}">${m}</option>`).join('');
+  ownerSel.value = ini.primary_owner || '';
+  const catSel = document.getElementById('tfi-category');
+  catSel.innerHTML = Object.keys(CATEGORIES).map(c=>`<option value="${c}">${CATEGORIES[c].icon} ${c}</option>`).join('');
+  const msSel = document.getElementById('tfi-milestone');
+  msSel.innerHTML = '<option value="">— Sin milestone —</option>' + (ini.milestones||[]).map(ms=>`<option value="${ms.id||ms.name}">${ms.name}</option>`).join('');
+  openModal('modal-task-from-ini');
+  setTimeout(()=>document.getElementById('tfi-title').focus(), 150);
+}
+
+function submitTaskFromInitiative() {
+  const iniId = document.getElementById('tfi-ini-id').value;
+  const title = document.getElementById('tfi-title').value.trim();
+  const desc  = document.getElementById('tfi-desc').value.trim();
+  const owner = document.getElementById('tfi-owner').value;
+  const prio  = document.getElementById('tfi-priority').value;
+  const date  = document.getElementById('tfi-needed-by').value;
+  const cat   = document.getElementById('tfi-category').value;
+  const msId  = document.getElementById('tfi-milestone').value;
+  if (!title) { toast('⚠️ Requerido','Agrega un título para la tarea.','warning'); return; }
+  if (!validateDate(date, 'Fecha requerida')) return;
+  const ini = state.initiatives.find(i => i.id === iniId);
+  const now = new Date().toISOString();
+  const newReq = normalizeRequest({
+    id: genId(cat||'General'),
+    created_at: now, updated_at: now, updated_by: state.currentUser||'Sistema',
+    version: 1,
+    requester_name: state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
+    category: cat || Object.keys(CATEGORIES)[0],
+    request_type: 'Tarea interna', title, description: desc||title, objective: title,
+    needed_by: date, requester_priority: prio, expected_impact:'', support_links:[], additional_comments:'',
+    status:'Backlog', assigned_owner: owner, admin_priority: prio, complexity:'Media', internal_only:true,
+    linked_initiative_id: iniId,
+    linked_milestone_id: msId || null,
+    activity_log: [{type:'log',author:state.currentUser||'Equipo',content:`Tarea creada desde Roadmap — Iniciativa: ${ini?ini.name:'?'}`,created_at:now}],
+    files:[], milestones:[]
+  });
+  warnCriticalTaskNoOwner(newReq);
+  state.requests.unshift(newReq);
+  markDirty('request', newReq.id);
+  addAuditLog('request', newReq.id, 'created', null, {title, status:'Backlog', owner, iniId});
+  saveNow('create-task-from-ini');
+  closeModal('modal-task-from-ini');
+  updateNavBadges();
+  renderRoadmap();
+  toast('⚡ Tarea creada', `${newReq.id}: ${title}`, 'success');
+}
+
+function openLinkTaskToInitiative(iniId) {
+  document.getElementById('link-task-ini-id').value = iniId;
+  document.getElementById('link-task-search').value = '';
+  renderLinkTaskList(iniId, '');
+  openModal('modal-link-task');
+}
+
+function renderLinkTaskList(iniId, query) {
+  const unlinked = state.requests.filter(r => {
+    if (!query) return !r.linked_initiative_id;
+    const q = query.toLowerCase();
+    return r.title.toLowerCase().includes(q) || r.id.toLowerCase().includes(q);
+  });
+  const listEl = document.getElementById('link-task-list');
+  if (!listEl) return;
+  if (!unlinked.length) {
+    listEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">Sin tareas disponibles</div>';
+    return;
+  }
+  listEl.innerHTML = unlinked.slice(0,30).map(r => {
+    const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="linkTaskToInitiative('${r.id}','${iniId}')">
+      <span style="font-size:18px">${catInfo.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${r.id} · ${statusBadge(r.status)} · ${r.assigned_owner||'Sin owner'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterLinkTaskList() {
+  const iniId = document.getElementById('link-task-ini-id').value;
+  const q = document.getElementById('link-task-search').value;
+  renderLinkTaskList(iniId, q);
+}
+
+function linkTaskToInitiative(reqId, iniId) {
+  const req = state.requests.find(r => r.id === reqId);
+  if (!req) return;
+  const oldIni = req.linked_initiative_id;
+  req.linked_initiative_id = iniId;
+  req.updated_at = new Date().toISOString();
+  req.updated_by = state.currentUser || 'Sistema';
+  req.version = (req.version||1) + 1;
+  req.activity_log.push({type:'log',author:state.currentUser||'Equipo',content:`Vinculado a iniciativa: ${iniId}`,created_at:new Date().toISOString()});
+  addAuditLog('request', reqId, 'linked_initiative_id', oldIni, iniId);
+  markDirty('request', reqId);
+  saveNow('link-task');
+  closeModal('modal-link-task');
+  renderRoadmap();
+  toast('🔗 Tarea vinculada', req.title.substring(0,40), 'success');
+}
+
+function unlinkTaskFromInitiative(reqId) {
+  const req = state.requests.find(r => r.id === reqId);
+  if (!req) return;
+  if (!confirm(`¿Desvincular "${req.title.substring(0,50)}" de la iniciativa? La tarea NO será eliminada.`)) return;
+  const oldIni = req.linked_initiative_id;
+  req.linked_initiative_id = null;
+  req.linked_milestone_id = null;
+  req.updated_at = new Date().toISOString();
+  req.updated_by = state.currentUser || 'Sistema';
+  req.version = (req.version||1) + 1;
+  addAuditLog('request', reqId, 'linked_initiative_id', oldIni, null);
+  markDirty('request', reqId);
+  saveNow('unlink-task');
+  renderRoadmap();
+  toast('✕ Tarea desvinculada', req.title.substring(0,40), 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UPGRADE 3 — CALENDAR VIEW
+// ═══════════════════════════════════════════════════════════════════
+
+// State for calendar (stored in main state)
+function getCalendarState() {
+  if (!state.calendarView) state.calendarView = 'week';
+  if (!state.calendarDate) state.calendarDate = new Date().toISOString().split('T')[0];
+  if (!state.calendarFilter) state.calendarFilter = {owner:'',category:'',status:'',priority:'',initiative:'',eventType:''};
+  return state;
+}
+
+function changeCalendarView(v) {
+  state.calendarView = v;
+  renderCalendar();
+}
+
+function changeCalendarDate(dir) {
+  const cs = getCalendarState();
+  const d = new Date(cs.calendarDate);
+  if (cs.calendarView === 'week') {
+    d.setDate(d.getDate() + (dir === 'next' ? 7 : -7));
+  } else {
+    d.setMonth(d.getMonth() + (dir === 'next' ? 1 : -1));
+  }
+  state.calendarDate = d.toISOString().split('T')[0];
+  renderCalendar();
+}
+
+function getWeekRange(dateStr) {
+  const d = new Date(dateStr);
+  const dow = d.getDay(); // 0=Sun
+  const mon = new Date(d); mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return { start: mon.toISOString().split('T')[0], end: sun.toISOString().split('T')[0], mon };
+}
+
+function getMonthRange(dateStr) {
+  const d = new Date(dateStr);
+  const first = new Date(d.getFullYear(), d.getMonth(), 1);
+  const last  = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return { start: first.toISOString().split('T')[0], end: last.toISOString().split('T')[0], year: d.getFullYear(), month: d.getMonth() };
+}
+
+function getCalendarEvents() {
+  const cs = getCalendarState();
+  const f = cs.calendarFilter;
+  const events = [];
+  const PRIO_COLORS = {Crítica:{bg:'#FEF2F2',c:'#B91C1C',border:'#FECACA'},Alta:{bg:'#FFF7ED',c:'#9A3412',border:'#FDBA74'},Media:{bg:'#EFF6FF',c:'#1D4ED8',border:'#BFDBFE'},Baja:{bg:'#F0FDF4',c:'#15803D',border:'#BBF7D0'}};
+
+  // Tasks from Kanban
+  state.requests.forEach(req => {
+    if (!req.needed_by) return;
+    if (f.owner && req.assigned_owner !== f.owner) return;
+    if (f.category && req.category !== f.category) return;
+    if (f.status && req.status !== f.status) return;
+    if (f.priority && req.admin_priority !== f.priority && req.requester_priority !== f.priority) return;
+    if (f.initiative && req.linked_initiative_id !== f.initiative) return;
+    if (f.eventType && f.eventType !== 'task') return;
+    const prio = req.admin_priority || req.requester_priority || 'Media';
+    const pc = PRIO_COLORS[prio] || PRIO_COLORS.Media;
+    const done = ['Concluida','Cancelada'].includes(req.status);
+    const overdue = isOverdue(req.needed_by) && !done;
+    events.push({
+      id: req.id, type:'task', date: req.needed_by,
+      title: req.title, owner: req.assigned_owner||'—', status: req.status,
+      priority: prio, category: req.category,
+      bg: done?'#F0FDF4':overdue?'#FEF2F2':pc.bg,
+      color: done?'#15803D':overdue?'#B91C1C':pc.c,
+      border: done?'#BBF7D0':overdue?'#FECACA':pc.border,
+      icon: done?'✅':overdue?'🔴':'📋'
+    });
+  });
+
+  // Milestones from initiatives
+  state.initiatives.forEach(ini => {
+    if (f.initiative && ini.id !== f.initiative) return;
+    if (f.eventType && f.eventType !== 'milestone') return;
+    (ini.milestones||[]).forEach(ms => {
+      if (!ms.target_date) return;
+      if (f.owner && ms.owner !== f.owner) return;
+      if (f.status && ms.status !== f.status) return;
+      const done = ['Completado','Validada'].includes(ms.status);
+      const overdue = isOverdue(ms.target_date) && !done;
+      events.push({
+        id: `${ini.id}::${ms.id||ms.name}`, type:'milestone', date: ms.target_date,
+        title: ms.name, owner: ms.owner||'—', status: ms.status,
+        initiative: ini.name, initiativeId: ini.id,
+        bg: done?'#F5F3FF':overdue?'#FEF2F2':'#F5F3FF',
+        color: done?'#5B21B6':overdue?'#B91C1C':'#6D28D9',
+        border: done?'#DDD6FE':overdue?'#FECACA':'#DDD6FE',
+        icon: done?'✅':overdue?'🔴':'◆'
+      });
+    });
+  });
+
+  // Initiatives by target_close_date
+  state.initiatives.forEach(ini => {
+    if (!ini.target_close_date) return;
+    if (f.initiative && ini.id !== f.initiative) return;
+    if (f.owner && ini.primary_owner !== f.owner) return;
+    if (f.status && ini.status !== f.status) return;
+    if (f.eventType && f.eventType !== 'initiative') return;
+    const done = ['Concluida'].includes(ini.status);
+    const overdue = isOverdue(ini.target_close_date) && !done;
+    events.push({
+      id: `ini::${ini.id}`, type:'initiative', date: ini.target_close_date,
+      title: ini.name, owner: ini.primary_owner||'—', status: ini.status,
+      category: ini.category,
+      bg: done?'#F0FDF4':overdue?'#FEF2F2':'#E0F5F0',
+      color: done?'#15803D':overdue?'#B91C1C':'#006666',
+      border: done?'#BBF7D0':overdue?'#FECACA':'#6EE7D0',
+      icon: done?'✅':overdue?'🔴':'🗺️'
+    });
+  });
+
+  return events;
+}
+
+function groupEventsByDate(events) {
+  const map = {};
+  events.forEach(ev => {
+    if (!map[ev.date]) map[ev.date] = [];
+    map[ev.date].push(ev);
+  });
+  return map;
+}
+
+function openCalendarEvent(eventType, eventId) {
+  if (eventType === 'task') {
+    openTask(eventId);
+  } else if (eventType === 'milestone') {
+    const [iniId, msId] = eventId.split('::');
+    editInitiativeMilestone(iniId, msId);
+  } else if (eventType === 'initiative') {
+    const iniId = eventId.replace('ini::', '');
+    editInitiative(iniId);
+  }
+}
+
+function renderWeekCalendar(events, weekRange) {
+  const byDate = groupEventsByDate(events);
+  const today = new Date().toISOString().split('T')[0];
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let html = '<div class="cal-week-grid">';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekRange.mon);
+    d.setDate(weekRange.mon.getDate() + i);
+    const dStr = d.toISOString().split('T')[0];
+    const dayEvents = byDate[dStr] || [];
+    const isToday = dStr === today;
+    html += `<div class="cal-day-col${isToday?' today':''}">
+      <div class="cal-day-header">
+        <span class="day-name">${DAYS[i]}</span>
+        <span class="day-num">${d.getDate()}</span>
+      </div>
+      <div class="cal-day-events">`;
+    dayEvents.forEach(ev => {
+      html += `<div class="cal-event" style="background:${ev.bg};color:${ev.color};border-color:${ev.border}" onclick="openCalendarEvent('${ev.type}','${ev.id}')" title="${ev.title} — ${ev.owner} — ${ev.status}">
+        <div class="ev-title">${ev.icon} ${ev.title.substring(0,28)}${ev.title.length>28?'…':''}</div>
+        <div class="ev-meta">${ev.type==='task'?ev.priority+' · ':ev.type==='milestone'?'◆ ':ev.type==='initiative'?'🗺️ ':''}${ev.owner}</div>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderMonthCalendar(events, monthRange) {
+  const byDate = groupEventsByDate(events);
+  const today = new Date().toISOString().split('T')[0];
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const firstDay = new Date(monthRange.year, monthRange.month, 1);
+  const lastDay  = new Date(monthRange.year, monthRange.month+1, 0);
+  // Start of grid — Monday of the week containing the 1st
+  const startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+  const gridStart = new Date(firstDay); gridStart.setDate(1 - startDow);
+  // End of grid — Sunday of week containing last day
+  const endDow = lastDay.getDay() === 0 ? 0 : 7 - lastDay.getDay();
+  const gridEnd = new Date(lastDay); gridEnd.setDate(lastDay.getDate() + endDow);
+  let html = '<div class="cal-month-header-row">' + DAYS.map(d=>`<div class="cal-month-dow">${d}</div>`).join('') + '</div>';
+  html += '<div class="cal-month-grid">';
+  const cur = new Date(gridStart);
+  while (cur <= gridEnd) {
+    const dStr = cur.toISOString().split('T')[0];
+    const isToday = dStr === today;
+    const otherMonth = cur.getMonth() !== monthRange.month;
+    const dayEvents = byDate[dStr] || [];
+    const MAX_SHOW = 3;
+    const shown = dayEvents.slice(0, MAX_SHOW);
+    const extra = dayEvents.length - MAX_SHOW;
+    html += `<div class="cal-month-cell${isToday?' today':''}${otherMonth?' other-month':''}">
+      <div class="cal-month-day-num">${cur.getDate()}</div>`;
+    shown.forEach(ev => {
+      html += `<div class="cal-event" style="background:${ev.bg};color:${ev.color};border-color:${ev.border};font-size:10px;padding:2px 5px;margin:1px 4px" onclick="openCalendarEvent('${ev.type}','${ev.id}')" title="${ev.title}">
+        ${ev.icon} ${ev.title.substring(0,20)}${ev.title.length>20?'…':''}
+      </div>`;
+    });
+    if (extra > 0) html += `<div class="cal-more-badge" onclick="openDayEventsModal('${dStr}')">+${extra} más</div>`;
+    html += '</div>';
+    cur.setDate(cur.getDate() + 1);
+  }
+  html += '</div>';
+  return html;
+}
+
+function openDayEventsModal(dateStr) {
+  // Simple: show all events for a day in a toast-like panel or existing modal
+  const events = getCalendarEvents().filter(e => e.date === dateStr);
+  const html = events.map(ev => `<div class="rm-task-item" onclick="openCalendarEvent('${ev.type}','${ev.id}')">
+    <span style="font-size:16px">${ev.icon}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.title}</div>
+      <div style="font-size:10px;color:var(--text-muted)">${ev.type} · ${ev.owner} · ${ev.status}</div>
+    </div>
+  </div>`).join('');
+  // Reuse an existing modal or build a simple alert
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10002;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;min-width:320px;max-width:460px;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-lg)';
+  div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><strong>📆 ${fmtDate(dateStr)}</strong><button onclick="this.closest('div[style]').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted)">✕</button></div>${html||'<div style="text-align:center;color:var(--text-muted);padding:16px">Sin eventos este día</div>'}`;
+  document.body.appendChild(div);
+  div.onclick = e => { if(e.target===div) div.remove(); };
+}
+
+function applyCalendarFilters() { renderCalendar(); }
+
+function renderCalendar() {
+  const cs = getCalendarState();
+  const f = cs.calendarFilter;
+  const view = cs.calendarView || 'week';
+  const dateStr = cs.calendarDate || new Date().toISOString().split('T')[0];
+  const events = getCalendarEvents();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Stats
+  const thisWeek = events.filter(e => {
+    const wr = getWeekRange(today);
+    return e.date >= wr.start && e.date <= wr.end;
+  });
+  const overdue = events.filter(e => e.date < today && !['Concluida','Cancelada','Completado','Validada'].includes(e.status));
+  const dueToday = events.filter(e => e.date === today);
+  const critical = events.filter(e => e.priority === 'Crítica' && !['Concluida','Cancelada'].includes(e.status));
+  const done = events.filter(e => ['Concluida','Cancelada','Completado','Validada'].includes(e.status));
+
+  // Filter bar
+  const ownerOpts = ['', ...state.config.team].map(o=>`<option value="${o}" ${f.owner===o?'selected':''}>${o||'Todos los owners'}</option>`).join('');
+  const catOpts = ['', ...Object.keys(CATEGORIES)].map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c||'Todas las categorías'}</option>`).join('');
+  const iniOpts = ['', ...state.initiatives.map(i=>i.id)].map(id=>{const ini=state.initiatives.find(x=>x.id===id);return `<option value="${id}" ${f.initiative===id?'selected':''}>${id?ini?ini.name.substring(0,25):'?':'Todas las iniciativas'}</option>`;}).join('');
+  const typeOpts = ['','task','milestone','initiative'].map(t=>`<option value="${t}" ${f.eventType===t?'selected':''}>${t||'Todos los tipos'}</option>`).join('');
+  const prioOpts = ['', ...PRIORITIES].map(p=>`<option value="${p}" ${f.priority===p?'selected':''}>${p||'Todas las prioridades'}</option>`).join('');
+
+  // Range display
+  let rangeLabel = '';
+  if (view === 'week') {
+    const wr = getWeekRange(dateStr);
+    rangeLabel = `${fmtDate(wr.start)} — ${fmtDate(wr.end)}`;
+  } else {
+    const mr = getMonthRange(dateStr);
+    const d = new Date(dateStr);
+    rangeLabel = d.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
+  }
+
+  // Calendar grid
+  let calGrid = '';
+  if (view === 'week') {
+    calGrid = renderWeekCalendar(events, getWeekRange(dateStr));
+  } else {
+    calGrid = renderMonthCalendar(events, getMonthRange(dateStr));
+  }
+
+  const hasFilter = f.owner||f.category||f.status||f.priority||f.initiative||f.eventType;
+
+  document.getElementById('view-calendar').innerHTML = `
+    <div class="cal-header">
+      <div>
+        <div style="font-size:18px;font-weight:800">📆 Calendario</div>
+        <div style="font-size:12px;color:var(--text-muted)">${rangeLabel} · ${events.length} evento${events.length!==1?'s':''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="cal-nav-btn" onclick="changeCalendarDate('prev')">← Anterior</button>
+        <button class="cal-nav-btn" onclick="state.calendarDate=new Date().toISOString().split('T')[0];renderCalendar()">Hoy</button>
+        <button class="cal-nav-btn" onclick="changeCalendarDate('next')">Siguiente →</button>
+        <div class="cal-toggle">
+          <button class="${view==='week'?'active':''}" onclick="changeCalendarView('week')">Semana</button>
+          <button class="${view==='month'?'active':''}" onclick="changeCalendarView('month')">Mes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cal-stats">
+      <div class="cal-stat-card">
+        <div class="stat-num" style="color:var(--primary)">${thisWeek.length}</div>
+        <div class="stat-lbl">📅 Esta semana</div>
+      </div>
+      <div class="cal-stat-card">
+        <div class="stat-num" style="color:var(--error)">${overdue.length}</div>
+        <div class="stat-lbl">⚠️ Vencidos</div>
+      </div>
+      <div class="cal-stat-card">
+        <div class="stat-num" style="color:var(--warning)">${dueToday.length}</div>
+        <div class="stat-lbl">🎯 Vencen hoy</div>
+      </div>
+      <div class="cal-stat-card">
+        <div class="stat-num" style="color:var(--error)">${critical.length}</div>
+        <div class="stat-lbl">🔴 Críticos</div>
+      </div>
+      <div class="cal-stat-card">
+        <div class="stat-num" style="color:var(--success)">${done.length}</div>
+        <div class="stat-lbl">✅ Completados</div>
+      </div>
+    </div>
+
+    <div class="cal-filters">
+      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.owner=this.value;renderCalendar()">${ownerOpts}</select>
+      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.category=this.value;renderCalendar()">${catOpts}</select>
+      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.priority=this.value;renderCalendar()">${prioOpts}</select>
+      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.initiative=this.value;renderCalendar()">${iniOpts}</select>
+      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.eventType=this.value;renderCalendar()">${typeOpts}</select>
+      ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.calendarFilter={owner:'',category:'',status:'',priority:'',initiative:'',eventType:''};renderCalendar()" style="font-size:11px">✕ Limpiar</button>`:''}
+    </div>
+
+    ${calGrid}
+  `;
+}
+
+
 document.addEventListener('DOMContentLoaded', init);
 </script>
 
@@ -6522,6 +7477,86 @@ document.addEventListener('DOMContentLoaded', init);
 </style>
 
 <!-- Floating ? button -->
+
+<!-- ═══ MODAL: CONFLICT RESOLUTION (Upgrade 1) ═══════════════ -->
+<div id="modal-conflict" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-conflict')" style="z-index:10001">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Conflicto de versión detectado</div>
+      <button class="modal-close" onclick="closeModal('modal-conflict')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+        Otro usuario modificó este elemento desde tu última sincronización. Elige cómo resolver el conflicto.
+      </p>
+      <div id="conflict-entity-info" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--text-secondary)"></div>
+      <table class="conflict-diff-table">
+        <thead><tr><th>Campo</th><th class="td-local">Mi versión (local)</th><th class="td-remote">Versión remota</th></tr></thead>
+        <tbody id="conflict-diff-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="_resolveConflictNow('mine')">📌 Mantener mi versión</button>
+      <button class="btn btn-secondary btn-sm" onclick="_resolveConflictNow('theirs')">☁️ Usar versión remota</button>
+      <button class="btn btn-primary btn-sm" onclick="_resolveConflictNow('merge')">🔀 Fusionar campos clave</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CREATE TASK FROM INITIATIVE (Upgrade 2) ════════ -->
+<div id="modal-task-from-ini" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-task-from-ini')">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title" id="task-from-ini-title">⚡ Nueva tarea en iniciativa</div>
+      <button class="modal-close" onclick="closeModal('modal-task-from-ini')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label form-required">Título</label>
+        <input class="form-input" id="tfi-title" type="text" placeholder="¿Qué hay que hacer?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-textarea" id="tfi-desc" rows="2" placeholder="Detalle del trabajo…"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">Owner</label><select class="form-select" id="tfi-owner"></select></div>
+        <div class="form-group"><label class="form-label">Prioridad</label>
+          <select class="form-select" id="tfi-priority">
+            <option value="Media">Media</option><option value="Alta">Alta</option><option value="Crítica">Crítica</option><option value="Baja">Baja</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Fecha requerida</label><input class="form-input" id="tfi-needed-by" type="date"></div>
+        <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="tfi-category"></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Milestone vinculado</label><select class="form-select" id="tfi-milestone"></select></div>
+      <input type="hidden" id="tfi-ini-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task-from-ini')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitTaskFromInitiative()">⚡ Crear tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: LINK TASK TO INITIATIVE (Upgrade 2) ════════════ -->
+<div id="modal-link-task" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-link-task')">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Vincular tarea existente</div>
+      <button class="modal-close" onclick="closeModal('modal-link-task')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Buscar tarea</label>
+        <input class="form-input" id="link-task-search" type="text" placeholder="Escribe título o ID…" oninput="filterLinkTaskList()">
+      </div>
+      <div id="link-task-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;"></div>
+      <input type="hidden" id="link-task-ini-id">
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-link-task')">Cerrar</button></div>
+  </div>
+</div>
 <button id="ai-fab" onclick="toggleAIPanel()" title="Jason — Copiloto Ops">
   <svg width="30" height="30" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M21,40 Q12,40 11,34 L11,29 Q11,26 14,24 L17,23 Q13,19 13,15 L13,12 Q13,7 18,5 L20,4 Q18,2 19,1 Q20,0 22,0.5 Q24,1 24,3 L26,2 Q28,1 30,3 Q31,5 29,7 L32,8 Q35,10 35,14 L34,18 Q32,21 29,22 L31,24 Q33,26 33,30 L33,34 Q33,40 24,40 Z" fill="#34d399"/>
