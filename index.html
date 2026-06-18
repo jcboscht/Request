@@ -925,68 +925,6 @@ td.td-action{white-space:nowrap;}
   background:rgba(0,0,0,0.4);backdrop-filter:blur(2px);
 }
 #sidebar-overlay.open{display:block;}
-
-/* ═══════════════════════════════════════════════════════════
-   SYNC INDICATOR (Upgrade 1)
-═══════════════════════════════════════════════════════════ */
-#autosave-indicator{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:all 0.3s ease;white-space:nowrap;}
-#autosave-indicator.state-saved{background:#F0FDF4;color:#15803D;border-color:#BBF7D0;}
-#autosave-indicator.state-saving{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE;}
-#autosave-indicator.state-dirty{background:#FEFCE8;color:#854D0E;border-color:#FDE047;}
-#autosave-indicator.state-error{background:#FEF2F2;color:#B91C1C;border-color:#FECACA;}
-#autosave-indicator.state-conflict{background:#FFF7ED;color:#9A3412;border-color:#FDBA74;}
-#autosave-indicator.state-offline{background:#F3F4F6;color:#6B7280;border-color:#D1D5DB;}
-#autosave-indicator .sync-pulse{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-#autosave-indicator.state-saved .sync-pulse{background:#22C55E;}
-#autosave-indicator.state-saving .sync-pulse{background:#3B82F6;animation:pulse-s 1s infinite;}
-#autosave-indicator.state-dirty .sync-pulse{background:#EAB308;animation:pulse-d 2s infinite;}
-#autosave-indicator.state-error .sync-pulse{background:#EF4444;}
-#autosave-indicator.state-conflict .sync-pulse{background:#F97316;animation:pulse-d 1s infinite;}
-#autosave-indicator.state-offline .sync-pulse{background:#9CA3AF;}
-@keyframes pulse-s{0%,100%{opacity:1}50%{opacity:0.3}}
-@keyframes pulse-d{0%,100%{opacity:1}50%{opacity:0.5}}
-.conflict-diff-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
-.conflict-diff-table th{background:var(--surface2);padding:6px 10px;text-align:left;border:1px solid var(--border);font-weight:700;color:var(--text-muted);}
-.conflict-diff-table td{padding:6px 10px;border:1px solid var(--border-light);vertical-align:top;}
-.td-local{background:#FFFBEB;}.td-remote{background:#EFF6FF;}
-/* ═══════════════════════════════════════════════════════════
-   CALENDAR VIEW (Upgrade 3)
-═══════════════════════════════════════════════════════════ */
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-.cal-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);}
-.cal-nav-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
-.cal-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.cal-toggle button{padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary);}
-.cal-toggle button.active{background:var(--primary);color:#fff;}
-.cal-week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-.cal-day-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);min-height:120px;overflow:hidden;}
-.cal-day-col.today{border-color:var(--primary);border-width:2px;}
-.cal-day-header{padding:6px 8px;border-bottom:1px solid var(--border-light);background:var(--surface2);text-align:center;}
-.cal-day-header .day-num{font-size:18px;font-weight:800;color:var(--text-primary);display:block;}
-.cal-day-header .day-name{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
-.cal-day-events{padding:4px;}
-.cal-event{border-radius:6px;padding:4px 6px;margin-bottom:3px;font-size:11px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;}
-.cal-event:hover{filter:brightness(0.9);transform:translateY(-1px);}
-.cal-event .ev-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cal-event .ev-meta{font-size:10px;opacity:0.85;margin-top:1px;}
-.cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-.cal-month-cell{background:var(--surface);border:1px solid var(--border-light);border-radius:8px;min-height:80px;overflow:hidden;}
-.cal-month-cell.today{border-color:var(--primary);border-width:2px;}
-.cal-month-cell.other-month{background:var(--surface2);opacity:0.55;}
-.cal-month-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
-.cal-month-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);padding:6px 0;text-transform:uppercase;}
-.cal-month-day-num{font-size:12px;font-weight:700;padding:4px 6px;color:var(--text-secondary);}
-.cal-month-cell.today .cal-month-day-num{color:var(--primary);}
-.cal-more-badge{font-size:10px;color:var(--primary);font-weight:700;padding:2px 6px;cursor:pointer;text-align:center;}
-.cal-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
-.cal-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;}
-.cal-stat-card .stat-num{font-size:22px;font-weight:800;color:var(--text-primary);}
-.cal-stat-card .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;}
-.cal-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);}
-@media(max-width:768px){.cal-week-grid{grid-template-columns:1fr;}.cal-event .ev-meta{display:none;}}
-/* Roadmap task groups (Upgrade 2) */
-.rm-task-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border-light);border-radius:7px;margin-bottom:4px;cursor:pointer;transition:var(--transition-fast);}
-.rm-task-item:hover{border-color:var(--primary);background:var(--primary-lighter);}
 </style>
 </head>
 <body>
@@ -1007,6 +945,9 @@ td.td-action{white-space:nowrap;}
       <input type="text" class="form-input" id="login-username"
         placeholder="tu usuario"
         autocomplete="username"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
         onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
     </div>
     <div class="form-group">
@@ -1051,17 +992,20 @@ td.td-action{white-space:nowrap;}
         <div class="nav-item" data-view="kanban" onclick="navigate('kanban')">
           <span class="nav-icon">⬛</span><span>Kanban</span>
         </div>
-        <div class="nav-item" data-view="roadmap" onclick="navigate('roadmap')">
-          <span class="nav-icon">🗺️</span><span>Roadmap</span>
-        </div>
         <div class="nav-item" data-view="calendar" onclick="navigate('calendar')">
           <span class="nav-icon">📆</span><span>Calendario</span>
         </div>
+        <div class="nav-item" data-view="roadmap" onclick="navigate('roadmap')">
+          <span class="nav-icon">🗺️</span><span>Roadmap</span>
+        </div>
         <div class="nav-item" data-view="planeacion" onclick="navigate('planeacion')">
-          <span class="nav-icon">📅</span><span>Planeación Q</span>
+          <span class="nav-icon">🎯</span><span>OKRs Transversales</span>
         </div>
         <div class="nav-item" data-view="docs" onclick="navigate('docs')">
           <span class="nav-icon">📚</span><span>Documentos</span>
+        </div>
+        <div class="nav-item" id="nav-my-requests" data-view="myRequests" onclick="navigate('myRequests')" style="display:none">
+          <span class="nav-icon">📬</span><span>Mis Solicitudes</span>
         </div>
       </div>
       <div class="nav-section" id="admin-nav" style="display:none">
@@ -1102,11 +1046,7 @@ td.td-action{white-space:nowrap;}
       <button class="btn-icon" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
       <div class="topbar-title" id="topbar-title">Inicio</div>
       <div class="topbar-actions" id="topbar-actions">
-        <div id="autosave-indicator" class="state-saved" title="Estado de guardado" onclick="openFileSyncPanel()">
-          <div class="sync-pulse"></div>
-          <span id="autosave-label">Guardado</span>
-        </div>
-        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive" style="display:none">
+        <div id="file-sync-btn" onclick="openFileSyncPanel()" title="Sincronización con OneDrive">
           <span class="sync-dot yellow" id="sync-dot"></span>
           <span id="sync-label">Sin archivo</span>
         </div>
@@ -1122,6 +1062,7 @@ td.td-action{white-space:nowrap;}
       <div id="view-intake" class="hidden"></div>
       <div id="view-backlog" class="hidden"></div>
       <div id="view-kanban" class="hidden"></div>
+      <div id="view-calendar" class="hidden"></div>
       <div id="view-dashboard" class="hidden"></div>
       <div id="view-heatmap" class="hidden"></div>
       <div id="view-library" class="hidden"></div>
@@ -1130,7 +1071,6 @@ td.td-action{white-space:nowrap;}
       <div id="view-reports" class="hidden"></div>
       <div id="view-config" class="hidden"></div>
       <div id="view-planeacion" class="hidden"></div>
-      <div id="view-calendar" class="hidden"></div>
     </div>
   </div>
 
@@ -1146,17 +1086,17 @@ td.td-action{white-space:nowrap;}
       <div class="bnav-item" data-view="kanban" onclick="navigate('kanban')">
         <span class="bnav-icon">⬛</span><span>Kanban</span>
       </div>
+      <div class="bnav-item" data-view="calendar" onclick="navigate('calendar')">
+        <span class="bnav-icon">📆</span><span>Cal.</span>
+      </div>
       <div class="bnav-item" data-view="roadmap" onclick="navigate('roadmap')">
         <span class="bnav-icon">🗺️</span><span>Roadmap</span>
-      </div>
-      <div class="bnav-item" data-view="calendar" onclick="navigate('calendar')">
-        <span class="bnav-icon">📆</span><div>Calendario</div>
       </div>
       <div class="bnav-item" data-view="docs" onclick="navigate('docs')">
         <span class="bnav-icon">📚</span><span>Docs</span>
       </div>
       <div class="bnav-item" data-view="planeacion" onclick="navigate('planeacion')">
-        <span class="bnav-icon">📅</span><span>Plan Q</span>
+        <span class="bnav-icon">🎯</span><span>OKRs</span>
       </div>
     </div>
   </nav>
@@ -1189,7 +1129,7 @@ td.td-action{white-space:nowrap;}
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">Usuario</label>
-        <input type="text" class="form-input" id="auth-username" placeholder="Tu nombre de usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+        <input type="text" class="form-input" id="auth-username" placeholder="Tu nombre de usuario" autocomplete="username" autocapitalize="none" autocorrect="off" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
       </div>
       <div class="form-group">
         <label class="form-label">Contraseña</label>
@@ -1206,7 +1146,7 @@ td.td-action{white-space:nowrap;}
 
 <!-- Quick task modal -->
 <div class="modal-overlay" id="modal-quick" onclick="closeQuickModal(event)">
-  <div class="modal" style="max-width:460px" onclick="event.stopPropagation()">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">⚡ Tarea Interna Rápida</div>
       <button class="modal-close" onclick="closeQuickModal()">✕</button>
@@ -1225,23 +1165,6 @@ td.td-action{white-space:nowrap;}
         <select class="form-select" id="qt-priority">
           <option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option>
         </select>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group">
-          <label class="form-label">Fecha requerida</label>
-          <input type="date" class="form-input" id="qt-needed-by">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Duración estimada</label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input type="number" class="form-input" id="qt-duration" min="1" placeholder="0" style="width:70px">
-            <select class="form-select" id="qt-duration-unit" style="flex:1">
-              <option value="días">días</option>
-              <option value="horas">horas</option>
-              <option value="semanas">semanas</option>
-            </select>
-          </div>
-        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Asignar a</label>
@@ -1293,11 +1216,11 @@ td.td-action{white-space:nowrap;}
   <div class="modal" style="max-width:580px;width:96%" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">🗺️ Agregar al Roadmap</div>
-      <button class="modal-close" onclick="_editingIniId=null;document.getElementById('ini-tabs-wrapper').style.display='flex';closeModal('modal-new-initiative')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-new-initiative')">✕</button>
     </div>
     <div class="modal-body" style="padding:16px">
       <!-- Tabs -->
-      <div id="ini-tabs-wrapper" style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
+      <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
         <button id="ini-tab-0" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="switchIniTab(0)">🚀 Nueva Iniciativa</button>
         <button id="ini-tab-1" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="switchIniTab(1)">📌 Nuevo Milestone</button>
       </div>
@@ -1476,6 +1399,17 @@ td.td-action{white-space:nowrap;}
         <button class="btn btn-secondary btn-full" onclick="createNewDataFile()">✨ Crear nuevo archivo de datos</button>
         <button class="btn btn-secondary btn-full" onclick="manualSyncNow()" id="btn-sync-now" style="display:none">↕️ Sincronizar ahora</button>
         <button class="btn btn-ghost btn-full" onclick="exportDataJSON()">⬇️ Exportar datos como JSON (respaldo)</button>
+          <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px">🗄️ RESTAURAR BACKUP LOCAL</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="restoreFromBackup(1)">Backup 1 (más reciente)</button>
+              <button class="btn btn-ghost btn-sm" onclick="restoreFromBackup(2)">Backup 2</button>
+              <button class="btn btn-ghost btn-sm" onclick="restoreFromBackup(3)">Backup 3</button>
+            </div>
+            <div id="backup-ts" style="font-size:10px;color:var(--text-muted);margin-top:4px">
+              ${localStorage.getItem('sorh_backup_ts')?'Último backup: '+new Date(localStorage.getItem('sorh_backup_ts')).toLocaleString('es-MX'):'Sin backups aún'}
+            </div>
+          </div>
         <button class="btn btn-ghost btn-full" onclick="document.getElementById('import-json-input').click()">⬆️ Importar JSON</button>
         <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importDataJSON(this)">
         <button class="btn btn-danger btn-sm" onclick="disconnectFile()" id="btn-disconnect" style="display:none;margin-top:4px">✕ Desconectar archivo</button>
@@ -1518,6 +1452,7 @@ td.td-action{white-space:nowrap;}
           <option value="admin">🔑 Administrador — acceso completo</option>
           <option value="team">👤 Equipo — crear y gestionar solicitudes</option>
           <option value="viewer">👁 Visualizador — solo lectura</option>
+          <option value="requester">📬 Solicitante — solo puede levantar y ver sus propias solicitudes</option>
         </select>
       </div>
     </div>
@@ -1718,21 +1653,13 @@ let state = {
   areaRoadmaps: [],
   areaFilter: '',
   quarterFilter: '',
-  planeacionView: 'cards',
-  // Upgrade 1
-  auditLog: [],
-  // Upgrade 3
-  calendarView: 'week',
-  calendarDate: null,
-  calendarFilter: {owner:'',category:'',status:'',priority:'',initiative:'',eventType:''}
+  planeacionView: 'cards'
 };
 
 // ═══════════════════════════════════════════════════════════
 // LOCAL STORAGE
 // ═══════════════════════════════════════════════════════════
 function saveState() {
-  // Legacy sync function — now delegates to DataProvider.local + markDirty
-  markDirty('state', 'global');
   try {
     localStorage.setItem('sorh_requests', JSON.stringify(state.requests));
     localStorage.setItem('sorh_initiatives', JSON.stringify(state.initiatives));
@@ -1760,10 +1687,7 @@ function loadState() {
     const nn = localStorage.getItem('sorh_notifications');
     if(nn) state.notifications = JSON.parse(nn);
     const ar = localStorage.getItem('sorh_area_roadmaps');
-    const al = localStorage.getItem('sorh_audit_log');
     if(ar) state.areaRoadmaps = JSON.parse(ar);
-    if(al) state.auditLog = JSON.parse(al);
-    if(!state.auditLog) state.auditLog = [];
   } catch(e) {}
 }
 
@@ -2252,6 +2176,27 @@ let _editingIniId = null; // tracks initiative being edited
 let _lastSaved = null;
 let _lastFileTimestamp = null; // for conflict detection
 let _isSaving = false;         // guard against concurrent autosave
+let _otherTabActive = false;   // BroadcastChannel multi-tab guard
+
+// ── Multi-tab coordination ─────────────────────────────────
+const _sorhChannel = (typeof BroadcastChannel !== 'undefined')
+  ? new BroadcastChannel('sorh_tab_sync') : null;
+if (_sorhChannel) {
+  _sorhChannel.onmessage = (e) => {
+    if (e.data === 'tab_open') {
+      _otherTabActive = true;
+      const b = document.getElementById('multitab-banner');
+      if (b) b.style.display = 'block';
+      _sorhChannel.postMessage('tab_ack');
+    } else if (e.data === 'tab_close') {
+      _otherTabActive = false;
+      const b = document.getElementById('multitab-banner');
+      if (b) b.style.display = 'none';
+    }
+  };
+  window.addEventListener('load',  () => _sorhChannel.postMessage('tab_open'));
+  window.addEventListener('unload',() => _sorhChannel.postMessage('tab_close'));
+}
 
 // ─── Session timeout ───────────────────────────────────────
 const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
@@ -2363,8 +2308,22 @@ async function loadFromFile(notify=true) {
 async function saveToFile() {
   if (!_fileHandle) return;
   if (_isSaving) return;   // prevent concurrent saves
+  if (_otherTabActive) { toast('⚠️ Múltiples pestañas','Cierra las otras pestañas de la app antes de guardar.','warning'); return; }
   _isSaving = true;
   try {
+    // ── Rolling localStorage backup (last 3 snapshots) ──────
+    try {
+      const snap = JSON.stringify({
+        v:2, saved_at:new Date().toISOString(), saved_by:state.currentUser||'system',
+        requests:state.requests, initiatives:state.initiatives,
+        config:state.config, documents:state.documents,
+        areaRoadmaps:state.areaRoadmaps
+      });
+      localStorage.setItem('sorh_backup_3', localStorage.getItem('sorh_backup_2')||'');
+      localStorage.setItem('sorh_backup_2', localStorage.getItem('sorh_backup_1')||'');
+      localStorage.setItem('sorh_backup_1', snap);
+      localStorage.setItem('sorh_backup_ts', new Date().toISOString());
+    } catch(bErr) { /* storage quota — silently skip */ }
     const perm = await _fileHandle.queryPermission({mode:'readwrite'});
     if (perm !== 'granted') {
       const granted = await _fileHandle.requestPermission({mode:'readwrite'});
@@ -2399,7 +2358,7 @@ async function saveToFile() {
     const data = {
       v: 2, saved_at: nowTs, saved_by: state.currentUser||'system',
       requests: state.requests, initiatives: state.initiatives,
-      config: state.config, documents: state.documents,
+      config: (()=>{ const c={...state.config}; if(c.users) c.users=c.users.map(u=>{const {password,password_hashed,...rest}=u;return rest;}); return c; })(), documents: state.documents,
       notifications: (state.notifications||[]).slice(-100),
       areaRoadmaps: state.areaRoadmaps
     };
@@ -2469,8 +2428,10 @@ function updateSyncUI() {
   const stText = document.getElementById('filesync-status-text');
   const stFile = document.getElementById('filesync-filename');
   if (!dot || !label) return;
+  const noSyncBanner = document.getElementById('nosync-banner');
   if (_fileHandle) {
     dot.className='sync-dot green'; label.textContent=_fileHandle.name;
+    if(noSyncBanner) noSyncBanner.style.display='none';
     if(btnNow) btnNow.style.display='';
     if(btnDis) btnDis.style.display='';
     if(stCard) stCard.style.background='#F0FDF4'; stCard.style.borderColor='#86EFAC';
@@ -2482,6 +2443,7 @@ function updateSyncUI() {
     if(stFile) stFile.textContent='Usa Chrome o Edge. Puedes exportar/importar JSON manualmente.';
   } else {
     dot.className='sync-dot yellow'; label.textContent='Sin archivo';
+    if(noSyncBanner && (state.isAdmin||state.isTeam)) noSyncBanner.style.display='block';
     if(btnNow) btnNow.style.display='none';
     if(btnDis) btnDis.style.display='none';
     if(stCard) { stCard.style.background='#FEFCE8'; stCard.style.borderColor='#FDE68A'; }
@@ -2492,10 +2454,27 @@ function updateSyncUI() {
 
 function openFileSyncPanel() { updateSyncUI(); openModal('modal-filesync'); }
 
+function restoreFromBackup(n) {
+  const snap = localStorage.getItem('sorh_backup_'+n);
+  if(!snap) { toast('⚠️ Sin backup','No hay backup disponible en esa posición.','warning'); return; }
+  try {
+    const data = JSON.parse(snap);
+    const ts = data.saved_at ? new Date(data.saved_at).toLocaleString('es-MX') : 'fecha desconocida';
+    if(!confirm('¿Restaurar backup del '+ts+'?\nLos cambios no guardados se perderán.')) return;
+    if(data.requests)     state.requests     = mergeById(state.requests,     data.requests);
+    if(data.initiatives)  state.initiatives  = mergeById(state.initiatives,  data.initiatives);
+    if(data.documents)    state.documents    = mergeById(state.documents,    data.documents);
+    if(data.areaRoadmaps) state.areaRoadmaps = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+    saveState();
+    toast('✅ Backup restaurado','Datos del '+ts,'success');
+    navigate(state.currentView);
+  } catch(e) { toast('⚠️ Error','El backup está corrupto.','warning'); }
+}
 function exportDataJSON() {
+  const safeConfig = (()=>{ const c={...state.config}; if(c.users) c.users=c.users.map(u=>{const {password,password_hashed,...rest}=u;return rest;}); return c; })();
   const data = {
     v:2, saved_at:new Date().toISOString(), saved_by:state.currentUser||'system',
-    requests:state.requests, initiatives:state.initiatives, config:state.config,
+    requests:state.requests, initiatives:state.initiatives, config:safeConfig,
     documents:state.documents, notifications:(state.notifications||[]).slice(-100),
     areaRoadmaps:state.areaRoadmaps
   };
@@ -2590,8 +2569,10 @@ async function doLogin() {
   }
   const user = candidate;
   if(errEl) errEl.style.display='none';
-  state.isAdmin = user.role === 'admin';
-  state.isTeam  = user.role === 'admin' || user.role === 'team';
+  state.isAdmin     = user.role === 'admin';
+  state.isTeam      = user.role === 'admin' || user.role === 'team';
+  state.isRequester = user.role === 'requester';
+  state.isViewer    = user.role === 'viewer';
   state.currentUser = user.name;
   state.currentUserId = user.id;
   touchSession();
@@ -2599,7 +2580,7 @@ async function doLogin() {
   updateUserUI();
   updateNavBadges();
   hideLoginScreen();
-  navigate('home');
+  navigate(state.isRequester ? 'intake' : 'home');
   toast('👋 Bienvenido','Hola, '+user.name+'! Sesión iniciada correctamente.','success');
 }
 
@@ -2658,8 +2639,10 @@ async function doAuth() {
     }
   }
   if(ok) {
-    state.isAdmin = candidate.role === 'admin';
-    state.isTeam  = candidate.role === 'admin' || candidate.role === 'team';
+    state.isAdmin     = candidate.role === 'admin';
+    state.isTeam      = candidate.role === 'admin' || candidate.role === 'team';
+    state.isRequester = candidate.role === 'requester';
+    state.isViewer    = candidate.role === 'viewer';
     state.currentUser = candidate.name;
     state.currentUserId = candidate.id;
     touchSession();
@@ -2689,7 +2672,23 @@ function handleUserClick() {
     showLoginScreen();
   }
 }
+function updateRequesterNav() {
+  // Show/hide nav items based on requester role
+  const isReq = state.isRequester;
+  const navItems = document.querySelectorAll('.nav-item[data-view]');
+  navItems.forEach(el => {
+    const v = el.dataset.view;
+    if(isReq) {
+      el.style.display = ['intake','myRequests'].includes(v) ? '' : 'none';
+    } else {
+      el.style.display = '';
+    }
+  });
+  const msNav = document.getElementById('nav-my-requests');
+  if(msNav) msNav.style.display = isReq ? '' : 'none';
+}
 function updateUserUI() {
+  updateRequesterNav();
   const avatar = document.getElementById('user-avatar');
   const name = document.getElementById('user-name');
   const role = document.getElementById('user-role');
@@ -2715,18 +2714,27 @@ function updateUserUI() {
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 const VIEW_TITLES = {
-  home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',calendar:'📆 Calendario',
+  home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',calendar:'📆 Calendario de Tareas',
   dashboard:'Dashboard Ejecutivo',heatmap:'Bandwidth del Equipo',library:'Biblioteca Documental',
   roadmap:'Roadmap',reports:'Reporte Semanal',config:'Configuración',
   docs:'Documentos para Consulta',
-  planeacion:'📅 Planeación Q — Roadmaps Transversales'
+  planeacion:'🎯 OKRs Transversales'
 };
 function navigate(view) {
   if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
   const adminViews = ['dashboard','heatmap','library','reports','config'];
+  const requesterViews = ['intake']; // requester can ONLY access these
+  const teamViews = ['backlog','kanban','calendar','roadmap','docs','planeacion','home','intake'];
+  if(state.isRequester && !requesterViews.includes(view)) {
+    // Requester sees only their own requests view
+    view = 'myRequests';
+  }
   if(adminViews.includes(view) && !state.isAdmin) {
     toast('🔒 Acceso restringido','Esta sección requiere acceso de administrador.','warning');
     openAuthModal(); return;
+  }
+  if(state.isViewer && ['config'].includes(view)) {
+    toast('🔒 Sin permiso','Los visualizadores no pueden acceder a configuración.','warning'); return;
   }
   state.currentView = view;
   // Hide all views
@@ -2744,8 +2752,8 @@ function navigate(view) {
   document.getElementById('topbar-title').innerHTML = VIEW_TITLES[view]||view;
   // Render
   const renders = {
-    home:renderHome, intake:renderIntake, backlog:renderBacklog, calendar:renderCalendar,
-    kanban:renderKanban, dashboard:renderDashboard, heatmap:renderHeatmap,
+    home:renderHome, intake:renderIntake, myRequests:renderMyRequests, backlog:renderBacklog,
+    kanban:renderKanban, calendar:renderCalendar, dashboard:renderDashboard, heatmap:renderHeatmap,
     library:renderLibrary, roadmap:renderRoadmap, reports:renderReports, config:renderConfig,
     docs:renderDocs,
     planeacion:renderPlaneacion
@@ -2979,9 +2987,12 @@ function renderHome() {
         <div class="categories-grid">${catCards}</div>
       </div>
       <div>
-        <div class="day-panel">
-          <div class="day-panel-header">
-            <div class="day-panel-title">📅 Resumen del día</div>
+        <div class="day-panel" style="cursor:pointer" onclick="navigate('kanban')">
+          <div class="day-panel-header" style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="day-panel-title">📅 Resumen del día</div>
+              <span style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">Ver Kanban →</span>
+            </div>
             <div class="day-panel-date">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</div>
           </div>
           <div class="day-panel-body">
@@ -2993,11 +3004,11 @@ function renderHome() {
               <span class="day-stat-label">⚙️ En proceso</span>
               <span class="day-stat-val">${inProgressCount}</span>
             </div>
-            <div class="day-stat">
+            <div class="day-stat" onclick="navigate('kanban')">
               <span class="day-stat-label">✅ Por validar</span>
               <span class="day-stat-val">${pendingVal}</span>
             </div>
-            <div class="day-stat">
+            <div class="day-stat" onclick="navigate('kanban')">
               <span class="day-stat-label">⏰ Vencen esta semana</span>
               <span class="day-stat-val" style="color:${upcomingReqs>0?'var(--error)':'var(--success)'}">${upcomingReqs}</span>
             </div>
@@ -3095,10 +3106,20 @@ function renderDocs() {
 
   if(tab === 0) {
     // BIBLIOTECA
-    const docCards = visibleDocs.map((doc, di) => {
-      const realIdx = allDocs.indexOf(doc);
-      const latest = doc.versions && doc.versions.length > 0 ? doc.versions[doc.versions.length-1] : null;
-      const histRows = (doc.versions||[]).slice().reverse().map(v=>`
+    const DOC_CATEGORIES = ['Procesos & SOP','Manuales','Producto Estándar VCN','Otros'];
+    const grouped = {};
+    DOC_CATEGORIES.forEach(c=>grouped[c]=[]);
+    visibleDocs.forEach(doc=>{
+      const cat = doc.doc_category || 'Otros';
+      if(grouped[cat] !== undefined) grouped[cat].push(doc);
+      else grouped['Otros'].push(doc);
+    });
+    const docCards = DOC_CATEGORIES.filter(c=>grouped[c].length>0).map(cat=>{
+      const catIcons = {'Procesos & SOP':'⚙️','Manuales':'📖','Producto Estándar VCN':'📦','Otros':'📁'};
+      const cards = grouped[cat].map(doc => {
+        const realIdx = allDocs.indexOf(doc);
+        const latest = doc.versions && doc.versions.length > 0 ? doc.versions[doc.versions.length-1] : null;
+        const histRows = (doc.versions||[]).slice().reverse().map(v=>`
         <tr>
           <td style="padding:6px 8px;font-size:11px;font-weight:700;color:var(--primary)">v${v.version}</td>
           <td style="padding:6px 8px;font-size:11px;color:var(--text-secondary)">${v.date}</td>
@@ -3106,7 +3127,7 @@ function renderDocs() {
           <td style="padding:6px 8px;font-size:11px;color:var(--text-muted)">${v.notes||'—'}</td>
           <td style="padding:6px 8px">${v.url&&v.url!='#'?`<a href="${v.url}" target="_blank" style="font-size:11px;color:var(--primary);font-weight:600">Abrir →</a>`:'<span style="font-size:10px;color:var(--text-muted)">Sin link</span>'}</td>
         </tr>`).join('');
-      return `
+        return `
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,var(--surface2),var(--surface));border-bottom:1px solid var(--border-light)">
             <div style="width:44px;height:44px;background:var(--primary-lighter);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📄</div>
@@ -3150,6 +3171,15 @@ function renderDocs() {
             </div>
           </details>`:''}
         </div>`;
+      }).join('');
+      return `<div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 16px;background:var(--primary-lighter);border-radius:var(--radius);border:1px solid var(--primary-light)">
+          <span style="font-size:18px">${catIcons[cat]||'📁'}</span>
+          <span style="font-size:14px;font-weight:700;color:var(--primary)">${cat}</span>
+          <span style="margin-left:auto;background:var(--primary-light);color:var(--primary);font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px">${grouped[cat].length} doc${grouped[cat].length!==1?'s':''}</span>
+        </div>
+        ${cards}
+      </div>`;
     }).join('') || '<div style="text-align:center;padding:48px 20px;color:var(--text-muted)"><div style="font-size:40px;margin-bottom:12px">📂</div><div style="font-size:15px;font-weight:600">No hay documentos publicados aún</div></div>';
 
     const addDocHtml = isAdmin ? `
@@ -3157,6 +3187,7 @@ function renderDocs() {
         <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:14px">📄 Agregar nuevo documento</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Nombre *</label><input type="text" class="form-input" id="nd2-name" placeholder="Nombre del documento" style="font-size:13px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Categoría</label><select class="form-select" id="nd2-cat" style="font-size:13px"><option value="Procesos &amp; SOP">⚙️ Procesos &amp; SOP</option><option value="Manuales">📖 Manuales</option><option value="Producto Estándar VCN">📦 Producto Estándar VCN</option><option value="Otros" selected>📁 Otros</option></select></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Descripción</label><input type="text" class="form-input" id="nd2-desc" placeholder="Descripción breve" style="font-size:13px"></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Versión</label><input type="text" class="form-input" id="nd2-ver" placeholder="1.0" style="font-size:12px"></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Fecha</label><input type="date" class="form-input" id="nd2-date" style="font-size:12px" value="${new Date().toISOString().split('T')[0]}"></div>
@@ -3342,7 +3373,9 @@ function saveNewDoc() {
   if(!name) { toast('⚠️ Requerido','Ingresa el nombre del documento.','warning'); return; }
   if(!url) { toast('⚠️ Requerido','Ingresa el link al documento.','warning'); return; }
   if(!state.documents) state.documents = [];
-  state.documents.push({ id:`doc-${Date.now()}`, name, description:desc, published,
+  const docCatEl = document.getElementById('nd2-cat');
+  const docCategory = docCatEl ? docCatEl.value : 'Otros';
+  state.documents.push({ id:`doc-${Date.now()}`, name, description:desc, published, doc_category:docCategory,
     versions:[{ version:ver, date:date||new Date().toISOString().split('T')[0], url, notes, updated_by:state.currentUser||'Admin' }]
   });
   saveState();
@@ -3508,6 +3541,50 @@ function startIntakeWithCategory(cat) {
   intakeData.category = cat;
   intakeData.requester_name = state.currentUser || intakeData.requester_name;
   navigate('intake');
+}
+
+function renderMyRequests() {
+  const myReqs = (state.requests||[]).filter(r =>
+    r.requester_name === state.currentUser ||
+    r.requester_id   === state.currentUserId
+  ).sort((a,b)=>b.created_at.localeCompare(a.created_at));
+
+  const statusColor = {'Backlog':'#6B7280','En proceso':'var(--primary)','Ejecutada':'#D97706',
+    'Validada':'var(--success)','Concluida':'var(--success)','Cancelada':'var(--error)',
+    'Requiere Cambios':'#7C3AED'};
+
+  const rows = myReqs.length ? myReqs.map(r=>`
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+      padding:12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);
+      cursor:pointer" onclick="openTask('${r.id}')">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${r.title}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+          ${r.id} · ${r.category} · ${fmtDate(r.created_at)}
+        </div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:var(--radius-full);
+        background:${statusColor[r.status]||'#6B7280'}20;color:${statusColor[r.status]||'#6B7280'};
+        border:1px solid ${statusColor[r.status]||'#6B7280'}40;white-space:nowrap">${r.status}</span>
+      <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">
+        ${r.needed_by?'🗓 '+fmtDate(r.needed_by):''}
+      </span>
+    </div>`).join('') :
+    '<div style="text-align:center;padding:48px;color:var(--text-muted)">No tienes solicitudes registradas aún.</div>';
+
+  document.getElementById('view-intake').innerHTML = `
+    <div style="max-width:660px;margin:0 auto">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📬 Mis Solicitudes</div>
+            <div class="card-subtitle">Historial de solicitudes que has enviado al equipo de Strategic Ops</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="navigate('intake')">+ Nueva Solicitud</button>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:8px">${rows}</div>
+      </div>
+    </div>`;
 }
 
 function renderIntake() {
@@ -3706,9 +3783,13 @@ function submitIntake() {
         <div style="font-size:20px;font-weight:800;color:var(--primary);font-family:monospace">${newReq.id}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Guarda este ID para dar seguimiento a tu solicitud</div>
       </div>
+      <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#166534">
+        ✅ El equipo de Strategic Ops revisará tu solicitud pronto. Puedes dar seguimiento usando el ID de arriba.
+      </div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-secondary" onclick="openTask('${newReq.id}')">📋 Ver mi solicitud</button>
-        <button class="btn btn-primary" onclick="navigate('home')">🏠 Ir al inicio</button>
+        <button class="btn btn-secondary" onclick="openTask('${newReq.id}')">📋 Ver detalles</button>
+        ${state.isRequester?`<button class="btn btn-secondary" onclick="navigate('myRequests')">📬 Mis solicitudes</button>`:''}
+        <button class="btn btn-primary" onclick="navigate(state.isRequester?'myRequests':'home')">🏠 Ir al inicio</button>
       </div>
     </div>
   `;
@@ -3813,10 +3894,15 @@ function renderPlaneacion() {
     <div style="max-width:1100px;margin:0 auto">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Roadmaps Transversales</h2>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);margin-bottom:4px">OKRs Transversales</h2>
           <div style="font-size:13px;color:var(--text-muted)">${total} iniciativa${total!==1?'s':''} ${statusSummary?'— '+statusSummary:''}</div>
         </div>
-        ${canEdit?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
+        <div style="display:flex;gap:8px;align-items:center">
+          ${canEdit?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
+          <button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
+          <input type="file" id="okr-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processOKRUpload(this)">
+          <button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>
+        </div>
       </div>
 
       <!-- Area filter chips -->
@@ -4158,6 +4244,7 @@ function deleteRequest(id) {
 }
 
 function deleteInitiative(id) {
+  if(!state.isAdmin) { toast('🔒 Sin permiso','Solo administradores pueden eliminar iniciativas.','warning'); return; }
   const ini = state.initiatives.find(i=>i.id===id);
   if(!ini) return;
   if(!confirm(`¿Eliminar la iniciativa "${ini.name}"?\nEsta acción no se puede deshacer.`)) return;
@@ -4169,7 +4256,14 @@ function deleteInitiative(id) {
 
 function renderBacklog() {
   const f = state.backlogFilter;
+  // "Mis Tareas" quick filter for team members
+  const myTasksActive = state.backlogFilter._myTasks;
   let reqs = state.requests.filter(r=>{
+    if(myTasksActive) {
+      const isOwner = r.assigned_owner === state.currentUser ||
+        (r.milestones||[]).some(m=>m.owner===state.currentUser && m.status!=='Completado');
+      if(!isOwner) return false;
+    }
     if(f.status && r.status!==f.status) return false;
     if(f.category && r.category!==f.category) return false;
     if(f.owner) { if(f.owner==='Sin asignar'&&r.assigned_owner) return false; if(f.owner!=='Sin asignar'&&r.assigned_owner!==f.owner) return false; }
@@ -4218,7 +4312,16 @@ function renderBacklog() {
         <option value="">Todas las prioridades</option>${prioOpts}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};renderBacklog()">✕ Limpiar</button>
+      ${state.isTeam||state.isAdmin ? `<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;renderBacklog()" style="${myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)'};border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">👤 Mis Tareas</button>` : ''}
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary)">\${reqs.length} solicitud\${reqs.length!==1?'es':''}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="uploadBacklogFileClick()" title="Cargar backlog desde archivo Excel/CSV">⬆️ Cargar Backlog</button>
+        <input type="file" id="backlog-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processBacklogUpload(this)">
+        <button class="btn btn-secondary btn-sm" onclick="downloadBacklogExcel()" title="Descargar backlog como Excel">⬇️ Descargar Excel</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table>
@@ -4243,28 +4346,10 @@ function renderKanban() {
   const catOpts = ['', ...Object.keys(CATEGORIES)].map(c=>`<option value="${c}" ${kf.category===c?'selected':''}>${c||'Todas las categorías'}</option>`).join('');
   const prioOpts = ['', ...PRIORITIES].map(p=>`<option value="${p}" ${kf.priority===p?'selected':''}>${p||'Todas las prioridades'}</option>`).join('');
 
-  // Resolve milestone name for banner
-  let msBannerHtml = '';
-  if(kf.milestone) {
-    let msName = kf.milestone;
-    if(kf._milestoneIniId) {
-      const ini = state.initiatives.find(x=>x.id===kf._milestoneIniId);
-      if(ini) {
-        const ms = ini.milestones.find(m=>(m.id||m.name)===kf.milestone);
-        if(ms) msName = ms.name + (ini ? ` — ${ini.name}` : '');
-      }
-    }
-    msBannerHtml = `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <span style="font-size:12px;color:#1D4ED8">🔗 Filtrando por milestone: <strong>${msName}</strong></span>
-      <button onclick="state.kanbanFilter.milestone=null;state.kanbanFilter._milestoneIniId=null;renderKanban()" style="background:none;border:none;cursor:pointer;color:#1D4ED8;font-size:12px;padding:0;margin-left:auto">✕ Quitar filtro</button>
-    </div>`;
-  }
-
   let reqs = state.requests.filter(r=>{
     if(kf.owner && r.assigned_owner!==kf.owner) return false;
     if(kf.category && r.category!==kf.category) return false;
     if(kf.priority && r.requester_priority!==kf.priority && r.admin_priority!==kf.priority) return false;
-    if(kf.milestone && r.linked_milestone_id !== kf.milestone) return false;
     return true;
   });
 
@@ -4276,6 +4361,7 @@ function renderKanban() {
       const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📝'};
       return `
         <div class="kanban-card" draggable="true" id="kc-${r.id}"
+          style="${(()=>{const bl=(r.activity_log||[]).some(e=>e.type==='bloqueador'&&e.resolved!==true);return bl?'border-left:3px solid #EF4444':''})()}"
           ondragstart="dragStart(event,'${r.id}')"
           ondragend="dragEnd(event)"
           onclick="openTask('${r.id}')">
@@ -4284,10 +4370,10 @@ function renderKanban() {
             ${priorityBadge(r.admin_priority||r.requester_priority)}
           </div>
           <div class="kc-title">${r.title}</div>
+          ${(()=>{ const blocked=(r.activity_log||[]).some(e=>e.type==='bloqueador'&&e.resolved!==true); return blocked?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 6px;margin-bottom:4px">🔴 BLOQUEADA</div>':''; })()}
           <div class="kc-meta">
             <span class="badge" style="background:${catInfo.bg};color:${catInfo.color};font-size:10px">${catInfo.icon} ${r.category.split(' ')[0]}</span>
-            ${r.linked_initiative_id?`<span class="badge" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-size:10px">🗺️ ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,15)}</span>`:''}
-            ${(()=>{if(!r.linked_milestone_id) return '';const ini=state.initiatives.find(x=>x.id===r.linked_initiative_id);const ms=ini?(ini.milestones||[]).find(m=>(m.id||m.name)===r.linked_milestone_id):null;return ms?`<span class="badge" style="background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;font-size:10px">◆ ${ms.name.substring(0,18)}</span>`:''})()}
+            ${r.linked_initiative_id?`<span class="badge" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-size:10px">🔗 ${(state.initiatives.find(x=>x.id===r.linked_initiative_id)||{name:'?'}).name.substring(0,15)}</span>`:''}
           </div>
           <div class="kc-footer">
             <span class="kc-owner">${r.assigned_owner||'—'}</span>
@@ -4316,7 +4402,6 @@ function renderKanban() {
   }).join('');
 
   document.getElementById('view-kanban').innerHTML = `
-    ${msBannerHtml}
     <div class="filters-bar" style="margin-bottom:16px">
       <select class="filter-select" onchange="state.kanbanFilter.owner=this.value;renderKanban()">
         ${ownerOpts}
@@ -4327,7 +4412,7 @@ function renderKanban() {
       <select class="filter-select" onchange="state.kanbanFilter.priority=this.value;renderKanban()">
         ${prioOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:'',milestone:null,_milestoneIniId:null};renderKanban()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:''};renderKanban()">✕ Limpiar</button>
       ${state.isTeam?`<button class="btn btn-primary btn-sm" onclick="openQuickModal()" style="margin-left:auto">⚡ Tarea Interna</button>`:''}
     </div>
     <div id="kanban-board">${cols}</div>
@@ -4359,14 +4444,9 @@ function dropCard(e, newStatus) {
   if(req && req.status!==newStatus) {
     const oldStatus = req.status;
     req.status = newStatus;
-    const now_dc = new Date().toISOString();
-    req.updated_at = now_dc;
-    req.updated_by = state.currentUser || 'Sistema';
-    req.version = (req.version||1) + 1;
-    req.activity_log.push({type:'status', author:state.currentUser||'Sistema', content:`Cambio de estado: ${oldStatus} → ${newStatus}`, created_at:now_dc});
-    addAuditLog('request', req.id, 'status', oldStatus, newStatus);
-    markDirty('request', req.id);
-    saveNow('kanban-drop');
+    req.updated_at = new Date().toISOString();
+    req.activity_log.push({type:'status', author:state.currentUser||'Sistema', content:`Cambio de estado: ${oldStatus} → ${newStatus}`, created_at:new Date().toISOString()});
+    saveState();
     renderKanban();
     toast('✅ Estado actualizado',`${req.title.slice(0,40)}... → ${newStatus}`,'success');
   }
@@ -4397,6 +4477,12 @@ function renderDashboard() {
   const topPerson = Object.entries(byPerson).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxBiz = topBiz[0]?.[1]||1;
 
+  const today = new Date().toISOString().split('T')[0];
+  const in3days = new Date(Date.now()+3*86400000).toISOString().split('T')[0];
+  const activeStatuses = ['Backlog','En proceso','Ejecutada'];
+  const vencidos = reqs.filter(r=>activeStatuses.includes(r.status)&&r.needed_by&&r.needed_by<today).length;
+  const enRiesgo = reqs.filter(r=>activeStatuses.includes(r.status)&&r.needed_by&&r.needed_by>=today&&r.needed_by<=in3days).length;
+
   const kpiData = [
     {label:'Total solicitudes', val:reqs.length, icon:'📋', color:'var(--primary)'},
     {label:'En backlog', val:statusCounts['Backlog'], icon:'⏳', color:'#6B7280'},
@@ -4404,10 +4490,14 @@ function renderDashboard() {
     {label:'Ejecutadas', val:statusCounts['Ejecutada'], icon:'📤', color:'#D97706'},
     {label:'Validadas/Concluidas', val:statusCounts['Validada']+statusCounts['Concluida'], icon:'✅', color:'var(--success)'},
     {label:'Canceladas', val:statusCounts['Cancelada'], icon:'❌', color:'var(--error)'},
+    {label:'Vencidas', val:vencidos, icon:'🔴', color:'#DC2626',
+     style:vencidos>0?'border:2px solid #FECACA;background:#FEF2F2':''},
+    {label:'En riesgo (3d)', val:enRiesgo, icon:'🟡', color:'#D97706',
+     style:enRiesgo>0?'border:2px solid #FDE68A;background:#FFFBEB':''},
   ];
 
   const kpiHtml = kpiData.map(k=>`
-    <div class="kpi-card">
+    <div class="kpi-card" style="${k.style||''}">
       <div class="kpi-label">${k.icon} ${k.label}</div>
       <div class="kpi-value" style="color:${k.color}">${k.val}</div>
     </div>
@@ -4747,16 +4837,11 @@ function renderRoadmap() {
     const catInfo = CATEGORIES[ini.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
     const msHtml = ini.milestones.map(ms=>{
       const msStatusColor = {'No iniciado':'#9CA3AF','En proceso':'#3B82F6','En revisión':'#7C3AED','Completado':'#22C55E','Reprogramado':'#EAB308','Bloqueado':'#EF4444','Validada':'#16A34A'};
-      const msId = ms.id||ms.name;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-light)">
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light)">
         <div style="width:8px;height:8px;border-radius:50%;background:${msStatusColor[ms.status]||'#9CA3AF'};flex-shrink:0"></div>
         <div style="flex:1;font-size:12px;color:var(--text-secondary)">${ms.name}</div>
         <div style="font-size:10px;color:var(--text-muted)">${ms.owner}</div>
         <div style="font-size:10px;color:${isOverdue(ms.target_date)&&ms.status!=='Completado'?'var(--error)':'var(--text-muted)'}">${fmtDateShort(ms.target_date)}</div>
-        ${state.isAdmin?`
-          <button onclick="event.stopPropagation();editInitiativeMilestone('${ini.id}','${msId}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#1D4ED8" title="Editar milestone">✏️</button>
-          <button onclick="event.stopPropagation();deleteInitiativeMilestone('${ini.id}','${msId}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#B91C1C" title="Eliminar milestone">🗑</button>
-        `:''}
       </div>`;
     }).join('');
     return `
@@ -4774,7 +4859,6 @@ function renderRoadmap() {
           ${state.isAdmin?`
             <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
               <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
-              <button onclick="duplicateInitiative('${ini.id}')" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#15803D" title="Duplicar iniciativa">📋 Duplicar</button>
               <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
             </div>
           `:''}
@@ -4847,16 +4931,11 @@ function renderRoadmap() {
     const catInfo=CATEGORIES[ini.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
     const msHtml2=ini.milestones.map(ms=>{
       const msc={'No iniciado':'#9CA3AF','En proceso':'#3B82F6','En revisión':'#7C3AED','Completado':'#22C55E','Reprogramado':'#EAB308','Bloqueado':'#EF4444','Validada':'#16A34A'};
-      const msId2 = ms.id||ms.name;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-light)">
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light)">
         <div style="width:8px;height:8px;border-radius:50%;background:${msc[ms.status]||'#9CA3AF'};flex-shrink:0"></div>
         <div style="flex:1;font-size:12px;color:var(--text-secondary)">${ms.name}</div>
         <div style="font-size:10px;color:var(--text-muted)">${ms.owner}</div>
         <div style="font-size:10px;color:${isOverdue(ms.target_date)&&ms.status!=='Completado'?'var(--error)':'var(--text-muted)'}">${fmtDateShort(ms.target_date)}</div>
-        ${state.isAdmin?`
-          <button onclick="event.stopPropagation();editInitiativeMilestone('${ini.id}','${msId2}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#1D4ED8" title="Editar milestone">✏️</button>
-          <button onclick="event.stopPropagation();deleteInitiativeMilestone('${ini.id}','${msId2}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#B91C1C" title="Eliminar milestone">🗑</button>
-        `:''}
       </div>`;
     }).join('');
     const linkedTasks=state.requests.filter(r=>r.linked_initiative_id===ini.id);
@@ -4874,7 +4953,6 @@ function renderRoadmap() {
         ${state.isAdmin?`
           <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
             <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
-            <button onclick="duplicateInitiative('${ini.id}')" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#15803D" title="Duplicar iniciativa">📋 Duplicar</button>
             <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
           </div>
         `:''}
@@ -4892,48 +4970,6 @@ function renderRoadmap() {
             ${msHtml2||'<div style="font-size:12px;color:var(--text-muted)">Sin milestones definidos</div>'}
           </div>
         </div>
-        ${(()=>{
-          // Upgrade 2: tasks grouped by status
-          if (!linkedTasks.length) return `<div style="border-top:1px solid var(--border-light);padding-top:12px;margin-top:4px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:12px;font-weight:700;color:var(--text-muted)">📋 Tareas vinculadas</span>
-              <div style="display:flex;gap:6px">
-                ${state.isAdmin?`<button onclick="openCreateTaskFromInitiative('${ini.id}')" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">⚡ Nueva tarea</button>`:''}
-                ${state.isAdmin?`<button onclick="openLinkTaskToInitiative('${ini.id}')" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔗 Vincular existente</button>`:''}
-              </div>
-            </div>
-            <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:8px 0">Sin tareas vinculadas</div>
-          </div>`;
-          const byStatus = {};
-          STATUSES.forEach(s=>byStatus[s]=[]);
-          linkedTasks.forEach(r=>{ if(byStatus[r.status]) byStatus[r.status].push(r); else { if(!byStatus['Backlog']) byStatus['Backlog']=[]; byStatus['Backlog'].push(r); } });
-          const taskGroupsHtml = STATUSES.filter(s=>byStatus[s]&&byStatus[s].length).map(s=>{
-            const sc = STATUS_COLORS[s]||'#6B7280';
-            const sb = STATUS_BG[s]||'#F9FAFB';
-            const items = byStatus[s].map(r=>{
-              const ci = CATEGORIES[r.category]||{icon:'📋',color:'#6B7280',bg:'#F9FAFB'};
-              return `<div class="rm-task-item" onclick="openTask('${r.id}')">
-                <span style="font-size:14px">${ci.icon}</span>
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
-                  <div style="font-size:10px;color:var(--text-muted)">${r.id} · ${r.assigned_owner||'Sin owner'} · ${r.needed_by?'📅 '+fmtDateShort(r.needed_by):''}</div>
-                </div>
-                ${state.isAdmin?`<button onclick="event.stopPropagation();unlinkTaskFromInitiative('${r.id}')" title="Desvincular" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:5px;padding:2px 5px;font-size:10px;cursor:pointer;color:#B91C1C;flex-shrink:0">✕</button>`:''}
-              </div>`;
-            }).join('');
-            return `<div style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:5px;padding:3px 8px;background:${sb};border-radius:5px;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:${sc}">${s.toUpperCase()}</span><span style="font-size:10px;color:${sc};font-weight:600">(${byStatus[s].length})</span></div>${items}</div>`;
-          }).join('');
-          return `<div style="border-top:1px solid var(--border-light);padding-top:12px;margin-top:4px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <span style="font-size:12px;font-weight:700;color:var(--text-primary)">📋 Tareas vinculadas <span style="font-size:11px;font-weight:400;color:var(--text-muted)">(${linkedTasks.length})</span></span>
-              <div style="display:flex;gap:6px">
-                ${state.isAdmin?`<button onclick="openCreateTaskFromInitiative('${ini.id}')" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">⚡ Nueva tarea</button>`:''}
-                ${state.isAdmin?`<button onclick="openLinkTaskToInitiative('${ini.id}')" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔗 Vincular existente</button>`:''}
-              </div>
-            </div>
-            ${taskGroupsHtml}
-          </div>`;
-        })()}
       </div>
     </div>`;
   }).join('');
@@ -5022,10 +5058,7 @@ function renderRoadmapGantt() {
     return;
   }
 
-  // Init expand state (plain object, not persisted)
-  if(!state.ganttExpanded) state.ganttExpanded = {};
-
-  // Compute time range
+  // Compute time range across all initiatives + milestones
   const allDates = inits.flatMap(ini=>{
     const dates = [ini.start_date, ini.target_close_date].filter(Boolean);
     ini.milestones.forEach(ms=>{ if(ms.target_date) dates.push(ms.target_date); });
@@ -5033,13 +5066,13 @@ function renderRoadmapGantt() {
   });
   const minDate = new Date(allDates.reduce((a,b)=>a<b?a:b));
   const maxDate = new Date(allDates.reduce((a,b)=>a>b?a:b));
+  // Pad 1 month each side
   minDate.setDate(1);
   maxDate.setMonth(maxDate.getMonth()+1); maxDate.setDate(1);
   const totalDays = (maxDate-minDate)/(1000*86400);
 
-  const ROW_H = 56;
-  const MS_ROW_H = 42;
-  const LABEL_W = 210;
+  const ROW_H = 52;
+  const LABEL_W = 200;
   const CHART_W = Math.max(600, totalDays * 3.2);
   const HEADER_H = 48;
   const statusCol = {'En planeación':'#00CC99','En ejecución':'#008080','Concluida':'#22C55E','En pausa':'#EAB308','Cancelada':'#DC2626','Backlog':'#9CA3AF','En revisión':'#D97706'};
@@ -5050,158 +5083,86 @@ function renderRoadmapGantt() {
     return Math.max(0, Math.min(100, ((dd-minDate)/(maxDate-minDate))*100));
   }
 
-  // Month columns
+  // Build month columns for header
   const months = [];
   const cur = new Date(minDate);
   while(cur < maxDate) {
-    months.push({ label: cur.toLocaleDateString('es-MX',{month:'short',year:'2-digit'}), p: pct(cur.toISOString().split('T')[0]) });
+    months.push({ label: cur.toLocaleDateString('es-MX',{month:'short',year:'2-digit'}), pctStart: pct(cur.toISOString().split('T')[0]) });
     cur.setMonth(cur.getMonth()+1);
   }
-  const todayPct = pct(new Date().toISOString().split('T')[0]);
 
-  // Grid lines SVG string (reused per row)
-  const gridLinesSvg = (h) => months.map(m=>`<line x1="${m.p/100*CHART_W}" y1="0" x2="${m.p/100*CHART_W}" y2="${h}" stroke="#f0f0f0" stroke-width="1"/>`).join('') +
-    `<line x1="${todayPct/100*CHART_W}" y1="0" x2="${todayPct/100*CHART_W}" y2="${h}" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>`;
+  const monthLines = months.map(m=>`
+    <line x1="${LABEL_W + m.pctStart/100*CHART_W}" y1="0" x2="${LABEL_W + m.pctStart/100*CHART_W}" y2="${HEADER_H + inits.length*ROW_H}" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="${LABEL_W + m.pctStart/100*CHART_W + 6}" y="20" font-size="10" fill="#9CA3AF" font-family="Helvetica,Arial,sans-serif">${m.label}</text>
+  `).join('');
+
+  // Today line
+  const todayPct = pct(new Date().toISOString().split('T')[0]);
+  const todayLine = `
+    <line x1="${LABEL_W + todayPct/100*CHART_W}" y1="0" x2="${LABEL_W + todayPct/100*CHART_W}" y2="${HEADER_H + inits.length*ROW_H}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text x="${LABEL_W + todayPct/100*CHART_W + 4}" y="36" font-size="9" fill="#EF4444" font-family="Helvetica,Arial,sans-serif" font-weight="700">HOY</text>
+  `;
 
   // Apply grouping
   let sortedInits = [...inits];
   if(state.ganttGroupBy === 'category') sortedInits.sort((a,b)=>a.category.localeCompare(b.category));
   if(state.ganttGroupBy === 'status') sortedInits.sort((a,b)=>a.status.localeCompare(b.status));
 
-  // Build initiative rows (hybrid HTML + SVG)
-  const rowsHtml = sortedInits.map((ini, ri)=>{
+  // Build rows with optional group headers
+  let currentGroup = null;
+  let rowIndex = 0;
+  const rows = sortedInits.flatMap((ini)=>{
+    const ri = rowIndex;
+    const y = HEADER_H + ri*ROW_H;
     const color = statusCol[ini.status] || '#6B7280';
     const startPct = pct(ini.start_date || ini.target_close_date);
     const endPct = pct(ini.target_close_date);
-    const barX = startPct/100*CHART_W;
+    const barX = LABEL_W + startPct/100*CHART_W;
     const barW = Math.max(4, (endPct-startPct)/100*CHART_W);
 
-    // Duration in days
-    const durDays = ini.start_date && ini.target_close_date
-      ? Math.round((new Date(ini.target_close_date) - new Date(ini.start_date)) / 86400000) : null;
-
-    // Progress from milestones
+    // Progress overlay
     const totalMs = ini.milestones.length;
     const doneMs = ini.milestones.filter(m=>m.status==='Completado'||m.status==='Validada').length;
-    const progress = totalMs>0 ? doneMs/totalMs : 0;
+    const progress = totalMs>0?doneMs/totalMs:0;
 
-    // Diamonds for each milestone
+    // Milestone diamonds
     const diamonds = ini.milestones.map(ms=>{
-      if(!ms.target_date) return '';
-      const mx = pct(ms.target_date)/100*CHART_W;
+      const mx = LABEL_W + pct(ms.target_date)/100*CHART_W;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
-      return `<g><polygon points="${mx},${ROW_H/2-8} ${mx+7},${ROW_H/2} ${mx},${ROW_H/2+8} ${mx-7},${ROW_H/2}" fill="${mc}" stroke="#fff" stroke-width="1.5"><title>${ms.name} — ${ms.status} (${ms.target_date})</title></polygon></g>`;
+      return `
+        <g>
+          <polygon points="${mx},${y+18} ${mx+7},${y+26} ${mx},${y+34} ${mx-7},${y+26}" fill="${mc}" stroke="#fff" stroke-width="1.5"/>
+          <title>${ms.name} — ${ms.status} (${ms.target_date})</title>
+        </g>
+      `;
     }).join('');
 
-    // Duration label inside bar
-    const durBarLabel = durDays && barW > 50
-      ? `<text x="${barX+barW/2}" y="${ROW_H/2+4}" font-size="10" fill="white" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" font-weight="700">${durDays}d</text>` : '';
-
-    const isExpanded = !!state.ganttExpanded[ini.id];
-    const labelText = ini.name.length > 26 ? ini.name.slice(0,26)+'…' : ini.name;
-
-    // Milestone sub-rows when expanded
-    let expandHtml = '';
-    if(isExpanded) {
-      if(!ini.milestones.length) {
-        expandHtml = `<div style="display:flex;background:#fafafa;border-bottom:1px solid #e5e7eb">
-          <div style="width:${LABEL_W}px;flex-shrink:0;padding:8px 12px 8px 24px;border-right:1px solid #e5e7eb;font-size:12px;color:var(--text-muted)">Sin milestones definidos</div>
-          <div style="flex:1"></div>
-        </div>`;
-      } else {
-        expandHtml = ini.milestones.map(ms=>{
-          const msc = msStatusCol[ms.status]||'#9CA3AF';
-          const linkedTasks = state.requests.filter(r=>r.linked_milestone_id === (ms.id||ms.name));
-          const overdue = ms.target_date && isOverdue(ms.target_date) && ms.status!=='Completado' && ms.status!=='Validada';
-          const mxPos = ms.target_date ? pct(ms.target_date)/100*CHART_W : null;
-          const msNameShort = ms.name.length > 28 ? ms.name.slice(0,28)+'…' : ms.name;
-
-          // Task status breakdown
-          const taskStatusCounts = {};
-          linkedTasks.forEach(r=>{ taskStatusCounts[r.status] = (taskStatusCounts[r.status]||0)+1; });
-          const taskBreakdown = Object.entries(taskStatusCounts).map(([s,n])=>`<span style="font-size:9px;background:${STATUS_BG[s]||'#F3F4F6'};color:${STATUS_COLORS[s]||'#6B7280'};border-radius:8px;padding:1px 5px">${s} ${n}</span>`).join('');
-
-          const tasksBadge = linkedTasks.length
-            ? `<button onclick="event.stopPropagation();filterKanbanByMilestone('${ms.id||ms.name}','${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:2px 7px;font-size:10px;cursor:pointer;color:#1D4ED8;font-weight:600">🔗 ${linkedTasks.length} tarea${linkedTasks.length>1?'s':''}</button>`
-            : `<span style="font-size:10px;color:var(--text-muted);font-style:italic">Sin tareas</span>`;
-
-          return `<div style="display:flex;align-items:stretch;background:#f8f9fb;border-bottom:1px solid #eef0f3">
-            <div style="width:${LABEL_W}px;flex-shrink:0;padding:6px 8px 6px 24px;border-right:1px solid #e5e7eb;border-left:3px solid ${msc}">
-              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${msc};flex-shrink:0"></div>
-                <span style="font-size:11px;font-weight:600;color:var(--text-primary)" title="${ms.name}">${msNameShort}</span>
-              </div>
-              <div style="font-size:10px;color:var(--text-muted);padding-left:12px;margin-bottom:3px">${ms.owner||'—'} · <span style="color:${overdue?'#EF4444':'inherit'};font-weight:${overdue?'700':'400'}">${fmtDateShort(ms.target_date)}</span></div>
-              <div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${tasksBadge}${taskBreakdown?`<span style="color:#ccc">|</span>${taskBreakdown}`:''}</div>
-            </div>
-            <div style="flex:1;overflow:hidden;position:relative;height:${MS_ROW_H}px">
-              <svg width="${CHART_W}" height="${MS_ROW_H}" style="display:block">
-                ${gridLinesSvg(MS_ROW_H)}
-                ${mxPos!==null ? `
-                  <polygon points="${mxPos},${MS_ROW_H/2-7} ${mxPos+7},${MS_ROW_H/2} ${mxPos},${MS_ROW_H/2+7} ${mxPos-7},${MS_ROW_H/2}" fill="${msc}" stroke="#fff" stroke-width="1.5"/>
-                  <text x="${mxPos+10}" y="${MS_ROW_H/2+4}" font-size="9" fill="${msc}" font-family="Helvetica,Arial,sans-serif" font-weight="600">${ms.status}</text>
-                ` : ''}
-              </svg>
-            </div>
-          </div>`;
-        }).join('');
-      }
-    }
+    // Label truncated
+    const labelMaxChars = 28;
+    const labelText = ini.name.length > labelMaxChars ? ini.name.slice(0,labelMaxChars)+'…' : ini.name;
 
     return `
-      <div style="display:flex;align-items:center;background:${ri%2===0?'#f9fafb':'#fff'};border-bottom:1px solid #e5e7eb;min-height:${ROW_H}px">
-        <div style="width:${LABEL_W}px;flex-shrink:0;padding:7px 8px;border-right:1px solid #d1d5db">
-          <div style="font-size:11px;font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${ini.name}">${labelText}</div>
-          <div style="font-size:10px;color:#6B7280;margin-top:1px">${ini.primary_owner} · ${ini.status}</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
-            ${durDays ? `<span style="font-size:10px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;padding:1px 5px;color:#374151;font-weight:600">⏱ ${durDays}d</span>` : ''}
-            <button onclick="toggleGanttRow('${ini.id}')" style="font-size:10px;background:${isExpanded?'#EFF6FF':'var(--surface)'};border:1px solid ${isExpanded?'#BFDBFE':'var(--border)'};border-radius:4px;padding:1px 7px;cursor:pointer;color:${isExpanded?'#1D4ED8':'var(--text-secondary)'};">${isExpanded ? '▲ ocultar' : '▼ ver más'}</button>
-            ${totalMs>0?`<span style="font-size:10px;color:var(--text-muted)">${doneMs}/${totalMs} ms</span>`:''}
-          </div>
-        </div>
-        <div style="flex:1;overflow:hidden;position:relative;height:${ROW_H}px">
-          <svg width="${CHART_W}" height="${ROW_H}" style="display:block">
-            <defs>
-              <linearGradient id="grad-${ini.id}" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="${Math.round(progress*100)}%" stop-color="${color}" stop-opacity="1"/>
-                <stop offset="${Math.round(progress*100)}%" stop-color="${color}" stop-opacity="0.18"/>
-                <stop offset="100%" stop-color="${color}" stop-opacity="0.18"/>
-              </linearGradient>
-              <clipPath id="clip-${ini.id}">
-                <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8"/>
-              </clipPath>
-            </defs>
-            ${gridLinesSvg(ROW_H)}
-            <!-- Bar bg track -->
-            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="${color}18"/>
-            <!-- Gradient fill -->
-            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="url(#grad-${ini.id})"/>
-            <!-- Sharp progress divider line -->
-            ${progress > 0 && progress < 1 ? `<line x1="${barX + barW*progress}" y1="${ROW_H/2-8}" x2="${barX + barW*progress}" y2="${ROW_H/2+8}" stroke="${color}" stroke-width="2" clip-path="url(#clip-${ini.id})"/>` : ''}
-            <!-- Border -->
-            <rect x="${barX}" y="${ROW_H/2-8}" width="${barW}" height="16" rx="8" fill="none" stroke="${color}" stroke-width="1.5"/>
-            ${durBarLabel}
-            ${diamonds}
-          </svg>
-        </div>
-      </div>
-      ${isExpanded ? expandHtml : ''}
+      <g>
+        <!-- Row bg -->
+        <rect x="0" y="${y}" width="${LABEL_W + CHART_W}" height="${ROW_H}" fill="${ri%2===0?'#f9fafb':'#fff'}"/>
+        <!-- Label -->
+        <text x="8" y="${y+20}" font-size="11" font-weight="700" fill="#1f2937" font-family="Helvetica,Arial,sans-serif" clip-path="url(#label-clip)">${labelText}</text>
+        <text x="8" y="${y+35}" font-size="10" fill="#6B7280" font-family="Helvetica,Arial,sans-serif">${ini.primary_owner} · ${ini.status}</text>
+        <line x1="${LABEL_W}" y1="${y}" x2="${LABEL_W + CHART_W}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
+        <!-- Bar background -->
+        <rect x="${barX}" y="${y+14}" width="${barW}" height="16" rx="8" fill="${color}30"/>
+        <!-- Bar fill (progress) -->
+        <rect x="${barX}" y="${y+14}" width="${barW*progress}" height="16" rx="8" fill="${color}"/>
+        <!-- Bar border -->
+        <rect x="${barX}" y="${y+14}" width="${barW}" height="16" rx="8" fill="none" stroke="${color}" stroke-width="1.5"/>
+        <!-- Milestone diamonds -->
+        ${diamonds}
+      </g>
     `;
   }).join('');
 
-  // Header SVG
-  const headerSvg = `<svg width="${LABEL_W + CHART_W}" height="${HEADER_H}" style="display:block;border-bottom:2px solid #d1d5db">
-    <rect x="0" y="0" width="${LABEL_W + CHART_W}" height="${HEADER_H}" fill="#f3f4f6"/>
-    <rect x="0" y="0" width="${LABEL_W}" height="${HEADER_H}" fill="#f3f4f6"/>
-    <text x="8" y="30" font-size="11" font-weight="700" fill="#4B5563" font-family="Helvetica,Arial,sans-serif">INICIATIVA</text>
-    <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#d1d5db" stroke-width="1.5"/>
-    ${months.map(m=>`
-      <line x1="${LABEL_W + m.p/100*CHART_W}" y1="0" x2="${LABEL_W + m.p/100*CHART_W}" y2="${HEADER_H}" stroke="#e5e7eb" stroke-width="1"/>
-      <text x="${LABEL_W + m.p/100*CHART_W + 5}" y="20" font-size="10" fill="#9CA3AF" font-family="Helvetica,Arial,sans-serif">${m.label}</text>
-    `).join('')}
-    <line x1="${LABEL_W + todayPct/100*CHART_W}" y1="0" x2="${LABEL_W + todayPct/100*CHART_W}" y2="${HEADER_H}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
-    <text x="${LABEL_W + todayPct/100*CHART_W + 4}" y="36" font-size="9" fill="#EF4444" font-family="Helvetica,Arial,sans-serif" font-weight="700">HOY</text>
-  </svg>`;
+  const svgH = HEADER_H + inits.length * ROW_H + 20;
+  const svgW = LABEL_W + CHART_W;
 
   const legendItems = Object.entries(statusCol).map(([s,c])=>`
     <div style="display:flex;align-items:center;gap:4px">
@@ -5228,6 +5189,8 @@ function renderRoadmapGantt() {
         </div>
       </div>
     </div>
+
+    <!-- Legend -->
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius)">
       ${legendItems}
       <div style="display:flex;align-items:center;gap:4px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-light)">
@@ -5239,27 +5202,30 @@ function renderRoadmapGantt() {
         <span style="font-size:11px;color:var(--text-secondary)">Hoy</span>
       </div>
     </div>
+
+    <!-- Gantt SVG -->
     <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff">
-      <div style="min-width:${LABEL_W + CHART_W}px">
-        ${headerSvg}
-        ${rowsHtml}
-      </div>
+      <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="label-clip"><rect x="0" y="0" width="${LABEL_W-8}" height="${svgH}"/></clipPath>
+        </defs>
+        <!-- Header bg -->
+        <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#f3f4f6"/>
+        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#d1d5db" stroke-width="1.5"/>
+        <rect x="0" y="0" width="${LABEL_W}" height="${HEADER_H}" fill="#f3f4f6"/>
+        <text x="8" y="30" font-size="11" font-weight="700" fill="#4B5563" font-family="Helvetica,Arial,sans-serif">INICIATIVA</text>
+        <!-- Month lines & labels -->
+        ${monthLines}
+        <!-- Today -->
+        ${todayLine}
+        <!-- Rows -->
+        ${rows}
+        <!-- Bottom border -->
+        <line x1="0" y1="${svgH-1}" x2="${svgW}" y2="${svgH-1}" stroke="#e5e7eb" stroke-width="1"/>
+      </svg>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">⏱ duración en días · ▼ ver más despliega milestones · 🔗 vincula al Kanban</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Las barras muestran avance % de milestones. Los diamantes ◆ indican fechas objetivo de milestones.</div>
   `;
-}
-
-function toggleGanttRow(iniId) {
-  if(!state.ganttExpanded) state.ganttExpanded = {};
-  state.ganttExpanded[iniId] = !state.ganttExpanded[iniId];
-  renderRoadmapGantt();
-}
-
-function filterKanbanByMilestone(msId, iniId) {
-  if(!state.kanbanFilter) state.kanbanFilter = {};
-  state.kanbanFilter.milestone = msId;
-  state.kanbanFilter._milestoneIniId = iniId || null;
-  navigate('kanban');
 }
 
 // ─── INITIATIVE / MILESTONE MODAL ────────────────────────
@@ -5267,11 +5233,6 @@ function openNewInitiativeModal() {
   _editingIniId = null;
   const titleEl = document.querySelector('#modal-new-initiative .modal-title');
   if(titleEl) titleEl.textContent = '🗺️ Agregar al Roadmap';
-  // Reset edit-mode UI
-  const tabsWrapper = document.getElementById('ini-tabs-wrapper');
-  if(tabsWrapper) tabsWrapper.style.display = 'flex';
-  const saveBtn = document.querySelector('#modal-new-initiative .modal-footer .btn-primary');
-  if(saveBtn) saveBtn.textContent = '✅ Guardar';
   // Populate selects
   const catSel = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
@@ -5300,7 +5261,7 @@ function editInitiative(iniId) {
   const ini = state.initiatives.find(i=>i.id===iniId);
   if(!ini) return;
   _editingIniId = iniId;
-  // Populate dropdowns
+  // Populate dropdowns first (same logic as openNewInitiativeModal)
   const catSel   = document.getElementById('ini-cat');
   const ownerSel = document.getElementById('ini-owner');
   const msOwnerSel = document.getElementById('ms-owner');
@@ -5320,94 +5281,20 @@ function editInitiative(iniId) {
   document.getElementById('ini-desc').value  = ini.description || '';
   const nextEl  = document.getElementById('ini-next');  if(nextEl)  nextEl.value  = ini.next_step || '';
   const risksEl = document.getElementById('ini-risks'); if(risksEl) risksEl.value = ini.risks || '';
-  // Set select values
+  // Now set select values (dropdowns are already populated)
   if(catSel)    catSel.value    = ini.category || '';
   if(ownerSel)  ownerSel.value  = ini.primary_owner || '';
   const statusSel = document.getElementById('ini-status');
   if(statusSel) statusSel.value = ini.status || 'En planeación';
-  // Edit mode UI: hide milestone tab, update title & save button
+  // Update modal title and open
   const titleEl = document.querySelector('#modal-new-initiative .modal-title');
   if(titleEl) titleEl.textContent = '✏️ Editar Iniciativa';
-  const tabsWrapper = document.getElementById('ini-tabs-wrapper');
-  if(tabsWrapper) tabsWrapper.style.display = 'none';
-  const saveBtn = document.querySelector('#modal-new-initiative .modal-footer .btn-primary');
-  if(saveBtn) saveBtn.textContent = '💾 Guardar cambios';
   switchIniTab(0);
   openModal('modal-new-initiative');
 }
 
-function editInitiativeMilestone(iniId, msId) {
-  const ini = state.initiatives.find(i=>i.id===iniId);
-  if(!ini) return;
-  const ms = ini.milestones.find(m=>(m.id||m.name)===msId);
-  if(!ms) return;
-  // Populate the milestone modal
-  const titleEl = document.getElementById('modal-milestone-title');
-  if(titleEl) titleEl.textContent = '✏️ Editar Milestone';
-  const nameEl = document.getElementById('ms-modal-name');
-  const dateEl = document.getElementById('ms-modal-date');
-  const ownerEl = document.getElementById('ms-modal-owner');
-  const descEl = document.getElementById('ms-modal-desc');
-  if(nameEl) nameEl.value = ms.name || '';
-  if(dateEl) dateEl.value = ms.target_date || '';
-  if(descEl) descEl.value = ms.description || '';
-  // Populate owner options
-  if(ownerEl) {
-    ownerEl.innerHTML = ['<option value="">Sin asignar</option>', ...state.config.team.map(m=>`<option value="${m}">${m}</option>`)].join('');
-    ownerEl.value = ms.owner || '';
-  }
-  // Add status selector if not present
-  let statusRow = document.getElementById('ms-modal-status-row');
-  if(!statusRow) {
-    statusRow = document.createElement('div');
-    statusRow.id = 'ms-modal-status-row';
-    statusRow.className = 'form-group';
-    statusRow.style.marginBottom = '4px';
-    statusRow.innerHTML = `<label class="form-label">Estado</label><select class="form-select" id="ms-modal-status" style="font-size:13px">${['No iniciado','En proceso','En revisión','Completado','Reprogramado','Bloqueado','Validada'].map(s=>`<option value="${s}">${s}</option>`).join('')}</select>`;
-    const descGroup = descEl?.closest('.form-group');
-    if(descGroup) descGroup.parentNode.insertBefore(statusRow, descGroup);
-  }
-  const statusEl = document.getElementById('ms-modal-status');
-  if(statusEl) statusEl.value = ms.status || 'No iniciado';
-  // Store refs and update save button
-  const modal = document.getElementById('modal-milestone');
-  modal.dataset.iniId = iniId;
-  modal.dataset.msMsId = msId;
-  modal.removeAttribute('data-req-id');
-  modal.removeAttribute('data-ms-idx');
-  const saveBtn = document.querySelector('#modal-milestone .modal-footer .btn-primary');
-  if(saveBtn) saveBtn.textContent = '💾 Guardar cambios';
-  openModal('modal-milestone');
-}
-
-function deleteInitiativeMilestone(iniId, msId) {
-  const ini = state.initiatives.find(i=>i.id===iniId);
-  if(!ini) return;
-  const ms = ini.milestones.find(m=>(m.id||m.name)===msId);
-  if(!ms) return;
-  if(!confirm(`¿Eliminar el milestone "${ms.name}"?`)) return;
-  ini.milestones = ini.milestones.filter(m=>(m.id||m.name)!==msId);
-  saveState();
-  renderRoadmap();
-  toast('🗑 Milestone eliminado', ms.name, 'info');
-}
-
-function duplicateInitiative(iniId) {
-  const ini = state.initiatives.find(i=>i.id===iniId);
-  if(!ini) return;
-  const now = new Date().toISOString();
-  const copy = JSON.parse(JSON.stringify(ini));
-  copy.id = `INI-${Date.now().toString().slice(-6)}`;
-  copy.name = `(Copia) ${ini.name}`;
-  copy.status = 'En planeación';
-  copy.milestones = (ini.milestones||[]).map(ms=>({...ms, id:`ms-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, status:'No iniciado'}));
-  state.initiatives.push(copy);
-  saveState();
-  renderRoadmap();
-  toast('📋 Iniciativa duplicada', copy.name, 'success');
-}
-
 function submitNewRoadmapItem() {
+  if(!state.isAdmin) { toast('🔒 Sin permiso','Solo administradores pueden gestionar el Roadmap.','warning'); return; }
   const activeTab = document.getElementById('ini-form-0').style.display!=='none' ? 0 : 1;
   if(activeTab === 0) {
     // New initiative
@@ -5957,8 +5844,7 @@ function renderTaskDetail(req) {
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">SOLICITANTE</div><div style="font-size:13px;font-weight:600">${req.requester_name}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ÁREA / BL</div><div style="font-size:13px;font-weight:600">${req.requester_area||'—'} / ${req.requester_business_line||'—'}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">TIPO DE SOLICITUD</div><div style="font-size:12px">${req.request_type}</div></div>
-          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA</div><div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)||'—'}${isOverdue(req.needed_by)?' ⚠️':''}</div></div>
-          ${req.duration?`<div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">DURACIÓN ESTIMADA</div><div style="font-size:13px;font-weight:600">⏱ ${req.duration}</div></div>`:''}
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA</div><div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)}${isOverdue(req.needed_by)?' ⚠️':''}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ID</div><div style="font-size:12px;font-family:monospace;color:var(--text-muted)">${req.id}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">CREADO</div><div style="font-size:12px;color:var(--text-muted)">${fmtDateTime(req.created_at)}</div></div>
         </div>
@@ -6175,10 +6061,19 @@ function toggleActionItemForm(id, typeVal) {
 
 
 function updateField(id, field, value) {
+  if(state.isViewer){toast('🔒 Sin permiso','Los visualizadores no pueden editar tareas.','warning');return;}
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
+  const oldVal = req[field];
   req[field] = value;
   req.updated_at = new Date().toISOString();
+  if((field==='admin_priority'||field==='assigned_owner') && oldVal!==value) {
+    if(!req.activity_log) req.activity_log=[];
+    const labels = {admin_priority:'Prioridad', assigned_owner:'Responsable'};
+    req.activity_log.push({type:'status', author:state.currentUser||'Sistema',
+      content:`${labels[field]||field} cambiado: ${oldVal||'—'} → ${value||'—'}`,
+      created_at:new Date().toISOString()});
+  }
   saveState();
 }
 
@@ -6192,6 +6087,7 @@ function updateMilestone(reqId, idx, field, value) {
 }
 
 function addLogEntry(id) {
+  if(state.isViewer){toast('🔒 Sin permiso','Los visualizadores no pueden agregar entradas.','warning');return;}
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const text = document.getElementById('new-log-text').value.trim();
@@ -6315,44 +6211,22 @@ function deleteMilestone(reqId, idx) {
 
 function submitMilestoneModal() {
   const modal = document.getElementById('modal-milestone');
+  const id = modal.dataset.reqId;
+  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
+  const req = state.requests.find(r=>r.id===id);
+  if(!req) return;
   const name = document.getElementById('ms-modal-name').value.trim();
   if(!name) { toast('⚠️','Escribe un nombre para el milestone.','warning'); return; }
   const date = document.getElementById('ms-modal-date').value;
   const owner = document.getElementById('ms-modal-owner').value;
   const desc = document.getElementById('ms-modal-desc').value.trim();
-  const statusEl = document.getElementById('ms-modal-status');
-
-  // — Initiative milestone edit mode —
-  if(modal.dataset.iniId && modal.dataset.msMsId) {
-    const ini = state.initiatives.find(i=>i.id===modal.dataset.iniId);
-    if(!ini) return;
-    const msIdx = ini.milestones.findIndex(m=>(m.id||m.name)===modal.dataset.msMsId);
-    if(msIdx >= 0) {
-      ini.milestones[msIdx] = { ...ini.milestones[msIdx], name, owner, target_date:date, description:desc, status:statusEl?.value||ini.milestones[msIdx].status };
-      saveState();
-      closeModal('modal-milestone');
-      // Reset modal
-      modal.removeAttribute('data-ini-id'); modal.removeAttribute('data-ms-ms-id');
-      const titleEl = document.getElementById('modal-milestone-title');
-      if(titleEl) titleEl.textContent = '📌 Nuevo Milestone';
-      const saveBtn = document.querySelector('#modal-milestone .modal-footer .btn-primary');
-      if(saveBtn) saveBtn.textContent = '📌 Agregar milestone';
-      renderRoadmap();
-      toast('✅ Milestone actualizado', name, 'success');
-    }
-    return;
-  }
-
-  // — Request milestone mode (original) —
-  const id = modal.dataset.reqId;
-  const msIdx = modal.dataset.msIdx !== undefined ? parseInt(modal.dataset.msIdx) : -1;
-  const req = state.requests.find(r=>r.id===id);
-  if(!req) return;
   if(!req.milestones) req.milestones = [];
   if(msIdx >= 0 && req.milestones[msIdx]) {
+    // Edit mode: preserve id and status
     req.milestones[msIdx] = { ...req.milestones[msIdx], name, owner, target_date:date, description:desc };
     toast('✅ Milestone actualizado', name, 'success');
   } else {
+    // Add mode
     req.milestones.push({id:`ms-${Date.now()}`, name, owner, target_date:date, status:'No iniciado', description:desc});
     toast('📌 Milestone agregado', name, 'success');
   }
@@ -6394,15 +6268,12 @@ function closeQuickModal(e) {
   closeModal('modal-quick');
 }
 function submitQuickTask() {
+  if(state.isViewer||state.isRequester){toast('🔒 Sin permiso','Tu rol no permite crear tareas.','warning');return;}
   const title = document.getElementById('qt-title').value.trim();
   const cat = document.getElementById('qt-category').value;
   const prio = document.getElementById('qt-priority').value;
   const owner = document.getElementById('qt-owner').value;
   const desc = document.getElementById('qt-desc').value.trim();
-  const neededBy = document.getElementById('qt-needed-by')?.value || '';
-  const durVal = document.getElementById('qt-duration')?.value || '';
-  const durUnit = document.getElementById('qt-duration-unit')?.value || 'días';
-  const duration = durVal ? `${durVal} ${durUnit}` : '';
   if(!title) { toast('⚠️ Campo requerido','Agrega un título.','warning'); return; }
   if(!desc) { toast('⚠️ Campo requerido','Agrega una descripción.','warning'); return; }
   const now = new Date().toISOString();
@@ -6411,23 +6282,16 @@ function submitQuickTask() {
     id:genId(cat), created_at:now, updated_at:now,
     requester_name:state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
     category:cat, request_type:types[0], title, description:desc, objective:desc,
-    needed_by:neededBy, requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
-    duration:duration,
+    needed_by:'', requester_priority:prio, expected_impact:'', support_links:[], additional_comments:'',
     status:'Backlog', assigned_owner:owner, admin_priority:prio, complexity:'Media', internal_only:true,
     activity_log:[{type:'log',author:state.currentUser||'Equipo',content:'Tarea interna creada.',created_at:now}],
     files:[], milestones:[]
   };
-  normalizeRequest(newReq);
-  warnCriticalTaskNoOwner(newReq);
   state.requests.unshift(newReq);
-  markDirty('request', newReq.id);
-  addAuditLog('request', newReq.id, 'created', null, {title:newReq.title, status:'Backlog'});
-  saveNow('quick-task');
+  saveState();
   closeModal('modal-quick');
   document.getElementById('qt-title').value='';
   document.getElementById('qt-desc').value='';
-  if(document.getElementById('qt-needed-by')) document.getElementById('qt-needed-by').value='';
-  if(document.getElementById('qt-duration')) document.getElementById('qt-duration').value='';
   toast('⚡ Tarea creada',title,'success');
   updateNavBadges();
   if(state.currentView==='kanban') renderKanban();
@@ -6453,9 +6317,6 @@ function init() {
 
   // Load state from localStorage (fast, synchronous)
   loadState();
-
-  // Normalize all entities (Upgrade 4)
-  normalizeState();
 
   // Seed if needed
   seedData();
@@ -6487,11 +6348,16 @@ function init() {
     }
   }
 
-  // Autosave every 60 seconds (Upgrade 1 — dirty-state aware)
-  startAutoSave();
-
-  // Mark initial state as clean
-  setSyncStatus('saved');
+  // Autosave every 60 seconds
+  setInterval(async () => {
+    if(state.isAdmin || state.isTeam) {
+      if(_fileHandle) {
+        await saveToFile();
+      } else {
+        saveState();
+      }
+    }
+  }, 60000);
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e=>{
@@ -6622,826 +6488,321 @@ function aiRespond(q) {
 // ═══════════════════════════════════════════════════════════
 
 
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 4 — NORMALIZATION HELPERS
-// ═══════════════════════════════════════════════════════════════════
-function normalizeRequest(req) {
-  const now = new Date().toISOString();
-  if (!req.id) req.id = genId(req.category||'General');
-  if (!req.created_at) req.created_at = now;
-  if (!req.updated_at) req.updated_at = now;
-  if (!req.updated_by) req.updated_by = state.currentUser || 'Sistema';
-  if (req.version === undefined) req.version = 1;
-  if (!req.activity_log) req.activity_log = [];
-  if (!req.files) req.files = [];
-  if (!req.milestones) req.milestones = [];
-  if (!req.support_links) req.support_links = [];
-  return req;
-}
-function normalizeInitiative(ini) {
-  const now = new Date().toISOString();
-  if (!ini.id) ini.id = `INI-${Date.now().toString().slice(-6)}`;
-  if (!ini.created_at) ini.created_at = now;
-  if (!ini.updated_at) ini.updated_at = now;
-  if (!ini.updated_by) ini.updated_by = state.currentUser || 'Sistema';
-  if (ini.version === undefined) ini.version = 1;
-  if (!ini.milestones) ini.milestones = [];
-  if (!ini.primary_owner && ini.owner) ini.primary_owner = ini.owner;
-  if (!ini.primary_owner) ini.primary_owner = 'TBD';
-  return ini;
-}
-function normalizeMilestone(ms) {
-  const now = new Date().toISOString();
-  if (!ms.id) ms.id = `ms-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
-  if (!ms.created_at) ms.created_at = now;
-  if (!ms.updated_at) ms.updated_at = now;
-  if (!ms.updated_by) ms.updated_by = state.currentUser || 'Sistema';
-  if (ms.version === undefined) ms.version = 1;
-  if (!ms.status) ms.status = 'No iniciado';
-  if (!ms.owner) ms.owner = '';
-  return ms;
-}
-function normalizeState() {
-  state.requests = (state.requests||[]).map(normalizeRequest);
-  state.initiatives = (state.initiatives||[]).map(ini => {
-    normalizeInitiative(ini);
-    ini.milestones = (ini.milestones||[]).map(normalizeMilestone);
-    return ini;
-  });
-  // Normalize area roadmaps milestones
-  (state.areaRoadmaps||[]).forEach(item => {
-    if (!item.id) item.id = `ar-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
-    if (!item.milestones) item.milestones = [];
-    item.milestones = item.milestones.map(normalizeMilestone);
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 4 — AUDIT LOG
-// ═══════════════════════════════════════════════════════════════════
-function addAuditLog(entityType, entityId, field, oldValue, newValue) {
-  if (!state.auditLog) state.auditLog = [];
-  state.auditLog.push({
-    ts: new Date().toISOString(),
-    user: state.currentUser || 'Sistema',
-    entityType, entityId, field,
-    oldValue: JSON.stringify(oldValue),
-    newValue: JSON.stringify(newValue)
-  });
-  // Keep last 200 audit entries
-  if (state.auditLog.length > 200) state.auditLog = state.auditLog.slice(-200);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 4 — VALIDATIONS
-// ═══════════════════════════════════════════════════════════════════
-function validateDate(dateStr, fieldLabel) {
-  if (!dateStr) return true;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) {
-    toast('⚠️ Fecha inválida', `${fieldLabel}: "${dateStr}" no es una fecha válida.`, 'warning');
-    return false;
-  }
-  return true;
-}
-function warnMilestoneDateExceedsInitiative(ms, ini) {
-  if (!ms.target_date || !ini.target_close_date) return;
-  if (ms.target_date > ini.target_close_date) {
-    toast('⚠️ Alerta de fecha', `El milestone "${ms.name}" tiene fecha (${fmtDateShort(ms.target_date)}) posterior al cierre de la iniciativa (${fmtDateShort(ini.target_close_date)}).`, 'warning');
-  }
-}
-function warnCriticalTaskNoOwner(req) {
-  if ((req.admin_priority === 'Crítica' || req.requester_priority === 'Crítica') && !req.assigned_owner) {
-    toast('⚠️ Tarea crítica sin owner', `"${req.title.substring(0,40)}" es Crítica pero no tiene owner asignado.`, 'warning');
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 1 — DIRTY STATE & AUTOSAVE ARCHITECTURE
-// ═══════════════════════════════════════════════════════════════════
-let _dirtyEntities = {};   // { 'request:ID': true, 'initiative:ID': true }
-let _isDirty = false;
-let _autoSaveTimer = null;
-let _conflictPending = null; // { entityType, entityId, local, remote }
-let _syncStatus = 'saved';   // saved | saving | dirty | error | conflict | offline
-
-// — DataProvider abstraction —
-const DataProvider = {
-  // LocalStorage implementation (always available)
-  local: {
-    save(data) {
-      try {
-        localStorage.setItem('sorh_requests',    JSON.stringify(data.requests));
-        localStorage.setItem('sorh_initiatives', JSON.stringify(data.initiatives));
-        localStorage.setItem('sorh_config',      JSON.stringify(data.config));
-        localStorage.setItem('sorh_auth',        JSON.stringify({isAdmin:data.isAdmin,isTeam:data.isTeam,currentUser:data.currentUser,currentUserId:data.currentUserId||null}));
-        localStorage.setItem('sorh_documents',   JSON.stringify(data.documents));
-        localStorage.setItem('sorh_notifications',JSON.stringify((data.notifications||[]).slice(-50)));
-        localStorage.setItem('sorh_area_roadmaps',JSON.stringify(data.areaRoadmaps));
-        localStorage.setItem('sorh_audit_log',   JSON.stringify((data.auditLog||[]).slice(-200)));
-        return true;
-      } catch(e) { console.warn('LocalStorage save error:', e); return false; }
-    },
-    load() {
-      try {
-        return {
-          requests:    JSON.parse(localStorage.getItem('sorh_requests')||'[]'),
-          initiatives: JSON.parse(localStorage.getItem('sorh_initiatives')||'[]'),
-          config:      JSON.parse(localStorage.getItem('sorh_config')||'null'),
-          auth:        JSON.parse(localStorage.getItem('sorh_auth')||'null'),
-          documents:   JSON.parse(localStorage.getItem('sorh_documents')||'[]'),
-          notifications:JSON.parse(localStorage.getItem('sorh_notifications')||'[]'),
-          areaRoadmaps:JSON.parse(localStorage.getItem('sorh_area_roadmaps')||'[]'),
-          auditLog:    JSON.parse(localStorage.getItem('sorh_audit_log')||'[]'),
-        };
-      } catch(e) { return null; }
-    }
-  },
-  // RemoteJsonProvider (File System API) — connects to shared JSON on OneDrive/network
-  remote: {
-    async save(data) {
-      if (!_fileHandle) return false;
-      try {
-        const perm = await _fileHandle.queryPermission({mode:'readwrite'});
-        if (perm !== 'granted') {
-          const granted = await _fileHandle.requestPermission({mode:'readwrite'});
-          if (granted !== 'granted') return false;
-        }
-        const writable = await _fileHandle.createWritable();
-        await writable.write(JSON.stringify(data, null, 2));
-        await writable.close();
-        _lastFileTimestamp = new Date().toISOString();
-        return true;
-      } catch(e) { console.warn('RemoteJsonProvider save error:', e); return false; }
-    },
-    async load() {
-      if (!_fileHandle) return null;
-      try {
-        const perm = await _fileHandle.queryPermission({mode:'readwrite'});
-        if (perm !== 'granted') return null;
-        const file = await _fileHandle.getFile();
-        return JSON.parse(await file.text());
-      } catch(e) { return null; }
-    }
-  }
-  // ApiProvider stub — ready to connect to Supabase/Firebase/REST API
-  // api: {
-  //   async save(data) { return await fetch('/api/state', {method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(r=>r.ok); },
-  //   async load()     { return await fetch('/api/state').then(r=>r.json()).catch(()=>null); }
-  // }
-};
-
-function setSyncStatus(status, label) {
-  _syncStatus = status;
-  const el = document.getElementById('autosave-indicator');
-  const lbl = document.getElementById('autosave-label');
-  if (!el) return;
-  el.className = 'state-' + status;
-  if (lbl) lbl.textContent = label || {
-    saved:'Guardado', saving:'Guardando…', dirty:'Cambios pendientes',
-    error:'Error al guardar', conflict:'Conflicto detectado', offline:'Sin conexión'
-  }[status] || status;
-}
-
-function markDirty(entityType, entityId) {
-  _isDirty = true;
-  if (entityType && entityId) _dirtyEntities[`${entityType}:${entityId}`] = true;
-  setSyncStatus('dirty');
-}
-
-async function saveNow(reason) {
-  if (!_isDirty && reason !== 'force') return;
-  if (_isSaving) return;
-  _isSaving = true;
-  setSyncStatus('saving');
-  try {
-    const data = {
-      version: '1.0',
-      saved_at: new Date().toISOString(),
-      saved_by: state.currentUser || 'Sistema',
-      requests: state.requests,
-      initiatives: state.initiatives,
-      config: state.config,
-      documents: state.documents,
-      notifications: (state.notifications||[]).slice(-50),
-      areaRoadmaps: state.areaRoadmaps,
-      auditLog: (state.auditLog||[]).slice(-200),
-      isAdmin: state.isAdmin, isTeam: state.isTeam,
-      currentUser: state.currentUser, currentUserId: state.currentUserId||null
-    };
-    // Always save to localStorage (offline fallback)
-    const localOk = DataProvider.local.save(data);
-    // If remote file connected, sync there too
-    let remoteOk = true;
-    if (_fileHandle) {
-      // Check for remote conflicts before writing
-      const remoteData = await DataProvider.remote.load();
-      if (remoteData && remoteData.saved_at > (_lastFileTimestamp||'0')) {
-        const conflicts = detectConflictsInBatch(remoteData);
-        if (conflicts.length > 0) {
-          _isSaving = false;
-          setSyncStatus('conflict');
-          showConflictModal(conflicts[0], remoteData);
-          return;
-        }
-        // Merge non-conflicting remote changes
-        mergeRemoteState(remoteData);
-      }
-      remoteOk = await DataProvider.remote.save(data);
-    }
-    _isDirty = false;
-    _dirtyEntities = {};
-    _lastSaved = new Date();
-    setSyncStatus(remoteOk ? 'saved' : 'saved', remoteOk ? 'Guardado' : 'Guardado (local)');
-  } catch(e) {
-    console.error('saveNow error:', e);
-    setSyncStatus('error');
-  } finally {
-    _isSaving = false;
-  }
-}
-
-function startAutoSave() {
-  stopAutoSave();
-  _autoSaveTimer = setInterval(async () => {
-    if ((state.isAdmin || state.isTeam) && _isDirty) {
-      await saveNow('autosave');
-    }
-  }, 60000); // 60 seconds
-}
-
-function stopAutoSave() {
-  if (_autoSaveTimer) { clearInterval(_autoSaveTimer); _autoSaveTimer = null; }
-}
-
-function detectConflict(localEntity, remoteEntity) {
-  if (!localEntity || !remoteEntity) return false;
-  const localV  = localEntity.version  || 1;
-  const remoteV = remoteEntity.version || 1;
-  const localTs = localEntity.updated_at  || localEntity.created_at  || '0';
-  const remoteTs = remoteEntity.updated_at || remoteEntity.created_at || '0';
-  return remoteV > localV || (remoteTs > localTs && remoteEntity.updated_by !== (state.currentUser||'Sistema'));
-}
-
-function detectConflictsInBatch(remoteData) {
-  const conflicts = [];
-  (remoteData.requests||[]).forEach(remote => {
-    const local = state.requests.find(r => r.id === remote.id);
-    if (local && detectConflict(local, remote)) conflicts.push({entityType:'request',entityId:remote.id,local,remote});
-  });
-  (remoteData.initiatives||[]).forEach(remote => {
-    const local = state.initiatives.find(i => i.id === remote.id);
-    if (local && detectConflict(local, remote)) conflicts.push({entityType:'initiative',entityId:remote.id,local,remote});
-  });
-  return conflicts;
-}
-
-function showConflictModal(conflict, remoteData) {
-  _conflictPending = { ...conflict, remoteData };
-  const el = document.getElementById('conflict-entity-info');
-  if (el) {
-    const name = conflict.local.title || conflict.local.name || conflict.entityId;
-    el.innerHTML = `<strong>Entidad:</strong> ${conflict.entityType} — <strong>${name}</strong><br>
-      <strong>Mi versión:</strong> v${conflict.local.version||1} · ${fmtDateTime(conflict.local.updated_at||'')} por ${conflict.local.updated_by||'—'}<br>
-      <strong>Versión remota:</strong> v${conflict.remote.version||1} · ${fmtDateTime(conflict.remote.updated_at||'')} por ${conflict.remote.updated_by||'—'}`;
-  }
-  const body = document.getElementById('conflict-diff-body');
-  if (body) {
-    const diffFields = ['title','name','status','description','assigned_owner','needed_by','admin_priority'];
-    const rows = diffFields.filter(f => JSON.stringify(conflict.local[f]) !== JSON.stringify(conflict.remote[f]))
-      .map(f => `<tr><td><strong>${f}</strong></td><td class="td-local">${conflict.local[f]||'—'}</td><td class="td-remote">${conflict.remote[f]||'—'}</td></tr>`)
-      .join('');
-    body.innerHTML = rows || '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:12px">No se detectaron diferencias en campos clave.</td></tr>';
-  }
-  openModal('modal-conflict');
-}
-
-function _resolveConflictNow(strategy) {
-  if (!_conflictPending) { closeModal('modal-conflict'); return; }
-  resolveConflict(_conflictPending.entityType, _conflictPending.entityId, strategy, _conflictPending);
-  closeModal('modal-conflict');
-}
-
-function resolveConflict(entityType, entityId, strategy, conflictData) {
-  const c = conflictData || _conflictPending;
-  if (!c) return;
-  const now = new Date().toISOString();
-  if (entityType === 'request' || c.entityType === 'request') {
-    const idx = state.requests.findIndex(r => r.id === (entityId||c.entityId));
-    if (idx < 0) return;
-    if (strategy === 'mine') {
-      state.requests[idx].version = (c.remote.version||1) + 1;
-      state.requests[idx].updated_at = now;
-      state.requests[idx].updated_by = state.currentUser || 'Sistema';
-    } else if (strategy === 'theirs') {
-      state.requests[idx] = { ...c.remote, version:(c.remote.version||1)+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
-    } else { // merge
-      state.requests[idx] = {
-        ...c.remote, ...state.requests[idx],
-        status: c.remote.status || state.requests[idx].status, // prefer remote status
-        version: (Math.max(c.local.version||1, c.remote.version||1)) + 1,
-        updated_at: now, updated_by: state.currentUser || 'Sistema'
-      };
-    }
-  } else if (entityType === 'initiative' || c.entityType === 'initiative') {
-    const idx = state.initiatives.findIndex(i => i.id === (entityId||c.entityId));
-    if (idx < 0) return;
-    if (strategy === 'mine') {
-      state.initiatives[idx].version = (c.remote.version||1) + 1;
-      state.initiatives[idx].updated_at = now;
-    } else if (strategy === 'theirs') {
-      state.initiatives[idx] = { ...c.remote, version:(c.remote.version||1)+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
-    } else {
-      state.initiatives[idx] = { ...c.remote, ...state.initiatives[idx], version:(Math.max(c.local.version||1,c.remote.version||1))+1, updated_at:now, updated_by:state.currentUser||'Sistema' };
-    }
-  }
-  _conflictPending = null;
-  toast('✅ Conflicto resuelto', `Estrategia: ${strategy==='mine'?'Mi versión':strategy==='theirs'?'Versión remota':'Fusión'}`, 'success');
-  _isDirty = true;
-  saveNow('conflict-resolved');
-  if (state.currentView === 'kanban') renderKanban();
-  if (state.currentView === 'roadmap') renderRoadmap();
-}
-
-function mergeRemoteState(remoteData) {
-  if (!remoteData) return;
-  // Non-conflicting merges (new items from remote not in local)
-  if (remoteData.requests) {
-    const localIds = new Set(state.requests.map(r => r.id));
-    (remoteData.requests).forEach(remote => {
-      if (!localIds.has(remote.id)) state.requests.push(normalizeRequest(remote));
-    });
-  }
-  if (remoteData.initiatives) {
-    const localIds = new Set(state.initiatives.map(i => i.id));
-    (remoteData.initiatives).forEach(remote => {
-      if (!localIds.has(remote.id)) state.initiatives.push(normalizeInitiative(remote));
-    });
-  }
-}
-
-function syncStateFromRemote() {
-  saveNow('manual-sync');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 2 — ROADMAP TASKS: helper functions
-// ═══════════════════════════════════════════════════════════════════
-function openCreateTaskFromInitiative(iniId) {
-  const ini = state.initiatives.find(i => i.id === iniId);
-  if (!ini) return;
-  document.getElementById('task-from-ini-title').textContent = `⚡ Nueva tarea — ${ini.name.substring(0,40)}`;
-  document.getElementById('tfi-ini-id').value = iniId;
-  document.getElementById('tfi-title').value = '';
-  document.getElementById('tfi-desc').value = '';
-  document.getElementById('tfi-needed-by').value = '';
-  const ownerSel = document.getElementById('tfi-owner');
-  ownerSel.innerHTML = '<option value="">Sin asignar</option>' + state.config.team.map(m=>`<option value="${m}">${m}</option>`).join('');
-  ownerSel.value = ini.primary_owner || '';
-  const catSel = document.getElementById('tfi-category');
-  catSel.innerHTML = Object.keys(CATEGORIES).map(c=>`<option value="${c}">${CATEGORIES[c].icon} ${c}</option>`).join('');
-  const msSel = document.getElementById('tfi-milestone');
-  msSel.innerHTML = '<option value="">— Sin milestone —</option>' + (ini.milestones||[]).map(ms=>`<option value="${ms.id||ms.name}">${ms.name}</option>`).join('');
-  openModal('modal-task-from-ini');
-  setTimeout(()=>document.getElementById('tfi-title').focus(), 150);
-}
-
-function submitTaskFromInitiative() {
-  const iniId = document.getElementById('tfi-ini-id').value;
-  const title = document.getElementById('tfi-title').value.trim();
-  const desc  = document.getElementById('tfi-desc').value.trim();
-  const owner = document.getElementById('tfi-owner').value;
-  const prio  = document.getElementById('tfi-priority').value;
-  const date  = document.getElementById('tfi-needed-by').value;
-  const cat   = document.getElementById('tfi-category').value;
-  const msId  = document.getElementById('tfi-milestone').value;
-  if (!title) { toast('⚠️ Requerido','Agrega un título para la tarea.','warning'); return; }
-  if (!validateDate(date, 'Fecha requerida')) return;
-  const ini = state.initiatives.find(i => i.id === iniId);
-  const now = new Date().toISOString();
-  const newReq = normalizeRequest({
-    id: genId(cat||'General'),
-    created_at: now, updated_at: now, updated_by: state.currentUser||'Sistema',
-    version: 1,
-    requester_name: state.currentUser||'Equipo', requester_area:'VCN Strategic Ops', requester_business_line:'VCN',
-    category: cat || Object.keys(CATEGORIES)[0],
-    request_type: 'Tarea interna', title, description: desc||title, objective: title,
-    needed_by: date, requester_priority: prio, expected_impact:'', support_links:[], additional_comments:'',
-    status:'Backlog', assigned_owner: owner, admin_priority: prio, complexity:'Media', internal_only:true,
-    linked_initiative_id: iniId,
-    linked_milestone_id: msId || null,
-    activity_log: [{type:'log',author:state.currentUser||'Equipo',content:`Tarea creada desde Roadmap — Iniciativa: ${ini?ini.name:'?'}`,created_at:now}],
-    files:[], milestones:[]
-  });
-  warnCriticalTaskNoOwner(newReq);
-  state.requests.unshift(newReq);
-  markDirty('request', newReq.id);
-  addAuditLog('request', newReq.id, 'created', null, {title, status:'Backlog', owner, iniId});
-  saveNow('create-task-from-ini');
-  closeModal('modal-task-from-ini');
-  updateNavBadges();
-  renderRoadmap();
-  toast('⚡ Tarea creada', `${newReq.id}: ${title}`, 'success');
-}
-
-function openLinkTaskToInitiative(iniId) {
-  document.getElementById('link-task-ini-id').value = iniId;
-  document.getElementById('link-task-search').value = '';
-  renderLinkTaskList(iniId, '');
-  openModal('modal-link-task');
-}
-
-function renderLinkTaskList(iniId, query) {
-  const unlinked = state.requests.filter(r => {
-    if (!query) return !r.linked_initiative_id;
-    const q = query.toLowerCase();
-    return r.title.toLowerCase().includes(q) || r.id.toLowerCase().includes(q);
-  });
-  const listEl = document.getElementById('link-task-list');
-  if (!listEl) return;
-  if (!unlinked.length) {
-    listEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">Sin tareas disponibles</div>';
-    return;
-  }
-  listEl.innerHTML = unlinked.slice(0,30).map(r => {
-    const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="linkTaskToInitiative('${r.id}','${iniId}')">
-      <span style="font-size:18px">${catInfo.icon}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${r.id} · ${statusBadge(r.status)} · ${r.assigned_owner||'Sin owner'}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function filterLinkTaskList() {
-  const iniId = document.getElementById('link-task-ini-id').value;
-  const q = document.getElementById('link-task-search').value;
-  renderLinkTaskList(iniId, q);
-}
-
-function linkTaskToInitiative(reqId, iniId) {
-  const req = state.requests.find(r => r.id === reqId);
-  if (!req) return;
-  const oldIni = req.linked_initiative_id;
-  req.linked_initiative_id = iniId;
-  req.updated_at = new Date().toISOString();
-  req.updated_by = state.currentUser || 'Sistema';
-  req.version = (req.version||1) + 1;
-  req.activity_log.push({type:'log',author:state.currentUser||'Equipo',content:`Vinculado a iniciativa: ${iniId}`,created_at:new Date().toISOString()});
-  addAuditLog('request', reqId, 'linked_initiative_id', oldIni, iniId);
-  markDirty('request', reqId);
-  saveNow('link-task');
-  closeModal('modal-link-task');
-  renderRoadmap();
-  toast('🔗 Tarea vinculada', req.title.substring(0,40), 'success');
-}
-
-function unlinkTaskFromInitiative(reqId) {
-  const req = state.requests.find(r => r.id === reqId);
-  if (!req) return;
-  if (!confirm(`¿Desvincular "${req.title.substring(0,50)}" de la iniciativa? La tarea NO será eliminada.`)) return;
-  const oldIni = req.linked_initiative_id;
-  req.linked_initiative_id = null;
-  req.linked_milestone_id = null;
-  req.updated_at = new Date().toISOString();
-  req.updated_by = state.currentUser || 'Sistema';
-  req.version = (req.version||1) + 1;
-  addAuditLog('request', reqId, 'linked_initiative_id', oldIni, null);
-  markDirty('request', reqId);
-  saveNow('unlink-task');
-  renderRoadmap();
-  toast('✕ Tarea desvinculada', req.title.substring(0,40), 'info');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UPGRADE 3 — CALENDAR VIEW
-// ═══════════════════════════════════════════════════════════════════
-
-// State for calendar (stored in main state)
-function getCalendarState() {
-  if (!state.calendarView) state.calendarView = 'week';
-  if (!state.calendarDate) state.calendarDate = new Date().toISOString().split('T')[0];
-  if (!state.calendarFilter) state.calendarFilter = {owner:'',category:'',status:'',priority:'',initiative:'',eventType:''};
-  return state;
-}
-
-function changeCalendarView(v) {
-  state.calendarView = v;
-  renderCalendar();
-}
-
-function changeCalendarDate(dir) {
-  const cs = getCalendarState();
-  const d = new Date(cs.calendarDate);
-  if (cs.calendarView === 'week') {
-    d.setDate(d.getDate() + (dir === 'next' ? 7 : -7));
-  } else {
-    d.setMonth(d.getMonth() + (dir === 'next' ? 1 : -1));
-  }
-  state.calendarDate = d.toISOString().split('T')[0];
-  renderCalendar();
-}
-
-function getWeekRange(dateStr) {
-  const d = new Date(dateStr);
-  const dow = d.getDay(); // 0=Sun
-  const mon = new Date(d); mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return { start: mon.toISOString().split('T')[0], end: sun.toISOString().split('T')[0], mon };
-}
-
-function getMonthRange(dateStr) {
-  const d = new Date(dateStr);
-  const first = new Date(d.getFullYear(), d.getMonth(), 1);
-  const last  = new Date(d.getFullYear(), d.getMonth()+1, 0);
-  return { start: first.toISOString().split('T')[0], end: last.toISOString().split('T')[0], year: d.getFullYear(), month: d.getMonth() };
-}
-
-function getCalendarEvents() {
-  const cs = getCalendarState();
-  const f = cs.calendarFilter;
-  const events = [];
-  const PRIO_COLORS = {Crítica:{bg:'#FEF2F2',c:'#B91C1C',border:'#FECACA'},Alta:{bg:'#FFF7ED',c:'#9A3412',border:'#FDBA74'},Media:{bg:'#EFF6FF',c:'#1D4ED8',border:'#BFDBFE'},Baja:{bg:'#F0FDF4',c:'#15803D',border:'#BBF7D0'}};
-
-  // Tasks from Kanban
-  state.requests.forEach(req => {
-    if (!req.needed_by) return;
-    if (f.owner && req.assigned_owner !== f.owner) return;
-    if (f.category && req.category !== f.category) return;
-    if (f.status && req.status !== f.status) return;
-    if (f.priority && req.admin_priority !== f.priority && req.requester_priority !== f.priority) return;
-    if (f.initiative && req.linked_initiative_id !== f.initiative) return;
-    if (f.eventType && f.eventType !== 'task') return;
-    const prio = req.admin_priority || req.requester_priority || 'Media';
-    const pc = PRIO_COLORS[prio] || PRIO_COLORS.Media;
-    const done = ['Concluida','Cancelada'].includes(req.status);
-    const overdue = isOverdue(req.needed_by) && !done;
-    events.push({
-      id: req.id, type:'task', date: req.needed_by,
-      title: req.title, owner: req.assigned_owner||'—', status: req.status,
-      priority: prio, category: req.category,
-      bg: done?'#F0FDF4':overdue?'#FEF2F2':pc.bg,
-      color: done?'#15803D':overdue?'#B91C1C':pc.c,
-      border: done?'#BBF7D0':overdue?'#FECACA':pc.border,
-      icon: done?'✅':overdue?'🔴':'📋'
-    });
-  });
-
-  // Milestones from initiatives
-  state.initiatives.forEach(ini => {
-    if (f.initiative && ini.id !== f.initiative) return;
-    if (f.eventType && f.eventType !== 'milestone') return;
-    (ini.milestones||[]).forEach(ms => {
-      if (!ms.target_date) return;
-      if (f.owner && ms.owner !== f.owner) return;
-      if (f.status && ms.status !== f.status) return;
-      const done = ['Completado','Validada'].includes(ms.status);
-      const overdue = isOverdue(ms.target_date) && !done;
-      events.push({
-        id: `${ini.id}::${ms.id||ms.name}`, type:'milestone', date: ms.target_date,
-        title: ms.name, owner: ms.owner||'—', status: ms.status,
-        initiative: ini.name, initiativeId: ini.id,
-        bg: done?'#F5F3FF':overdue?'#FEF2F2':'#F5F3FF',
-        color: done?'#5B21B6':overdue?'#B91C1C':'#6D28D9',
-        border: done?'#DDD6FE':overdue?'#FECACA':'#DDD6FE',
-        icon: done?'✅':overdue?'🔴':'◆'
-      });
-    });
-  });
-
-  // Initiatives by target_close_date
-  state.initiatives.forEach(ini => {
-    if (!ini.target_close_date) return;
-    if (f.initiative && ini.id !== f.initiative) return;
-    if (f.owner && ini.primary_owner !== f.owner) return;
-    if (f.status && ini.status !== f.status) return;
-    if (f.eventType && f.eventType !== 'initiative') return;
-    const done = ['Concluida'].includes(ini.status);
-    const overdue = isOverdue(ini.target_close_date) && !done;
-    events.push({
-      id: `ini::${ini.id}`, type:'initiative', date: ini.target_close_date,
-      title: ini.name, owner: ini.primary_owner||'—', status: ini.status,
-      category: ini.category,
-      bg: done?'#F0FDF4':overdue?'#FEF2F2':'#E0F5F0',
-      color: done?'#15803D':overdue?'#B91C1C':'#006666',
-      border: done?'#BBF7D0':overdue?'#FECACA':'#6EE7D0',
-      icon: done?'✅':overdue?'🔴':'🗺️'
-    });
-  });
-
-  return events;
-}
-
-function groupEventsByDate(events) {
-  const map = {};
-  events.forEach(ev => {
-    if (!map[ev.date]) map[ev.date] = [];
-    map[ev.date].push(ev);
-  });
-  return map;
-}
-
-function openCalendarEvent(eventType, eventId) {
-  if (eventType === 'task') {
-    openTask(eventId);
-  } else if (eventType === 'milestone') {
-    const [iniId, msId] = eventId.split('::');
-    editInitiativeMilestone(iniId, msId);
-  } else if (eventType === 'initiative') {
-    const iniId = eventId.replace('ini::', '');
-    editInitiative(iniId);
-  }
-}
-
-function renderWeekCalendar(events, weekRange) {
-  const byDate = groupEventsByDate(events);
-  const today = new Date().toISOString().split('T')[0];
-  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  let html = '<div class="cal-week-grid">';
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(weekRange.mon);
-    d.setDate(weekRange.mon.getDate() + i);
-    const dStr = d.toISOString().split('T')[0];
-    const dayEvents = byDate[dStr] || [];
-    const isToday = dStr === today;
-    html += `<div class="cal-day-col${isToday?' today':''}">
-      <div class="cal-day-header">
-        <span class="day-name">${DAYS[i]}</span>
-        <span class="day-num">${d.getDate()}</span>
-      </div>
-      <div class="cal-day-events">`;
-    dayEvents.forEach(ev => {
-      html += `<div class="cal-event" style="background:${ev.bg};color:${ev.color};border-color:${ev.border}" onclick="openCalendarEvent('${ev.type}','${ev.id}')" title="${ev.title} — ${ev.owner} — ${ev.status}">
-        <div class="ev-title">${ev.icon} ${ev.title.substring(0,28)}${ev.title.length>28?'…':''}</div>
-        <div class="ev-meta">${ev.type==='task'?ev.priority+' · ':ev.type==='milestone'?'◆ ':ev.type==='initiative'?'🗺️ ':''}${ev.owner}</div>
-      </div>`;
-    });
-    html += '</div></div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-function renderMonthCalendar(events, monthRange) {
-  const byDate = groupEventsByDate(events);
-  const today = new Date().toISOString().split('T')[0];
-  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const firstDay = new Date(monthRange.year, monthRange.month, 1);
-  const lastDay  = new Date(monthRange.year, monthRange.month+1, 0);
-  // Start of grid — Monday of the week containing the 1st
-  const startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-  const gridStart = new Date(firstDay); gridStart.setDate(1 - startDow);
-  // End of grid — Sunday of week containing last day
-  const endDow = lastDay.getDay() === 0 ? 0 : 7 - lastDay.getDay();
-  const gridEnd = new Date(lastDay); gridEnd.setDate(lastDay.getDate() + endDow);
-  let html = '<div class="cal-month-header-row">' + DAYS.map(d=>`<div class="cal-month-dow">${d}</div>`).join('') + '</div>';
-  html += '<div class="cal-month-grid">';
-  const cur = new Date(gridStart);
-  while (cur <= gridEnd) {
-    const dStr = cur.toISOString().split('T')[0];
-    const isToday = dStr === today;
-    const otherMonth = cur.getMonth() !== monthRange.month;
-    const dayEvents = byDate[dStr] || [];
-    const MAX_SHOW = 3;
-    const shown = dayEvents.slice(0, MAX_SHOW);
-    const extra = dayEvents.length - MAX_SHOW;
-    html += `<div class="cal-month-cell${isToday?' today':''}${otherMonth?' other-month':''}">
-      <div class="cal-month-day-num">${cur.getDate()}</div>`;
-    shown.forEach(ev => {
-      html += `<div class="cal-event" style="background:${ev.bg};color:${ev.color};border-color:${ev.border};font-size:10px;padding:2px 5px;margin:1px 4px" onclick="openCalendarEvent('${ev.type}','${ev.id}')" title="${ev.title}">
-        ${ev.icon} ${ev.title.substring(0,20)}${ev.title.length>20?'…':''}
-      </div>`;
-    });
-    if (extra > 0) html += `<div class="cal-more-badge" onclick="openDayEventsModal('${dStr}')">+${extra} más</div>`;
-    html += '</div>';
-    cur.setDate(cur.getDate() + 1);
-  }
-  html += '</div>';
-  return html;
-}
-
-function openDayEventsModal(dateStr) {
-  // Simple: show all events for a day in a toast-like panel or existing modal
-  const events = getCalendarEvents().filter(e => e.date === dateStr);
-  const html = events.map(ev => `<div class="rm-task-item" onclick="openCalendarEvent('${ev.type}','${ev.id}')">
-    <span style="font-size:16px">${ev.icon}</span>
-    <div style="flex:1;min-width:0">
-      <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.title}</div>
-      <div style="font-size:10px;color:var(--text-muted)">${ev.type} · ${ev.owner} · ${ev.status}</div>
-    </div>
-  </div>`).join('');
-  // Reuse an existing modal or build a simple alert
-  const div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10002;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;min-width:320px;max-width:460px;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-lg)';
-  div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><strong>📆 ${fmtDate(dateStr)}</strong><button onclick="this.closest('div[style]').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted)">✕</button></div>${html||'<div style="text-align:center;color:var(--text-muted);padding:16px">Sin eventos este día</div>'}`;
-  document.body.appendChild(div);
-  div.onclick = e => { if(e.target===div) div.remove(); };
-}
-
-function applyCalendarFilters() { renderCalendar(); }
-
+// ═══════════════════════════════════════════════════════════
+// VIEW: CALENDAR (reflejo del Kanban por fecha de entrega)
+// ═══════════════════════════════════════════════════════════
 function renderCalendar() {
-  const cs = getCalendarState();
-  const f = cs.calendarFilter;
-  const view = cs.calendarView || 'week';
-  const dateStr = cs.calendarDate || new Date().toISOString().split('T')[0];
-  const events = getCalendarEvents();
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const calMonth = state.calMonth !== undefined ? state.calMonth : today.getMonth();
+  const calYear = state.calYear !== undefined ? state.calYear : today.getFullYear();
+  state.calMonth = calMonth;
+  state.calYear = calYear;
 
-  // Stats
-  const thisWeek = events.filter(e => {
-    const wr = getWeekRange(today);
-    return e.date >= wr.start && e.date <= wr.end;
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay = new Date(calYear, calMonth+1, 0);
+  const monthName = firstDay.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+
+  // Group tasks by needed_by date
+  const tasksByDate = {};
+  state.requests.filter(r=>r.needed_by&&!['Concluida','Cancelada'].includes(r.status)).forEach(r=>{
+    const d = r.needed_by.split('T')[0];
+    if(!tasksByDate[d]) tasksByDate[d]=[];
+    tasksByDate[d].push(r);
   });
-  const overdue = events.filter(e => e.date < today && !['Concluida','Cancelada','Completado','Validada'].includes(e.status));
-  const dueToday = events.filter(e => e.date === today);
-  const critical = events.filter(e => e.priority === 'Crítica' && !['Concluida','Cancelada'].includes(e.status));
-  const done = events.filter(e => ['Concluida','Cancelada','Completado','Validada'].includes(e.status));
 
-  // Filter bar
-  const ownerOpts = ['', ...state.config.team].map(o=>`<option value="${o}" ${f.owner===o?'selected':''}>${o||'Todos los owners'}</option>`).join('');
-  const catOpts = ['', ...Object.keys(CATEGORIES)].map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c||'Todas las categorías'}</option>`).join('');
-  const iniOpts = ['', ...state.initiatives.map(i=>i.id)].map(id=>{const ini=state.initiatives.find(x=>x.id===id);return `<option value="${id}" ${f.initiative===id?'selected':''}>${id?ini?ini.name.substring(0,25):'?':'Todas las iniciativas'}</option>`;}).join('');
-  const typeOpts = ['','task','milestone','initiative'].map(t=>`<option value="${t}" ${f.eventType===t?'selected':''}>${t||'Todos los tipos'}</option>`).join('');
-  const prioOpts = ['', ...PRIORITIES].map(p=>`<option value="${p}" ${f.priority===p?'selected':''}>${p||'Todas las prioridades'}</option>`).join('');
-
-  // Range display
-  let rangeLabel = '';
-  if (view === 'week') {
-    const wr = getWeekRange(dateStr);
-    rangeLabel = `${fmtDate(wr.start)} — ${fmtDate(wr.end)}`;
-  } else {
-    const mr = getMonthRange(dateStr);
-    const d = new Date(dateStr);
-    rangeLabel = d.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
+  // Build calendar grid
+  const startDow = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const weeks = [];
+  let week = [];
+  for(let i=0;i<startDow;i++) week.push(null);
+  for(let d=1;d<=daysInMonth;d++){
+    week.push(d);
+    if(week.length===7){weeks.push(week);week=[];}
   }
+  while(week.length<7) week.push(null);
+  if(week.some(x=>x!==null)) weeks.push(week);
 
-  // Calendar grid
-  let calGrid = '';
-  if (view === 'week') {
-    calGrid = renderWeekCalendar(events, getWeekRange(dateStr));
-  } else {
-    calGrid = renderMonthCalendar(events, getMonthRange(dateStr));
-  }
+  const DOW_LABELS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const statusColors2 = {'Backlog':'#6B7280','En proceso':'#008080','Ejecutada':'#D97706','Validada':'#16A34A','Concluida':'#15803D','Requiere Cambios':'#EA580C','Cancelada':'#DC2626'};
+  const todayStr = today.toISOString().split('T')[0];
 
-  const hasFilter = f.owner||f.category||f.status||f.priority||f.initiative||f.eventType;
+  const calRows = weeks.map(week=>{
+    const cells = week.map(day=>{
+      if(!day) return `<td style="background:var(--surface2);border:1px solid var(--border-light);padding:6px;vertical-align:top;min-height:80px"></td>`;
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const tasks = tasksByDate[dateStr]||[];
+      const isToday = dateStr===todayStr;
+      const isOverdueDay = new Date(dateStr)<today;
+      const taskPills = tasks.slice(0,3).map(t=>`
+        <div onclick="openTask('${t.id}')" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${statusColors2[t.status]||'#6B7280'}18;color:${statusColors2[t.status]||'#6B7280'};border-left:2px solid ${statusColors2[t.status]||'#6B7280'}" title="${t.title}">${t.title}</div>
+      `).join('');
+      const more = tasks.length>3 ? `<div style="font-size:10px;color:var(--text-muted);font-weight:600">+${tasks.length-3} más</div>` : '';
+      return `<td style="background:${isToday?'var(--primary-light)':'var(--surface)'};border:1px solid ${isToday?'var(--primary)':'var(--border-light)'};padding:6px;vertical-align:top;min-height:80px;width:14.28%">
+        <div style="font-size:13px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--primary)':isOverdueDay&&tasks.length?'var(--error)':'var(--text-secondary)'};margin-bottom:4px">${day}</div>
+        ${taskPills}${more}
+      </td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  const legend = Object.entries(statusColors2).map(([s,c])=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${c};font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>${s}</span>`).join('');
+
+  const monthTasks = state.requests.filter(r=>{
+    if(!r.needed_by) return false;
+    const d = new Date(r.needed_by);
+    return d.getMonth()===calMonth && d.getFullYear()===calYear && !['Concluida','Cancelada'].includes(r.status);
+  }).sort((a,b)=>new Date(a.needed_by)-new Date(b.needed_by));
 
   document.getElementById('view-calendar').innerHTML = `
-    <div class="cal-header">
-      <div>
-        <div style="font-size:18px;font-weight:800">📆 Calendario</div>
-        <div style="font-size:12px;color:var(--text-muted)">${rangeLabel} · ${events.length} evento${events.length!==1?'s':''}</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="cal-nav-btn" onclick="changeCalendarDate('prev')">← Anterior</button>
-        <button class="cal-nav-btn" onclick="state.calendarDate=new Date().toISOString().split('T')[0];renderCalendar()">Hoy</button>
-        <button class="cal-nav-btn" onclick="changeCalendarDate('next')">Siguiente →</button>
-        <div class="cal-toggle">
-          <button class="${view==='week'?'active':''}" onclick="changeCalendarView('week')">Semana</button>
-          <button class="${view==='month'?'active':''}" onclick="changeCalendarView('month')">Mes</button>
+    <div style="max-width:1100px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);text-transform:capitalize">${monthName}</h2>
+          <div style="font-size:13px;color:var(--text-muted)">${monthTasks.length} tarea${monthTasks.length!==1?'s':''} con vencimiento este mes</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${calMonth===0?11:calMonth-1};${calMonth===0?'state.calYear='+(calYear-1)+';':''}renderCalendar()">← Anterior</button>
+          <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${today.getMonth()};state.calYear=${today.getFullYear()};renderCalendar()">Hoy</button>
+          <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${calMonth===11?0:calMonth+1};${calMonth===11?'state.calYear='+(calYear+1)+';':''}renderCalendar()">Siguiente →</button>
         </div>
       </div>
-    </div>
 
-    <div class="cal-stats">
-      <div class="cal-stat-card">
-        <div class="stat-num" style="color:var(--primary)">${thisWeek.length}</div>
-        <div class="stat-lbl">📅 Esta semana</div>
+      <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>${DOW_LABELS.map(d=>`<th style="padding:10px;text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);background:var(--primary-lighter);border:1px solid var(--border-light)">${d}</th>`).join('')}</tr>
+          </thead>
+          <tbody>${calRows}</tbody>
+        </table>
       </div>
-      <div class="cal-stat-card">
-        <div class="stat-num" style="color:var(--error)">${overdue.length}</div>
-        <div class="stat-lbl">⚠️ Vencidos</div>
-      </div>
-      <div class="cal-stat-card">
-        <div class="stat-num" style="color:var(--warning)">${dueToday.length}</div>
-        <div class="stat-lbl">🎯 Vencen hoy</div>
-      </div>
-      <div class="cal-stat-card">
-        <div class="stat-num" style="color:var(--error)">${critical.length}</div>
-        <div class="stat-lbl">🔴 Críticos</div>
-      </div>
-      <div class="cal-stat-card">
-        <div class="stat-num" style="color:var(--success)">${done.length}</div>
-        <div class="stat-lbl">✅ Completados</div>
-      </div>
-    </div>
 
-    <div class="cal-filters">
-      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.owner=this.value;renderCalendar()">${ownerOpts}</select>
-      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.category=this.value;renderCalendar()">${catOpts}</select>
-      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.priority=this.value;renderCalendar()">${prioOpts}</select>
-      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.initiative=this.value;renderCalendar()">${iniOpts}</select>
-      <select class="filter-select" style="font-size:12px" onchange="state.calendarFilter.eventType=this.value;renderCalendar()">${typeOpts}</select>
-      ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.calendarFilter={owner:'',category:'',status:'',priority:'',initiative:'',eventType:''};renderCalendar()" style="font-size:11px">✕ Limpiar</button>`:''}
-    </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">${legend}</div>
 
-    ${calGrid}
+      ${monthTasks.length ? `
+      <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:14px;font-weight:700;color:var(--text-primary)">📋 Tareas con vencimiento en ${monthName}</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--primary-lighter)">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--primary)">FECHA</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--primary)">TAREA</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--primary)">ESTADO</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--primary)">OWNER</th>
+          </tr></thead>
+          <tbody>
+            ${monthTasks.map(r=>`<tr onclick="openTask('${r.id}')" style="cursor:pointer;border-bottom:1px solid var(--border-light)">
+              <td style="padding:10px 14px;font-size:12px;font-weight:600;color:${isOverdue(r.needed_by)?'var(--error)':'var(--text-secondary)'}">${fmtDate(r.needed_by)}</td>
+              <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--text-primary);max-width:300px"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${r.title}</span></td>
+              <td style="padding:10px 14px">${statusBadge(r.status)}</td>
+              <td style="padding:10px 14px">${r.assigned_owner?ownerBadge(r.assigned_owner):'<span style="font-size:11px;color:var(--text-muted)">—</span>'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+    </div>
   `;
 }
 
+// ═══════════════════════════════════════════════════════════
+// BACKLOG EXCEL EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════
+function downloadBacklogExcel() {
+  const reqs = state.requests;
+  const headers = ['ID','Título','Categoría','Tipo de solicitud','Estado','Prioridad','Owner','Solicitante','Área solicitante','Fecha requerida','Fecha creación','Descripción','Objetivo'];
+  const rows = reqs.map(r=>[
+    r.id, r.title, r.category, r.request_type||'',
+    r.status, r.admin_priority||r.requester_priority, r.assigned_owner||'',
+    r.requester_name, r.requester_area||'',
+    r.needed_by||'', r.created_at||'',
+    (r.description||'').replace(/"/g,'""'),
+    (r.objective||'').replace(/"/g,'""')
+  ]);
+  const csvContent = [headers, ...rows]
+    .map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+  const BOM = '﻿';
+  const blob = new Blob([BOM+csvContent],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backlog_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Descargando','Backlog exportado como CSV (compatible con Excel)','success');
+}
+
+function uploadBacklogFileClick() {
+  document.getElementById('backlog-upload-input').click();
+}
+
+function processBacklogUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      if(file.name.endsWith('.json')) {
+        const data = JSON.parse(text);
+        const items = Array.isArray(data) ? data : (data.requests || []);
+        if(!items.length) { toast('⚠️ Sin datos','El archivo no contiene solicitudes válidas.','warning'); return; }
+        let added=0, updated=0;
+        items.forEach(item=>{
+          if(!item.id || !item.title) return;
+          const idx = state.requests.findIndex(r=>r.id===item.id);
+          if(idx>=0) { state.requests[idx]={...state.requests[idx],...item}; updated++; }
+          else { if(!item.created_at) item.created_at=new Date().toISOString(); if(!item.updated_at) item.updated_at=new Date().toISOString(); if(!item.activity_log) item.activity_log=[]; if(!item.files) item.files=[]; if(!item.milestones) item.milestones=[]; state.requests.push(item); added++; }
+        });
+        saveState(); renderBacklog();
+        toast('✅ Backlog cargado',`${added} nuevas, ${updated} actualizadas.`,'success');
+        return;
+      }
+      const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+      if(lines.length<2){ toast('⚠️ Sin datos','El CSV no contiene filas.','warning'); return; }
+      const parseCSVLine = (line)=>{
+        const result=[]; let cur=''; let inQ=false;
+        for(let i=0;i<line.length;i++){
+          if(line[i]==='"'&&!inQ&&(i===0||line[i-1]===',')){inQ=true;}
+          else if(line[i]==='"'&&inQ&&(i+1>=line.length||line[i+1]===',')){inQ=false;}
+          else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}
+          else{cur+=line[i];}
+        }
+        result.push(cur.trim());
+        return result.map(v=>v.replace(/^"|"$/g,'').replace(/""/g,'"'));
+      };
+      const headers = parseCSVLine(lines[0]).map(h=>h.toLowerCase().replace(/\s+/g,'_'));
+      const getH = (row, ...names) => { for(const n of names){ const idx=headers.indexOf(n); if(idx>=0&&row[idx]) return row[idx]; } return ''; };
+      let added=0, updated=0;
+      for(let i=1;i<lines.length;i++){
+        const row = parseCSVLine(lines[i]);
+        if(row.length<2) continue;
+        const id = getH(row,'id') || genId(getH(row,'categoría','categoria','category'));
+        const title = getH(row,'título','titulo','title','solicitud');
+        if(!title) continue;
+        const item = {
+          id, title,
+          category: getH(row,'categoría','categoria','category') || 'Solicitudes Generales',
+          request_type: getH(row,'tipo_de_solicitud','tipo','request_type') || 'Otros',
+          status: getH(row,'estado','status') || 'Backlog',
+          admin_priority: getH(row,'prioridad','priority') || 'Media',
+          requester_priority: getH(row,'prioridad','priority') || 'Media',
+          assigned_owner: getH(row,'owner','asignado') || '',
+          requester_name: getH(row,'solicitante','requester_name') || 'Importado',
+          requester_area: getH(row,'área','area','requester_area') || '',
+          needed_by: getH(row,'fecha_requerida','needed_by','fecha_req') || '',
+          description: getH(row,'descripción','descripcion','description') || '',
+          objective: getH(row,'objetivo','objective') || '',
+          created_at: getH(row,'fecha_creación','created_at') || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          activity_log:[], files:[], milestones:[], internal_only:false
+        };
+        const idx = state.requests.findIndex(r=>r.id===item.id);
+        if(idx>=0){ state.requests[idx]={...state.requests[idx],...item}; updated++; }
+        else{ state.requests.push(item); added++; }
+      }
+      saveState(); renderBacklog();
+      toast('✅ Backlog cargado',`${added} nuevas, ${updated} actualizadas.`,'success');
+    } catch(err) {
+      toast('❌ Error al cargar',err.message,'error');
+    }
+    input.value='';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ═══════════════════════════════════════════════════════════
+// OKRs TRANSVERSALES — EXCEL EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════
+function downloadOKRExcel() {
+  const items = state.areaRoadmaps || [];
+  const af = state.areaFilter || '';
+  const qf = state.quarterFilter || '';
+  const filtered = items.filter(i=>(af?i.area===af:true)&&(qf?i.quarter===qf:true));
+  const headers = ['ID','Título','Área Transversal','Quarter','Owner','Estatus','Prioridad','Fecha Inicio','Fecha Fin','Descripción','Tags'];
+  const rows = filtered.map(i=>[
+    i.id||'', i.title||'', i.area||'', i.quarter||'',
+    i.owner||'', i.status||'', i.priority||'',
+    i.start_date||'', i.end_date||'',
+    (i.description||'').replace(/"/g,'""'),
+    (i.tags||[]).join(', ')
+  ]);
+  const csvContent = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const BOM = '﻿';
+  const blob = new Blob([BOM+csvContent],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `okrs_transversales_${af||'todas'}_${qf||'todos'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Descargando','OKRs exportados como CSV','success');
+}
+
+function uploadOKRFileClick() {
+  document.getElementById('okr-upload-input').click();
+}
+
+function processOKRUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const text = e.target.result;
+      if(file.name.endsWith('.json')){
+        const data = JSON.parse(text);
+        const items = Array.isArray(data)?data:(data.areaRoadmaps||[]);
+        if(!items.length){toast('⚠️ Sin datos','El archivo no contiene OKRs válidos.','warning');return;}
+        let added=0,updated=0;
+        items.forEach(item=>{
+          if(!item.title) return;
+          if(!item.id) item.id='plan-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+          const idx=(state.areaRoadmaps||[]).findIndex(r=>r.id===item.id);
+          if(idx>=0){state.areaRoadmaps[idx]={...state.areaRoadmaps[idx],...item};updated++;}
+          else{if(!state.areaRoadmaps) state.areaRoadmaps=[];state.areaRoadmaps.push(item);added++;}
+        });
+        saveState();renderPlaneacion();
+        toast('✅ OKRs cargados',`${added} nuevos, ${updated} actualizados.`,'success');
+        return;
+      }
+      const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+      if(lines.length<2){toast('⚠️ Sin datos','El CSV no contiene filas.','warning');return;}
+      const parseCSVLine=(line)=>{const result=[];let cur='';let inQ=false;for(let i=0;i<line.length;i++){if(line[i]==='"'&&!inQ){inQ=true;}else if(line[i]==='"'&&inQ&&(i+1>=line.length||line[i+1]===',')){inQ=false;}else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}else{cur+=line[i];}}result.push(cur.trim());return result.map(v=>v.replace(/^"|"$/g,'').replace(/""/g,'"'));};
+      const hdrs=parseCSVLine(lines[0]).map(h=>h.toLowerCase().replace(/\s+/g,'_').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'));
+      const getH=(row,...names)=>{for(const n of names){const idx=hdrs.indexOf(n);if(idx>=0&&row[idx])return row[idx];}return '';};
+      if(!state.areaRoadmaps) state.areaRoadmaps=[];
+      let added=0,updated=0;
+      for(let i=1;i<lines.length;i++){
+        const row=parseCSVLine(lines[i]);
+        if(row.length<2)continue;
+        const title=getH(row,'titulo','title','nombre','name');
+        if(!title)continue;
+        const id=getH(row,'id')||'plan-'+Date.now()+'-'+i;
+        const item={
+          id,title,
+          area:getH(row,'area_transversal','area','transversal')||'Otro',
+          quarter:getH(row,'quarter','trimestre')||(typeof QUARTERS!=='undefined'?QUARTERS[0]:'Q1-2026'),
+          owner:getH(row,'owner','responsable')||'',
+          status:getH(row,'estatus','status','estado')||'Planeado',
+          priority:getH(row,'prioridad','priority')||'Media',
+          start_date:getH(row,'fecha_inicio','start_date','inicio')||'',
+          end_date:getH(row,'fecha_fin','end_date','fin')||'',
+          description:getH(row,'descripcion','description','descripcion')||'',
+          tags:getH(row,'tags','etiquetas').split(',').map(t=>t.trim()).filter(Boolean),
+          milestones:[]
+        };
+        const idx=state.areaRoadmaps.findIndex(r=>r.id===item.id);
+        if(idx>=0){state.areaRoadmaps[idx]={...state.areaRoadmaps[idx],...item};updated++;}
+        else{state.areaRoadmaps.push(item);added++;}
+      }
+      saveState();renderPlaneacion();
+      toast('✅ OKRs cargados',`${added} nuevos, ${updated} actualizados.`,'success');
+    }catch(err){toast('❌ Error al cargar',err.message,'error');}
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
@@ -7451,6 +6812,13 @@ document.addEventListener('DOMContentLoaded', init);
 #ai-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:52px;height:52px;border-radius:50%;background:#1a1a2e;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
 #ai-fab:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(0,0,0,0.45)}
 #ai-fab .ai-q{font-size:22px;font-weight:800;color:#fff;line-height:1;font-family:var(--font-sans)}
+#multitab-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8991;
+  background:#FEE2E2;color:#991B1B;padding:7px 16px;font-size:12px;text-align:center;
+  border-bottom:2px solid #EF4444;font-weight:500}
+#nosync-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8990;
+  background:#FEF3C7;color:#92400E;padding:7px 16px;font-size:12px;text-align:center;
+  border-bottom:2px solid #F59E0B;font-weight:500}
+#nosync-banner a{color:#92400E;font-weight:700;text-decoration:underline;cursor:pointer}
 #ai-overlay{position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,0.35);display:none}
 #ai-overlay.open{display:block}
 #ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:9000;width:360px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 32px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
@@ -7477,86 +6845,6 @@ document.addEventListener('DOMContentLoaded', init);
 </style>
 
 <!-- Floating ? button -->
-
-<!-- ═══ MODAL: CONFLICT RESOLUTION (Upgrade 1) ═══════════════ -->
-<div id="modal-conflict" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-conflict')" style="z-index:10001">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-header">
-      <div class="modal-title">⚠️ Conflicto de versión detectado</div>
-      <button class="modal-close" onclick="closeModal('modal-conflict')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
-        Otro usuario modificó este elemento desde tu última sincronización. Elige cómo resolver el conflicto.
-      </p>
-      <div id="conflict-entity-info" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--text-secondary)"></div>
-      <table class="conflict-diff-table">
-        <thead><tr><th>Campo</th><th class="td-local">Mi versión (local)</th><th class="td-remote">Versión remota</th></tr></thead>
-        <tbody id="conflict-diff-body"></tbody>
-      </table>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost btn-sm" onclick="_resolveConflictNow('mine')">📌 Mantener mi versión</button>
-      <button class="btn btn-secondary btn-sm" onclick="_resolveConflictNow('theirs')">☁️ Usar versión remota</button>
-      <button class="btn btn-primary btn-sm" onclick="_resolveConflictNow('merge')">🔀 Fusionar campos clave</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: CREATE TASK FROM INITIATIVE (Upgrade 2) ════════ -->
-<div id="modal-task-from-ini" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-task-from-ini')">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-header">
-      <div class="modal-title" id="task-from-ini-title">⚡ Nueva tarea en iniciativa</div>
-      <button class="modal-close" onclick="closeModal('modal-task-from-ini')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label form-required">Título</label>
-        <input class="form-input" id="tfi-title" type="text" placeholder="¿Qué hay que hacer?">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Descripción</label>
-        <textarea class="form-textarea" id="tfi-desc" rows="2" placeholder="Detalle del trabajo…"></textarea>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group"><label class="form-label">Owner</label><select class="form-select" id="tfi-owner"></select></div>
-        <div class="form-group"><label class="form-label">Prioridad</label>
-          <select class="form-select" id="tfi-priority">
-            <option value="Media">Media</option><option value="Alta">Alta</option><option value="Crítica">Crítica</option><option value="Baja">Baja</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="form-label">Fecha requerida</label><input class="form-input" id="tfi-needed-by" type="date"></div>
-        <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="tfi-category"></select></div>
-      </div>
-      <div class="form-group"><label class="form-label">Milestone vinculado</label><select class="form-select" id="tfi-milestone"></select></div>
-      <input type="hidden" id="tfi-ini-id">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-task-from-ini')">Cancelar</button>
-      <button class="btn btn-primary" onclick="submitTaskFromInitiative()">⚡ Crear tarea</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: LINK TASK TO INITIATIVE (Upgrade 2) ════════════ -->
-<div id="modal-link-task" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-link-task')">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <div class="modal-title">🔗 Vincular tarea existente</div>
-      <button class="modal-close" onclick="closeModal('modal-link-task')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Buscar tarea</label>
-        <input class="form-input" id="link-task-search" type="text" placeholder="Escribe título o ID…" oninput="filterLinkTaskList()">
-      </div>
-      <div id="link-task-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;"></div>
-      <input type="hidden" id="link-task-ini-id">
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-link-task')">Cerrar</button></div>
-  </div>
-</div>
 <button id="ai-fab" onclick="toggleAIPanel()" title="Jason — Copiloto Ops">
   <svg width="30" height="30" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M21,40 Q12,40 11,34 L11,29 Q11,26 14,24 L17,23 Q13,19 13,15 L13,12 Q13,7 18,5 L20,4 Q18,2 19,1 Q20,0 22,0.5 Q24,1 24,3 L26,2 Q28,1 30,3 Q31,5 29,7 L32,8 Q35,10 35,14 L34,18 Q32,21 29,22 L31,24 Q33,26 33,30 L33,34 Q33,40 24,40 Z" fill="#34d399"/>
@@ -7565,6 +6853,8 @@ document.addEventListener('DOMContentLoaded', init);
 </button>
 
 <!-- AI Panel -->
+<div id="multitab-banner">⚠️ <strong>Otra pestaña de la app está abierta</strong> — para evitar conflictos, trabaja en una sola pestaña a la vez.</div>
+<div id="nosync-banner">⚠️ <strong>Sin archivo conectado</strong> — los cambios solo se guardan en este navegador. <a onclick="openFileSyncModal()">Conectar archivo compartido →</a></div>
 <div id="ai-overlay" onclick="toggleAIPanel()"></div>
 <div id="ai-panel">
   <div id="ai-panel-header">
@@ -7597,4 +6887,3 @@ document.addEventListener('DOMContentLoaded', init);
 
 </body>
 </html>
-           
