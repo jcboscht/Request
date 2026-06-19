@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strategic Ops Request Hub</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+
 <style>
 /* ═══════════════════════════════════════════════════════════
    VARIABLES & RESET
@@ -279,9 +284,23 @@ img{max-width:100%;}
   padding:16px 20px;border-bottom:1px solid var(--border-light);
   display:flex;align-items:center;justify-content:space-between;
   gap:12px;
+  border-top:3px solid transparent;
+  border-image:linear-gradient(135deg,#3B1FA0,#6D28D9,#7C3AED) 1;
 }
-.card-title{font-size:15px;font-weight:700;color:var(--text-primary);}
+.card-title{
+  font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,#3B1FA0 0%,#6D28D9 50%,#7C3AED 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  color:#6D28D9;
+  display:inline;
+  padding-bottom:1px;
+}
 .card-subtitle{font-size:12px;color:var(--text-muted);margin-top:1px;}
+/* Card title emoji: keep emoji visible, gradient on text */
+.card-title .emoji{-webkit-text-fill-color:initial;}
+
 
 /* KPI card */
 .kpi-card{
@@ -1410,6 +1429,7 @@ td.td-action{white-space:nowrap;}
               ${localStorage.getItem('sorh_backup_ts')?'Último backup: '+new Date(localStorage.getItem('sorh_backup_ts')).toLocaleString('es-MX'):'Sin backups aún'}
             </div>
           </div>
+        <button class="btn btn-ghost btn-full" onclick="openTrash()">🗑 Ver papelera (restaurar eliminadas)</button>
         <button class="btn btn-ghost btn-full" onclick="document.getElementById('import-json-input').click()">⬆️ Importar JSON</button>
         <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importDataJSON(this)">
         <button class="btn btn-danger btn-sm" onclick="disconnectFile()" id="btn-disconnect" style="display:none;margin-top:4px">✕ Desconectar archivo</button>
@@ -1647,6 +1667,7 @@ let state = {
   libFilter: {search:'', category:'', owner:''},
   charts: {},
   documents: [],
+  trash: [],
   notifications: [],
   docsTab: 0,
   ganttGroupBy: '',
@@ -1668,6 +1689,7 @@ function saveState() {
     localStorage.setItem('sorh_documents', JSON.stringify(state.documents));
     localStorage.setItem('sorh_notifications', JSON.stringify(state.notifications.slice(-50)));
     localStorage.setItem('sorh_area_roadmaps', JSON.stringify(state.areaRoadmaps));
+    localStorage.setItem('sorh_trash', JSON.stringify((state.trash||[]).slice(0,200)));
   } catch(e) {}
   // Auto-sync to file (async, non-blocking)
   if (_fileHandle) saveToFile().catch(()=>{});
@@ -1688,6 +1710,8 @@ function loadState() {
     if(nn) state.notifications = JSON.parse(nn);
     const ar = localStorage.getItem('sorh_area_roadmaps');
     if(ar) state.areaRoadmaps = JSON.parse(ar);
+    const tr = localStorage.getItem('sorh_trash');
+    if(tr) state.trash = JSON.parse(tr);
   } catch(e) {}
 }
 
@@ -1707,29 +1731,37 @@ function genId(category) {
   const seq = String(todayCatReqs.length+1).padStart(4,'0');
   return `${d} - ${catKey} - ${seq}`;
 }
+// Parse a date as LOCAL time. 'YYYY-MM-DD' becomes local midnight, avoiding the
+// UTC off-by-one that previously shifted due-dates to the previous day in es-MX.
+function parseLocalDate(s) {
+  if(!s) return null;
+  if(typeof s === 'string') {
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+function _startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
 function fmtDate(iso) {
-  if(!iso) return '-';
-  const d = new Date(iso);
+  const d = parseLocalDate(iso); if(!d) return '-';
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
 }
 function fmtDateShort(iso) {
-  if(!iso) return '-';
-  const d = new Date(iso);
+  const d = parseLocalDate(iso); if(!d) return '-';
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
 }
 function fmtDateTime(iso) {
-  if(!iso) return '-';
-  const d = new Date(iso);
+  const d = parseLocalDate(iso); if(!d) return '-';
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 function isOverdue(dateStr) {
-  if(!dateStr) return false;
-  return new Date(dateStr) < new Date() ;
+  const d = parseLocalDate(dateStr); if(!d) return false;
+  return d < _startOfToday();
 }
 function daysUntil(dateStr) {
-  if(!dateStr) return null;
-  const diff = new Date(dateStr) - new Date();
-  return Math.ceil(diff/(1000*60*60*24));
+  const d = parseLocalDate(dateStr); if(d===null) return null;
+  return Math.round((d - _startOfToday())/(1000*60*60*24));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2060,35 +2092,43 @@ function seedData() {
 
   // Seed sample documents
   if(state.documents.length===0) {
+    const _D=(id,name,cat,sub,owner,status,ver,date,url,desc,review)=>({id,name,category:cat,doc_category:cat,subtype:sub,owner,status,published:status==='Publicado',version:ver,updated_at:date,next_review:review||'',tags:[],description:desc,versions:[{version:ver,date,url:url||'',notes:'Versión '+ver,updated_by:owner}]});
+    const G='https://docs.google.com/document/d/sorh';
     state.documents = [
-      {id:'doc-001', name:'Playbook Comercial VCN', category:'Comercial', published:true,
-       description:'Playbook oficial para el área comercial VCN.',
-       versions:[
-         {version:'2.0', url:'https://docs.google.com/spreadsheets', date:'2026-05-15', notes:'Actualización Q2 2026. Nuevas cláusulas DC.', updated_by:'Admin'},
-         {version:'1.0', url:'#', date:'2026-02-01', notes:'Versión inicial Q1 2026.', updated_by:'Admin'}
-       ]},
-      {id:'doc-002', name:'Estandarización Destination Charging', category:'Producto', published:true,
-       description:'Estándar de producto para sitios Destination Charging.',
-       versions:[
-         {version:'3.0', url:'#', date:'2026-04-20', notes:'Actualización de specs eléctricas.', updated_by:'Admin'},
-         {version:'2.0', url:'#', date:'2026-01-10', notes:'Ajustes de imagen y marca.', updated_by:'Admin'},
-         {version:'1.0', url:'#', date:'2025-09-01', notes:'Versión fundacional.', updated_by:'Admin'}
-       ]},
-      {id:'doc-003', name:'Estandarización Confort Hubs', category:'Producto', published:true,
-       description:'Guía de estandarización de Confort Hubs.',
-       versions:[
-         {version:'1.0', url:'#', date:'2026-03-05', notes:'Versión inicial.', updated_by:'Admin'}
-       ]},
-      {id:'doc-004', name:'SOP Onboarding de Sitios', category:'Procesos', published:true,
-       description:'Proceso oficial de onboarding de nuevos sitios.',
-       versions:[
-         {version:'2.0', url:'#', date:'2026-05-01', notes:'Flujo simplificado post-piloto.', updated_by:'Admin'},
-         {version:'1.0', url:'#', date:'2026-01-15', notes:'Versión original.', updated_by:'Admin'}
-       ]}
+      // Productos (8)
+      _D('doc-001','Estandarización Destination Charging','Productos','Estándar','Ana Beltrán','Publicado','1.0','2025-05-01',G,'Estándar de producto para sitios Destination Charging.','2026-09-01'),
+      _D('doc-002','Estandarización Confort Hubs','Productos','Guía','Juan Martínez','Publicado','1.0','2025-03-05',G,'Guía de estandarización de Confort Hubs.','2026-08-01'),
+      _D('doc-003','Dynamic Pricing 2.0','Productos','Lineamiento','Lucía Correa','Por revisar','0.9','2025-04-22',G,'Lineamientos y modelo de Dynamic Pricing 2.0.'),
+      _D('doc-004','Playbook Comercial VCN','Productos','Playbook','Ricardo Castillo','Publicado','1.0','2025-02-01','','Playbook oficial para el área comercial VCN.'),
+      _D('doc-005','Catálogo de Producto VCN','Productos','Estándar','Ana Beltrán','Publicado','2.1','2025-05-20',G,'Catálogo vigente de productos y soluciones VCN.','2026-07-15'),
+      _D('doc-006','Especificaciones Hardware Cargador','Productos','Estándar','Juan Martínez','Publicado','3.0','2025-04-10',G,'Specs eléctricas y mecánicas del hardware de carga.'),
+      _D('doc-007','Roadmap de Producto 2026','Productos','Lineamiento','Lucía Correa','Por revisar','1.2','2025-05-18',G,'Roadmap de producto para el ejercicio 2026.'),
+      _D('doc-008','Guía de Integración API','Productos','Guía','Ricardo Castillo','Publicado','1.0','2025-03-28',G,'Guía técnica de integración con la API VCN.'),
+      // Procesos (5)
+      _D('doc-101','SOP Onboarding de Sitios','Procesos','SOP','César Ramírez','Publicado','2.0','2025-05-01',G,'Proceso oficial de onboarding de nuevos sitios.','2026-09-30'),
+      _D('doc-102','SOP Mantenimiento Preventivo','Procesos','SOP','César Ramírez','Publicado','1.3','2025-04-15',G,'Rutinas de mantenimiento preventivo de sitios.'),
+      _D('doc-103','Proceso de Incidencias','Procesos','SOP','Claudia Torres','Por revisar','1.0','2025-04-30',G,'Flujo de registro y escalamiento de incidencias.'),
+      _D('doc-104','Checklist Apertura de Sitio','Procesos','Checklist','César Ramírez','Publicado','1.1','2025-05-10',G,'Checklist de validación para apertura de sitio.'),
+      _D('doc-105','Flujo de Aprobaciones Internas','Procesos','Estándar','Claudia Torres','Desactualizado','1.0','2024-11-01',G,'Niveles y reglas de aprobación interna.'),
+      // Estrategia (3)
+      _D('doc-201','Plan Estratégico 2026','Estrategia','Business Case','JC Bosch','Publicado','1.0','2025-04-01',G,'Plan estratégico anual de Strategic Ops.','2026-12-01'),
+      _D('doc-202','OKRs Strategic Ops Q2','Estrategia','Estándar','JC Bosch','Publicado','1.0','2025-05-01',G,'Objetivos y resultados clave del trimestre.'),
+      _D('doc-203','Tesis de Expansión Regional','Estrategia','Business Case','JC Bosch','Por revisar','0.8','2025-05-15',G,'Hipótesis y caso de negocio de expansión regional.'),
+      // Comercial (4)
+      _D('doc-301','Playbook de Ventas VCN','Comercial','Playbook','Paola Méndez','Publicado','2.0','2025-05-12',G,'Playbook de ventas y proceso comercial VCN.'),
+      _D('doc-302','Tarifario Comercial 2026','Comercial','Estándar','Paola Méndez','Publicado','1.4','2025-04-20',G,'Tarifario comercial vigente para 2026.','2026-06-30'),
+      _D('doc-303','Argumentario de Objeciones','Comercial','Playbook','Sergio Lara','Publicado','1.0','2025-03-18',G,'Guía de manejo de objeciones comerciales.'),
+      _D('doc-304','Contratos Marco Clientes','Comercial','Política','Sergio Lara','Desactualizado','1.0','2024-12-10',G,'Plantilla de contrato marco para clientes.'),
+      // Operación (2)
+      _D('doc-401','Manual de Operación Diaria','Operación','SOP','César Ramírez','Publicado','1.2','2025-05-05',G,'Manual de operación diaria del hub.'),
+      _D('doc-402','Tablero de KPIs Operativos','Operación','Estándar','Jorge Núñez','Publicado','1.0','2025-04-25',G,'Definición y lectura de KPIs operativos.'),
+      // Legal / Permisos (2)
+      _D('doc-501','Política de Datos y Privacidad','Legal / Permisos','Política','Claudia Torres','Publicado','1.0','2025-05-02',G,'Política de tratamiento de datos personales.','2026-08-31'),
+      _D('doc-502','Permisos Municipales (machote)','Legal / Permisos','Template','Claudia Torres','Publicado','1.0','2025-03-30','','Machote de gestión de permisos municipales.')
     ];
   }
 
-  state.initiatives = [
+    state.initiatives = [
     {
       id:'INI-001', name:'Expansión Destination Charging Q3 2026',
       description:'Plan de expansión de 15 nuevos sitios DC en CDMX y área metropolitana para Q3 2026.',
@@ -2175,7 +2215,8 @@ let _fileHandle = null;
 let _editingIniId = null; // tracks initiative being edited
 let _lastSaved = null;
 let _lastFileTimestamp = null; // for conflict detection
-let _isSaving = false;         // guard against concurrent autosave
+let _isSaving = false;
+let _lastDeletedId = null;         // guard against concurrent autosave
 let _otherTabActive = false;   // BroadcastChannel multi-tab guard
 
 // ── Multi-tab coordination ─────────────────────────────────
@@ -2261,19 +2302,38 @@ async function initFileSync() {
   updateSyncUI();
 }
 
-// ─── Multi-user merge: prefer the item with newer updated_at ──
+// ─── Multi-user merge (loss-resistant) ───────────────────────
+// Newer updated_at wins SCALAR fields, but append-only collections
+// (activity_log / files / milestones / versions) are UNIONED from both sides
+// so concurrent edits never silently destroy another user's history.
+function _unionBy(a, b, keyFn) {
+  const out = [], seen = new Set();
+  (a||[]).concat(b||[]).forEach(x => {
+    let k; try { k = keyFn(x); } catch(e){ k = JSON.stringify(x); }
+    if(!seen.has(k)) { seen.add(k); out.push(x); }
+  });
+  return out;
+}
 function mergeById(existing, incoming) {
   const map = new Map();
   (existing || []).forEach(item => map.set(item.id, item));
   (incoming || []).forEach(item => {
     const cur = map.get(item.id);
-    if (!cur) {
-      map.set(item.id, item);
-    } else {
-      const curTs = cur.updated_at || cur.created_at || '0';
-      const incTs = item.updated_at || item.created_at || '0';
-      if (incTs > curTs) map.set(item.id, item);
-    }
+    if (!cur) { map.set(item.id, item); return; }
+    const curTs = cur.updated_at || cur.created_at || '0';
+    const incTs = item.updated_at || item.created_at || '0';
+    const newer = incTs > curTs ? item : cur;
+    const older = incTs > curTs ? cur  : item;
+    const merged = { ...older, ...newer };
+    if (Array.isArray(cur.activity_log) || Array.isArray(item.activity_log))
+      merged.activity_log = _unionBy(cur.activity_log, item.activity_log, e=>(e.created_at||'')+'|'+(e.content||''));
+    if (Array.isArray(cur.files) || Array.isArray(item.files))
+      merged.files = _unionBy(cur.files, item.files, f=>(f.id||f.url||f.name||JSON.stringify(f)));
+    if (Array.isArray(cur.milestones) || Array.isArray(item.milestones))
+      merged.milestones = _unionBy(newer.milestones, older.milestones, m=>(m.id||m.name||JSON.stringify(m)));
+    if (Array.isArray(cur.versions) || Array.isArray(item.versions))
+      merged.versions = _unionBy(cur.versions, item.versions, v=>(v.version||'')+'|'+(v.date||''));
+    map.set(item.id, merged);
   });
   return Array.from(map.values());
 }
@@ -2295,7 +2355,9 @@ async function loadFromFile(notify=true) {
     if (data.documents)     state.documents     = mergeById(state.documents, data.documents);
     if (data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
     if (data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
+    if (data.trash)  state.trash  = mergeById(state.trash, data.trash);
     if (data.config) state.config = { ...state.config, ...data.config };
+    normalizeState();
     _lastSaved = new Date();
     updateSyncUI();
     updateNavBadges();
@@ -2360,7 +2422,8 @@ async function saveToFile() {
       requests: state.requests, initiatives: state.initiatives,
       config: (()=>{ const c={...state.config}; if(c.users) c.users=c.users.map(u=>{const {password,password_hashed,...rest}=u;return rest;}); return c; })(), documents: state.documents,
       notifications: (state.notifications||[]).slice(-100),
-      areaRoadmaps: state.areaRoadmaps
+      areaRoadmaps: state.areaRoadmaps,
+      trash: (state.trash||[]).slice(0,200)
     };
     const writable = await _fileHandle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
@@ -2960,29 +3023,33 @@ function renderHome() {
 
   document.getElementById('view-home').innerHTML = `
     <div class="hero">
-      <div class="hero-title">¿En qué podemos ayudarte? ⚡</div>
-      <div class="hero-sub">Levanta una solicitud o consulta el estado de la tuya</div>
-      <div class="hero-search">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar por ID o nombre de solicitud..." id="hero-search-input" onkeydown="if(event.key==='Enter')searchRequest()">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:28px">
+      <div style="flex:1;min-width:0">
+        <div class="hero-title">¿En qué podemos ayudarte? ⚡</div>
+        <div class="hero-sub">Levanta una solicitud o consulta el estado de la tuya</div>
+        <div class="hero-search" style="max-width:420px">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Buscar por ID o nombre de solicitud..." id="hero-search-input" onkeydown="if(event.key==='Enter')searchRequest()">
+        </div>
+        <div class="quick-stats">
+          <div class="qs-item"><div class="qs-number">${allRequests}</div><div class="qs-label">Total solicitudes</div></div>
+          <div class="qs-item"><div class="qs-number">${inProgressCount}</div><div class="qs-label">En proceso</div></div>
+          <div class="qs-item"><div class="qs-number">${backlogCount}</div><div class="qs-label">En backlog</div></div>
+          <div class="qs-item"><div class="qs-number">${pendingVal}</div><div class="qs-label">Por validar</div></div>
+        </div>
       </div>
-      <div class="quick-stats">
-        <div class="qs-item"><div class="qs-number">${allRequests}</div><div class="qs-label">Total solicitudes</div></div>
-        <div class="qs-item"><div class="qs-number">${inProgressCount}</div><div class="qs-label">En proceso</div></div>
-        <div class="qs-item"><div class="qs-number">${backlogCount}</div><div class="qs-label">En backlog</div></div>
-        <div class="qs-item"><div class="qs-number">${pendingVal}</div><div class="qs-label">Por validar</div></div>
+      <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;padding-top:4px;min-width:210px">
+        <button class="btn btn-primary" style="font-size:14px;padding:13px 24px;justify-content:center;border-radius:var(--radius-lg)" onclick="navigate('intake')">✏️ Nueva Solicitud</button>
+        ${(state.isTeam||state.isAdmin)?'<button class="btn btn-sm" style="background:#7C3AED;color:#fff;border:none;font-weight:700;font-size:13px;padding:13px 24px;border-radius:var(--radius-lg);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3" onclick="openQuickModal()">⚡ Tarea Interna<span style=\"font-size:10px;opacity:.70;font-weight:400\">Para uso de Strategic Ops</span></button>':''}
       </div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button class="btn btn-primary" style="font-size:14px;padding:10px 24px" onclick="navigate('intake')">✏️ Nueva Solicitud</button>
-        ${state.isTeam||state.isAdmin?`<button class="btn btn-sm" style="background:#7C3AED;color:#fff;border:none;font-weight:600;font-size:14px;padding:10px 24px;border-radius:var(--radius-lg);cursor:pointer" onclick="openQuickModal()">⚡ Tarea Interna <span style="font-size:10px;opacity:.75;display:block;font-weight:400">Para uso de Strategic Ops</span></button>`:''}
-      </div>
+    </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-bottom:24px" class="home-grid">
       <div>
         <div class="section-header">
           <div><div class="section-title">Categorías de Solicitud</div><div class="section-sub">Selecciona la categoría que mejor describe tu solicitud</div></div>
-          ${state.isTeam||state.isAdmin?`<button class="btn btn-sm" style="background:#7C3AED;color:#fff;border:none;font-weight:600" onclick="openQuickModal()">⚡ Tarea Interna</button>`:''}
+          ${(state.isTeam||state.isAdmin)?'<button class=\"btn btn-sm\" style=\"background:#7C3AED;color:#fff;border:none;font-weight:600\" onclick=\"openQuickModal()\">⚡ Tarea Interna</button>':''}
         </div>
         <div class="categories-grid">${catCards}</div>
       </div>
@@ -3086,198 +3153,302 @@ function searchRequest() {
 // ═══════════════════════════════════════════════════════════
 // VIEW: DOCS (Documentos para Consulta)
 // ═══════════════════════════════════════════════════════════
-function renderDocs() {
-  const tab = state.docsTab || 0;
-  const allDocs = state.documents || [];
-  const isAdmin = state.isAdmin;
-  // Guests see only published docs
-  const visibleDocs = isAdmin ? allDocs : allDocs.filter(d=>d.published);
-
-  // Render tab content
-  const container = document.getElementById('view-docs');
-  if(!container) return;
-
-  const tabHeader = `
-    <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;gap:0">
-      ${['📚 Consultar Biblioteca','🔍 Solicitar revisión','✏️ Solicitar actualización'].map((t,i)=>`
-        <button onclick="switchDocsTab(${i})" style="padding:10px 18px;font-size:13px;font-weight:${tab===i?'700':'500'};border:none;background:none;cursor:pointer;color:${tab===i?'var(--primary)':'var(--text-secondary)'};border-bottom:${tab===i?'2px solid var(--primary)':'2px solid transparent'};margin-bottom:-2px">${t}</button>
-      `).join('')}
+function renderDocs(){
+  const container=document.getElementById('view-docs'); if(!container) return;
+  _ensureDocHubCss();
+  const isAdmin=state.isAdmin;
+  state.docsSecondary = state.docsSecondary || 'biblioteca';
+  state.docsView = state.docsView || 'list';
+  if(state.docCatFilter===undefined) state.docCatFilter='';
+  if(state.docStatusFilter===undefined) state.docStatusFilter='';
+  if(state.docSearch===undefined) state.docSearch='';
+  state.docOpen = state.docOpen || {};
+  state.docShowAll = state.docShowAll || {};
+  const all=state.documents||[];
+  const visible=isAdmin?all:all.filter(d=>docStatusOf(d)==='Publicado');
+  const sec=state.docsSecondary;
+  // KPIs
+  const kTotal=visible.length;
+  const kPub=visible.filter(d=>docStatusOf(d)==='Publicado').length;
+  const kRev=visible.filter(d=>docStatusOf(d)==='Por revisar').length;
+  const kStale=visible.filter(d=>docIsStale(d)).length;
+  const kpi=(label,val,icon,col,sub,onclick)=>`<div class="dh-kpi"${onclick?` onclick="${onclick}" style="cursor:pointer"`:''}><div class="dh-kpi-tile" style="background:${col}1A;color:${col}">${icon}</div><div class="dh-kpi-txt"><div class="dh-kpi-val">${val}</div><div class="dh-kpi-lbl">${label}</div><div class="dh-kpi-sub">${sub}</div></div></div>`;
+  // Filter card (biblioteca/pendientes/desactualizados)
+  const catChips=`<button class="dh-chip ${!state.docCatFilter?'active':''}" onclick="state.docCatFilter='';renderDocs()">Todos</button>`+
+    DOC_HUB_CATS.map(c=>`<button class="dh-chip ${state.docCatFilter===c.key?'active':''}" onclick="state.docCatFilter='${c.key}';renderDocs()">${c.key}</button>`).join('');
+  const dotc={'Publicado':'#16A34A','Por revisar':'#D97706','Desactualizado':'#DC2626'};
+  const statChips=['Publicado','Por revisar','Desactualizado'].map(st=>`<button class="dh-chip dh-dot ${state.docStatusFilter===st?'active':''}" onclick="state.docStatusFilter=(state.docStatusFilter==='${st}'?'':'${st}');renderDocs()"><span class="dh-dotc" style="background:${dotc[st]}"></span>${st}</button>`).join('');
+  const filterCard = (sec!=='solicitudes') ? `<div class="dh-filtcard">
+      <div class="dh-filt-l"><span class="dh-filt-lbl">Categorías</span><div class="dh-chips">${catChips}</div></div>
+      <div class="dh-filt-r"><span class="dh-filt-lbl">Estado</span><div class="dh-chips">${statChips}</div>
+      <button class="dh-clear" onclick="state.docCatFilter='';state.docStatusFilter='';state.docSearch='';renderDocs()">✕ Limpiar filtros</button></div>
+    </div>` : '';
+  // Category cards (biblioteca only)
+  const catCards = (sec==='biblioteca') ? dhCatCards(visible) : '';
+  // secondary tabs + view toggle
+  const secTabs=[['biblioteca','📚 Biblioteca'],['pendientes','🔍 Pendientes de revisión'],['desactualizados','⚠️ Desactualizados'],['solicitudes','📨 Solicitudes']]
+    .map(([k,l])=>`<button class="dh-tab ${sec===k?'active':''}" onclick="state.docsSecondary='${k}';state.docReqForm=null;renderDocs()">${l}</button>`).join('');
+  const viewToggle=(sec==='biblioteca')?`<div class="dh-seg">`+
+    [['cats','▦ Categorías'],['list','☰ Lista'],['table','▤ Tabla']].map(([k,l])=>`<button class="dh-seg-btn ${state.docsView===k?'active':''}" onclick="state.docsView='${k}';renderDocs()">${l}</button>`).join('')+`</div>`:'';
+  const bottom = `<div class="dh-card dh-bottom">
+      <div class="dh-bottom-head"><div class="dh-tabs">${secTabs}</div>${viewToggle}</div>
+      <div id="dochub-results"></div>
     </div>`;
+  container.innerHTML=`
+   <div class="dh-wrap">
+     <div class="dh-header">
+       <div><div class="dh-title">📑 Documentos para Consulta</div>
+       <div class="dh-sub">Repositorio oficial del equipo — playbooks, procesos, estándares y estrategia vigentes.</div></div>
+       ${isAdmin?`<button class="btn btn-primary dh-add" onclick="openAddDocModal()">＋ Agregar documento</button>`:''}
+     </div>
+     <div class="dh-searchrow">
+       <div class="dh-search"><span>🔎</span><input id="dh-search-input" type="text" placeholder="Buscar documentos por título, descripción, categoría, etiqueta…" value="${(state.docSearch||'').replace(/"/g,'&quot;')}" oninput="state.docSearch=this.value;renderDocResults()"><span class="dh-kbd">⌘ K</span></div>
+       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='revision';renderDocs()">🔄 Solicitar revisión</button>
+       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='update';renderDocs()">✏️ Solicitar actualización</button>
+     </div>
+     <div class="dh-kpis">
+       ${kpi('Documentos',kTotal,'📁','#0D9488','Total en la biblioteca')}
+       ${kpi('Publicados',kPub,'✅','#16A34A','Activos y vigentes')}
+       ${kpi('Por revisar',kRev,'🕗','#D97706','Requieren atención',"state.docsSecondary='pendientes';state.docReqForm=null;renderDocs()")}
+       ${kpi('Desactualizados',kStale,'⚠️','#DC2626','Revisión recomendada',"state.docsSecondary='desactualizados';state.docReqForm=null;renderDocs()")}
+     </div>
+     ${filterCard}
+     ${catCards}
+     ${sec==='solicitudes' ? `<div class="dh-card dh-bottom"><div class="dh-bottom-head"><div class="dh-tabs">${secTabs}</div></div><div id="dochub-results">${docHubRequestsHtml()}</div></div>` : bottom}
+   </div>`;
+  if(sec!=='solicitudes') renderDocResults();
+}
 
-  if(tab === 0) {
-    // BIBLIOTECA
-    const DOC_CATEGORIES = ['Procesos & SOP','Manuales','Producto Estándar VCN','Otros'];
-    const grouped = {};
-    DOC_CATEGORIES.forEach(c=>grouped[c]=[]);
-    visibleDocs.forEach(doc=>{
-      const cat = doc.doc_category || 'Otros';
-      if(grouped[cat] !== undefined) grouped[cat].push(doc);
-      else grouped['Otros'].push(doc);
-    });
-    const docCards = DOC_CATEGORIES.filter(c=>grouped[c].length>0).map(cat=>{
-      const catIcons = {'Procesos & SOP':'⚙️','Manuales':'📖','Producto Estándar VCN':'📦','Otros':'📁'};
-      const cards = grouped[cat].map(doc => {
-        const realIdx = allDocs.indexOf(doc);
-        const latest = doc.versions && doc.versions.length > 0 ? doc.versions[doc.versions.length-1] : null;
-        const histRows = (doc.versions||[]).slice().reverse().map(v=>`
-        <tr>
-          <td style="padding:6px 8px;font-size:11px;font-weight:700;color:var(--primary)">v${v.version}</td>
-          <td style="padding:6px 8px;font-size:11px;color:var(--text-secondary)">${v.date}</td>
-          <td style="padding:6px 8px;font-size:11px;color:var(--text-secondary)">${v.updated_by||'—'}</td>
-          <td style="padding:6px 8px;font-size:11px;color:var(--text-muted)">${v.notes||'—'}</td>
-          <td style="padding:6px 8px">${v.url&&v.url!='#'?`<a href="${v.url}" target="_blank" style="font-size:11px;color:var(--primary);font-weight:600">Abrir →</a>`:'<span style="font-size:10px;color:var(--text-muted)">Sin link</span>'}</td>
-        </tr>`).join('');
-        return `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,var(--surface2),var(--surface));border-bottom:1px solid var(--border-light)">
-            <div style="width:44px;height:44px;background:var(--primary-lighter);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📄</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:14px;font-weight:800;color:var(--text-primary)">${doc.name}</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${doc.description||''}</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-              ${isAdmin?`<span onclick="toggleDocPublished(${realIdx})" style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;${doc.published?'background:#DCFCE7;color:#15803D':'background:#FEF3C7;color:#92400E'}">${doc.published?'✅ Publicado':'⏳ Borrador'}</span>`:`<span style="font-size:10px;font-weight:700;background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:20px">✅ Publicado</span>`}
-              ${latest?`<span style="font-size:10px;color:var(--text-muted)">v${latest.version} · ${latest.date}</span>`:''}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--surface)">
-            ${latest&&latest.url&&latest.url!='#'?`<a href="${latest.url}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;font-size:12px">🔗 Abrir versión actual</a>`:'<span style="font-size:12px;color:var(--text-muted);font-style:italic">Sin link aún</span>'}
-            <div style="display:flex;gap:6px">
-              ${isAdmin?`<button class="btn btn-secondary btn-sm" onclick="showDocsVersionForm(${realIdx})">+ Versión</button>`:''}
-              ${isAdmin?`<button class="btn btn-ghost btn-sm" style="color:var(--error)" onclick="deleteDoc(${realIdx})">✕</button>`:''}
-            </div>
-          </div>
-          <div id="docs-vform-${realIdx}" style="display:none;padding:14px 18px;background:var(--surface2);border-top:1px solid var(--border-light)">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:10px">📤 NUEVA VERSIÓN</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
-              <input type="text" class="form-input" id="dv-ver-${realIdx}" placeholder="Versión (ej. 2.1)" style="font-size:12px">
-              <input type="date" class="form-input" id="dv-date-${realIdx}" style="font-size:12px" value="${new Date().toISOString().split('T')[0]}">
-            </div>
-            <input type="text" class="form-input" id="dv-url-${realIdx}" placeholder="Link al documento (Google Drive, SharePoint...)" style="font-size:12px;margin-bottom:8px">
-            <input type="text" class="form-input" id="dv-notes-${realIdx}" placeholder="Notas de esta versión" style="font-size:12px;margin-bottom:8px">
-            <div style="display:flex;gap:8px;justify-content:flex-end">
-              <button class="btn btn-ghost btn-sm" onclick="hideDocsVersionForm(${realIdx})">Cancelar</button>
-              <button class="btn btn-primary btn-sm" onclick="saveDocsVersion(${realIdx})">💾 Guardar</button>
-            </div>
-          </div>
-          ${doc.versions&&doc.versions.length>1?`
-          <details style="border-top:1px solid var(--border-light)">
-            <summary style="padding:9px 18px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;user-select:none">📋 Historial de versiones (${doc.versions.length})</summary>
-            <div style="padding:0 18px 12px">
-              <table style="width:100%;border-collapse:collapse">
-                <thead><tr style="background:var(--surface2)"><th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text-muted);text-align:left">VER</th><th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text-muted);text-align:left">FECHA</th><th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text-muted);text-align:left">AUTOR</th><th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text-muted);text-align:left">NOTAS</th><th style="padding:5px 8px;font-size:10px;font-weight:700;color:var(--text-muted);text-align:left">LINK</th></tr></thead>
-                <tbody>${histRows}</tbody>
-              </table>
-            </div>
-          </details>`:''}
-        </div>`;
-      }).join('');
-      return `<div style="margin-bottom:28px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 16px;background:var(--primary-lighter);border-radius:var(--radius);border:1px solid var(--primary-light)">
-          <span style="font-size:18px">${catIcons[cat]||'📁'}</span>
-          <span style="font-size:14px;font-weight:700;color:var(--primary)">${cat}</span>
-          <span style="margin-left:auto;background:var(--primary-light);color:var(--primary);font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px">${grouped[cat].length} doc${grouped[cat].length!==1?'s':''}</span>
-        </div>
-        ${cards}
-      </div>`;
-    }).join('') || '<div style="text-align:center;padding:48px 20px;color:var(--text-muted)"><div style="font-size:40px;margin-bottom:12px">📂</div><div style="font-size:15px;font-weight:600">No hay documentos publicados aún</div></div>';
+// ── category config + helpers ────────────────────────────────
+const DOC_HUB_CATS=[
+  {key:'Productos',        icon:'📦', desc:'Estándares, playbooks y guías de productos y soluciones.', color:'#0EA5A5'},
+  {key:'Procesos',         icon:'⚙️', desc:'Procesos operativos, procedimientos y flujos.',           color:'#6366F1'},
+  {key:'Estrategia',       icon:'🎯', desc:'Estrategia, planes y lineamientos corporativos.',          color:'#EF4444'},
+  {key:'Comercial',        icon:'🤝', desc:'Playbooks comerciales, propuestas y argumentos.',          color:'#F59E0B'},
+  {key:'Operación',        icon:'🚚', desc:'Operación, soporte y documentación técnica.',              color:'#10B981'},
+  {key:'Legal / Permisos', icon:'🛡️', desc:'Contratos, permisos y cumplimiento.',                      color:'#3B82F6'},
+  {key:'Pricing',          icon:'💰', desc:'Modelos financieros y pricing.',                            color:'#16A34A'},
+  {key:'Marketing / CX',   icon:'📣', desc:'Marketing, marca y experiencia de cliente.',               color:'#DB2777'},
+  {key:'Plantillas',       icon:'🧩', desc:'Templates y formatos reutilizables.',                       color:'#6B7280'}
+];
+function docCatOf(doc){
+  const raw=((doc.doc_category||doc.category||'')+'').toLowerCase();
+  const has=(...xs)=>xs.some(x=>raw.includes(x));
+  if(has('plantilla','template','formato')) return 'Plantillas';
+  if(has('producto')) return 'Productos';
+  if(has('proceso','sop','manual')) return 'Procesos';
+  if(has('estrateg')) return 'Estrategia';
+  if(has('comercial','ventas','sales')) return 'Comercial';
+  if(has('operac')) return 'Operación';
+  if(has('legal','permiso','compliance','contrato')) return 'Legal / Permisos';
+  if(has('finanz','pricing','precio','presupuesto')) return 'Pricing';
+  if(has('marketing','marca','brand','experiencia')||raw==='cx'||raw.includes(' cx')) return 'Marketing / CX';
+  const st=(doc.subtype||'').toLowerCase();
+  if(st==='template') return 'Plantillas';
+  if(st==='sop') return 'Procesos';
+  return 'Procesos';
+}
+function docLatest(doc){ return (doc.versions&&doc.versions.length)?doc.versions[doc.versions.length-1]:null; }
+function docUrlOf(doc){ const l=docLatest(doc); const u=l?l.url:(doc.url||''); return (u&&u!=='#')?u:''; }
+function docHasLink(doc){ return !!docUrlOf(doc); }
+function docVersionOf(doc){ const l=docLatest(doc); return l?('v'+l.version):(doc.version?('v'+doc.version):'—'); }
+function docUpdatedOf(doc){ const l=docLatest(doc); return l?l.date:(doc.updated_at||''); }
+function docIsStale(doc){ if(doc.status==='Desactualizado') return true; if(doc.next_review){ const d=parseLocalDate(doc.next_review); if(d&&d<_startOfToday()) return true; } return false; }
+function docStatusOf(doc){ if(doc.status&&['Publicado','Borrador','Por revisar','Desactualizado'].includes(doc.status)) return doc.status; if(docIsStale(doc)) return 'Desactualizado'; return doc.published?'Publicado':'Borrador'; }
+function docNeedsReview(doc){ return docStatusOf(doc)==='Por revisar'; }
+function docOwnerOf(doc){ return doc.owner||(docLatest(doc)&&docLatest(doc).updated_by)||'—'; }
+function docAreaOf(doc){ return doc.area||''; }
+function docSubtypeOf(doc){ return doc.subtype||''; }
+function docMatches(doc,q){ if(!q) return true; q=q.toLowerCase(); return [doc.name,doc.description,docCatOf(doc),docSubtypeOf(doc),docOwnerOf(doc),docAreaOf(doc),(doc.tags||[]).join(' ')].filter(Boolean).join(' ').toLowerCase().includes(q); }
+function docStatusBadge(stt){ const m={'Publicado':['#DCFCE7','#15803D','✔'],'Borrador':['#FEF3C7','#92400E','✎'],'Por revisar':['#FEF3C7','#B45309','●'],'Desactualizado':['#FEE2E2','#B91C1C','▲']}; const c=m[stt]||['#F3F4F6','#6B7280','•']; return `<span class="dh-badge" style="background:${c[0]};color:${c[1]}">${c[2]} ${stt}</span>`; }
+function docTipoBadge(st){ if(!st) return '<span class="dh-muted">—</span>'; return `<span class="dh-badge dh-tipo">${st}</span>`; }
+const _DH_AVCOL=['#0EA5A5','#6366F1','#F59E0B','#EF4444','#10B981','#3B82F6','#DB2777','#8B5CF6','#0891B2'];
+function dhAvatar(name){ const n=(name||'?').trim(); const parts=n.split(/\s+/); const ini=((parts[0]||'?')[0]+(parts[1]||'')[0]||'').toUpperCase()||'?'; let h=0; for(let i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))>>>0; const col=_DH_AVCOL[h%_DH_AVCOL.length]; return `<span class="dh-av" style="background:${col}">${ini}</span>`; }
 
-    const addDocHtml = isAdmin ? `
-      <div id="docs-add-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px">
-        <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:14px">📄 Agregar nuevo documento</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Nombre *</label><input type="text" class="form-input" id="nd2-name" placeholder="Nombre del documento" style="font-size:13px"></div>
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Categoría</label><select class="form-select" id="nd2-cat" style="font-size:13px"><option value="Procesos &amp; SOP">⚙️ Procesos &amp; SOP</option><option value="Manuales">📖 Manuales</option><option value="Producto Estándar VCN">📦 Producto Estándar VCN</option><option value="Otros" selected>📁 Otros</option></select></div>
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Descripción</label><input type="text" class="form-input" id="nd2-desc" placeholder="Descripción breve" style="font-size:13px"></div>
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Versión</label><input type="text" class="form-input" id="nd2-ver" placeholder="1.0" style="font-size:12px"></div>
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Fecha</label><input type="date" class="form-input" id="nd2-date" style="font-size:12px" value="${new Date().toISOString().split('T')[0]}"></div>
-          <div style="grid-column:1/-1"><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Link *</label><input type="text" class="form-input" id="nd2-url" placeholder="https://drive.google.com/..." style="font-size:13px"></div>
-          <div style="grid-column:1/-1"><label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Notas</label><input type="text" class="form-input" id="nd2-notes" placeholder="Descripción de la versión inicial" style="font-size:13px"></div>
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-secondary)">
-            <input type="checkbox" id="nd2-published"> Publicar inmediatamente (visible para todos)
-          </label>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('docs-add-form').style.display='none'">Cancelar</button>
-          <button class="btn btn-primary btn-sm" onclick="saveNewDoc()">✅ Agregar</button>
-        </div>
-      </div>` : '';
-
-    container.innerHTML = `<div style="max-width:860px;margin:0 auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <div><div style="font-size:20px;font-weight:800">📚 Documentos para Consulta</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Repositorio oficial del equipo — links a Google Drive, SharePoint y más</div></div>
-        ${isAdmin?`<button class="btn btn-primary btn-sm" onclick="document.getElementById('docs-add-form').style.display='block'">+ Agregar documento</button>`:''}
+function renderDocResults(){
+  const host=document.getElementById('dochub-results'); if(!host) return;
+  const isAdmin=state.isAdmin; const all=state.documents||[];
+  let set=isAdmin?all.slice():all.filter(d=>docStatusOf(d)==='Publicado');
+  const sec=state.docsSecondary;
+  if(sec==='pendientes') set=set.filter(d=>docNeedsReview(d));
+  if(sec==='desactualizados') set=set.filter(d=>docIsStale(d));
+  if(state.docCatFilter) set=set.filter(d=>docCatOf(d)===state.docCatFilter);
+  if(state.docStatusFilter) set=set.filter(d=>docStatusOf(d)===state.docStatusFilter);
+  const q=(state.docSearch||'').trim(); if(q) set=set.filter(d=>docMatches(d,q));
+  if(!set.length){ host.innerHTML=dhEmpty(); return; }
+  const view=(sec==='biblioteca')?(state.docsView||'list'):'flat';
+  if(view==='table'){ host.innerHTML=dhTable(set); return; }
+  if(view==='flat'){ host.innerHTML=dhFlatList(set, sec==='pendientes'?'Pendientes de revisión':'Desactualizados'); return; }
+  // list / cats -> grouped by category
+  host.innerHTML = DOC_HUB_CATS.map(c=>{ const docs=set.filter(d=>docCatOf(d)===c.key); return docs.length?dhGroup(c,docs):''; }).join('') || dhEmpty();
+}
+function dhColHeader(titleHtml){
+  return `<div class="dh-l-grid dh-lh">
+    <div></div><div></div><div class="dh-lh-title">${titleHtml}</div>
+    <div class="dh-lh-lbl">Tipo</div><div class="dh-lh-lbl">Estado</div><div class="dh-lh-lbl">Versión</div><div class="dh-lh-lbl">Propietario</div><div class="dh-lh-lbl">Última actualización</div><div></div></div>`;
+}
+function dhGroup(c,docs){
+  const collapsible=(state.docsView==='cats');
+  const open = collapsible ? !!state.docOpen[c.key] : true;
+  const showAll=!!state.docShowAll[c.key]; const limit=6;
+  const caret = collapsible ? (open?'▾':'▸') : '▾';
+  const titleHtml=`<span class="dh-gh-ic" style="color:${c.color}">${c.icon}</span> <b>${c.key}</b> <span class="dh-gh-caret">${caret}</span> <span class="dh-group-n">${docs.length} documento${docs.length!==1?'s':''}</span>`;
+  const head=`<div class="dh-l-grid dh-lh"${collapsible?` onclick="toggleDocGroup('${c.key}')" style="cursor:pointer"`:''}>
+    <div></div><div></div><div class="dh-lh-title">${titleHtml}</div>
+    <div class="dh-lh-lbl">Tipo</div><div class="dh-lh-lbl">Estado</div><div class="dh-lh-lbl">Versión</div><div class="dh-lh-lbl">Propietario</div><div class="dh-lh-lbl">Última actualización</div><div></div></div>`;
+  const shown = open ? (showAll?docs:docs.slice(0,limit)) : [];
+  const rows = shown.map(d=>dhListRow(d)).join('');
+  const more = (open && !showAll && docs.length>limit) ? `<div class="dh-more" onclick="docToggleShowAll('${c.key}')">Ver más documentos en ${c.key} ▾</div>` : '';
+  return `<div class="dh-group">${head}${rows}${more}</div>`;
+}
+function dhFlatList(docs,title){ return `<div class="dh-group">${dhColHeader('<b>'+title+'</b> <span class="dh-group-n">'+docs.length+'</span>')}${docs.map(d=>dhListRow(d)).join('')}</div>`; }
+function dhListRow(doc){
+  const i=state.documents.indexOf(doc);
+  const isAdmin=state.isAdmin;
+  const st=docStatusOf(doc), url=docUrlOf(doc), nolink=!url;
+  const hist=(doc.versions||[]).slice().reverse().map(v=>`<tr><td>v${v.version}</td><td>${v.date||'—'}</td><td>${v.updated_by||'—'}</td><td>${v.notes||'—'}</td><td>${v.url&&v.url!=='#'?`<a href="${v.url}" target="_blank">Abrir →</a>`:'<span class="dh-muted">sin link</span>'}</td></tr>`).join('');
+  return `<div class="dh-l-wrap">
+    <div class="dh-l-grid dh-l-row">
+      <button class="dh-star ${doc._fav?'on':''}" title="Favorito" onclick="docToggleFav(${i})">${doc._fav?'★':'☆'}</button>
+      <div class="dh-row-ic-sm">📄</div>
+      <div class="dh-l-title"><div class="dh-l-name">${doc.name||'(sin nombre)'}</div>${doc.description?`<div class="dh-l-desc">${doc.description}</div>`:''}</div>
+      <div>${docTipoBadge(docSubtypeOf(doc))}</div>
+      <div class="dh-l-status">${docStatusBadge(st)}${nolink?'<span class="dh-mini-alert">🔗 Sin link</span>':''}</div>
+      <div class="dh-l-ver">${docVersionOf(doc)}</div>
+      <div class="dh-l-owner">${dhAvatar(docOwnerOf(doc))}<span>${docOwnerOf(doc)}</span></div>
+      <div class="dh-l-date">${docUpdatedOf(doc)?fmtDate(docUpdatedOf(doc)):'—'}</div>
+      <div class="dh-l-act">
+        ${url?`<a class="dh-act" href="${url}" target="_blank">👁 Abrir</a>`:`<span class="dh-act dis">👁 Abrir</span>`}
+        ${isAdmin?`<button class="dh-act" onclick="showDocsVersionForm(${i})">⊕ Nueva versión</button>`:''}
+        <button class="dh-act" onclick="var d=document.getElementById('dh-hist-${i}');if(d){d.open=!d.open;d.scrollIntoView({block:'nearest'});}">🕘 Historial</button>
+        <button class="dh-kebab" onclick="docKebab(${i},event)">⋮</button>
       </div>
-      ${tabHeader}${addDocHtml}${docCards}</div>`;
-
-  } else if(tab === 1) {
-    // SOLICITAR REVISIÓN
-    container.innerHTML = `<div style="max-width:640px;margin:0 auto">
-      <div style="font-size:20px;font-weight:800;margin-bottom:4px">📚 Documentos para Consulta</div>
-      ${tabHeader}
-      <div class="card"><div class="card-header"><div class="card-title">🔍 Solicitar revisión de documento</div>
-      <div class="card-subtitle">Pide al equipo que revise y valide un documento</div></div>
-      <div class="card-body">
-        <div class="form-group"><label class="form-label form-required">Documento a revisar</label>
-          <input type="text" class="form-input" id="dr-doc" placeholder="Nombre del documento o link">
-        </div>
-        <div class="form-group"><label class="form-label form-required">Motivo de la revisión</label>
-          <textarea class="form-textarea" id="dr-reason" rows="3" placeholder="¿Por qué necesita revisión? ¿Qué se debe verificar?"></textarea>
-        </div>
-        <div class="grid-2">
-          <div class="form-group"><label class="form-label">Fecha requerida</label>
-            <input type="date" class="form-input" id="dr-date">
-          </div>
-          <div class="form-group"><label class="form-label">Prioridad</label>
-            <select class="form-select" id="dr-prio">
-              ${PRIORITIES.map(p=>`<option>${p}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-          <button class="btn btn-ghost btn-sm" onclick="switchDocsTab(0)">Cancelar</button>
-          <button class="btn btn-primary" onclick="submitDocRequest('revision')">📤 Enviar solicitud</button>
-        </div>
-      </div></div></div>`;
-
-  } else if(tab === 2) {
-    // SOLICITAR ACTUALIZACIÓN
-    container.innerHTML = `<div style="max-width:640px;margin:0 auto">
-      <div style="font-size:20px;font-weight:800;margin-bottom:4px">📚 Documentos para Consulta</div>
-      ${tabHeader}
-      <div class="card"><div class="card-header"><div class="card-title">✏️ Solicitar actualización de documento</div>
-      <div class="card-subtitle">Pide que se actualice el contenido de un documento oficial</div></div>
-      <div class="card-body">
-        <div class="form-group"><label class="form-label form-required">Documento a actualizar</label>
-          <select class="form-select" id="du-doc">
-            <option value="">Selecciona el documento</option>
-            ${allDocs.map(d=>`<option value="${d.name}">${d.name}</option>`).join('')}
-            <option value="__otro__">Otro (especificar)</option>
-          </select>
-          <input type="text" class="form-input" id="du-doc-otro" placeholder="Nombre del documento..." style="margin-top:8px;display:none" oninput="">
-        </div>
-        <div class="form-group"><label class="form-label form-required">Cambios solicitados</label>
-          <textarea class="form-textarea" id="du-changes" rows="4" placeholder="¿Qué información debe agregarse, modificarse o eliminarse? Sé específico."></textarea>
-        </div>
-        <div class="form-group"><label class="form-label">Link o referencia de apoyo</label>
-          <input type="text" class="form-input" id="du-link" placeholder="Link de referencia (opcional)">
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-          <button class="btn btn-ghost btn-sm" onclick="switchDocsTab(0)">Cancelar</button>
-          <button class="btn btn-primary" onclick="submitDocRequest('update')">📤 Enviar solicitud</button>
-        </div>
-      </div></div></div>`;
-
-    // Wire up "Otro" selector
-    const sel = container.querySelector('#du-doc');
-    if(sel) sel.addEventListener('change', function(){
-      const otro = container.querySelector('#du-doc-otro');
-      if(otro) otro.style.display = this.value === '__otro__' ? 'block' : 'none';
-    });
+    </div>
+    <details class="dh-hist" id="dh-hist-${i}"><summary>📋 Historial de versiones (${(doc.versions||[]).length})</summary><table class="dh-hist-tbl"><thead><tr><th>Ver</th><th>Fecha</th><th>Autor</th><th>Notas</th><th>Link</th></tr></thead><tbody>${hist||'<tr><td colspan=5 class=dh-muted>Sin versiones</td></tr>'}</tbody></table></details>
+    ${isAdmin?dhVersionForm(i):''}
+  </div>`;
+}
+function dhCatCards(visible){
+  const counts={}; DOC_HUB_CATS.forEach(c=>counts[c.key]=0);
+  visible.forEach(d=>{ const k=docCatOf(d); counts[k]=(counts[k]||0)+1; });
+  const cards=DOC_HUB_CATS.filter(c=>counts[c.key]>0).map(c=>`<div class="dh-catcard" onclick="state.docCatFilter='${c.key}';state.docsView='list';renderDocs()">
+    <div class="dh-catcard-ic" style="background:${c.color}1A;color:${c.color}">${c.icon}</div>
+    <div class="dh-catcard-title">${c.key}</div>
+    <div class="dh-catcard-desc">${c.desc}</div>
+    <div class="dh-catcard-foot"><span class="dh-catcard-count">${counts[c.key]} documento${counts[c.key]!==1?'s':''}</span><span class="dh-catcard-chev">›</span></div>
+  </div>`).join('');
+  return cards?`<div class="dh-catgrid">${cards}</div>`:'';
+}
+function dhTable(set){
+  const isAdmin=state.isAdmin;
+  const rows=set.map(d=>{ const i=state.documents.indexOf(d); const url=docUrlOf(d);
+    return `<tr>
+      <td><div class="dh-td-name">${d.name||''}</div>${d.description?`<div class="dh-td-desc">${d.description}</div>`:''}</td>
+      <td>${docTipoBadge(docSubtypeOf(d))}</td>
+      <td>${docStatusBadge(docStatusOf(d))}${!url?'<div class="dh-mini-alert" style="margin-top:4px">🔗 Sin link</div>':''}</td>
+      <td>${docVersionOf(d)}</td>
+      <td><span class="dh-l-owner">${dhAvatar(docOwnerOf(d))}<span>${docOwnerOf(d)}</span></span></td>
+      <td>${docCatBadge(docCatOf(d))}</td>
+      <td>${docUpdatedOf(d)?fmtDate(docUpdatedOf(d)):'—'}</td>
+      <td class="dh-td-act">${url?`<a href="${url}" target="_blank" class="dh-iconbtn" title="Abrir">🔗</a>`:''}<button class="dh-iconbtn" title="Copiar link" onclick="copyDocLink(${i})">📋</button>${isAdmin?`<button class="dh-iconbtn" title="Nueva versión" onclick="showDocsVersionForm(${i})">＋</button>`:''}<button class="dh-iconbtn" title="Más" onclick="docKebab(${i},event)">⋮</button></td>
+    </tr>`; }).join('');
+  const vforms=isAdmin?set.map(d=>dhVersionForm(state.documents.indexOf(d))).join(''):'';
+  return `<div style="overflow-x:auto"><table class="dh-table"><thead><tr><th>Documento</th><th>Tipo</th><th>Estado</th><th>Ver</th><th>Propietario</th><th>Categoría</th><th>Actualizado</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${vforms}`;
+}
+function docCatBadge(k){ const c=DOC_HUB_CATS.find(x=>x.key===k); const col=c?c.color:'#6B7280'; return `<span class="dh-badge" style="background:${col}1A;color:${col}">${c?c.icon:'📁'} ${k}</span>`; }
+function dhEmpty(msg){ return `<div class="dh-empty"><div class="dh-empty-ic">📂</div><div class="dh-empty-t">${msg||'No hay documentos que coincidan'}</div><div class="dh-empty-s">Ajusta los filtros o la búsqueda${state.isAdmin?', o agrega un documento nuevo.':'.'}</div></div>`; }
+function dhVersionForm(i){ return `<div id="docs-vform-${i}" class="dh-vform" style="display:none">
+  <div class="dh-vform-title">📤 NUEVA VERSIÓN</div>
+  <div class="grid-2"><input class="form-input" id="dv-ver-${i}" placeholder="Versión (ej. 2.1)"><input type="date" class="form-input" id="dv-date-${i}" value="${new Date().toISOString().split('T')[0]}"></div>
+  <input class="form-input" id="dv-url-${i}" placeholder="Link al documento (Drive, SharePoint…)" style="margin-top:8px">
+  <input class="form-input" id="dv-notes-${i}" placeholder="Notas de esta versión" style="margin-top:8px">
+  <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="hideDocsVersionForm(${i})">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveDocsVersion(${i})">💾 Guardar</button></div>
+</div>`; }
+function docHubRequestsHtml(){
+  const reqs=(state.requests||[]).filter(r=>/^(Revisión|Actualización) de documento:/.test(r.title||''));
+  const form=state.docReqForm?docReqFormHtml(state.docReqForm):'';
+  const list=reqs.length?reqs.map(r=>`<div class="dh-l-wrap" onclick="openTask('${r.id}')" style="cursor:pointer"><div class="dh-l-grid dh-l-row" style="grid-template-columns:34px minmax(220px,1fr) 160px 130px">
+      <div class="dh-row-ic-sm">${(r.title||'').startsWith('Revisión')?'🔍':'✏️'}</div>
+      <div class="dh-l-title"><div class="dh-l-name">${r.title||''}</div><div class="dh-l-desc">${r.id} · ${r.requester_name||'—'}</div></div>
+      <div>${statusBadge(r.status)}</div><div class="dh-l-date">${fmtDate(r.created_at)}</div></div></div>`).join(''):dhEmpty('No hay solicitudes de documentos todavía.');
+  return `<div class="dh-reqbar"><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='revision';renderDocs()">🔄 Solicitar revisión</button><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='update';renderDocs()">✏️ Solicitar actualización</button></div>${form}<div style="margin-top:12px">${list}</div>`;
+}
+function docReqFormHtml(type){
+  if(type==='revision'){
+    return `<div class="dh-card" style="padding:18px;margin:6px 0">
+      <div class="dh-form-title">🔄 Solicitar revisión de documento</div>
+      <div class="form-group"><label class="form-label form-required">Documento a revisar</label><input class="form-input" id="dr-doc" placeholder="Nombre del documento o link"></div>
+      <div class="form-group"><label class="form-label form-required">Motivo de la revisión</label><textarea class="form-textarea" id="dr-reason" rows="3" placeholder="¿Qué se debe verificar?"></textarea></div>
+      <div class="grid-2"><div class="form-group"><label class="form-label">Fecha requerida</label><input type="date" class="form-input" id="dr-date"></div><div class="form-group"><label class="form-label">Prioridad</label><select class="form-select" id="dr-prio">${PRIORITIES.map(p=>'<option>'+p+'</option>').join('')}</select></div></div>
+      <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;renderDocs()">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('revision')">📤 Enviar</button></div>
+    </div>`;
   }
+  const docs=state.documents||[]; const pre=state.docReqPrefill||'';
+  return `<div class="dh-card" style="padding:18px;margin:6px 0">
+    <div class="dh-form-title">✏️ Solicitar actualización de documento</div>
+    <div class="form-group"><label class="form-label form-required">Documento a actualizar</label>
+      <select class="form-select" id="du-doc" onchange="var o=document.getElementById('du-doc-otro');if(o)o.style.display=this.value==='__otro__'?'block':'none'">
+        <option value="">Selecciona el documento</option>
+        ${docs.map(d=>`<option value="${(d.name||'').replace(/"/g,'&quot;')}" ${d.name===pre?'selected':''}>${d.name}</option>`).join('')}
+        <option value="__otro__">Otro (especificar)</option></select>
+      <input class="form-input" id="du-doc-otro" placeholder="Nombre del documento…" style="margin-top:8px;display:none"></div>
+    <div class="form-group"><label class="form-label form-required">Cambios solicitados</label><textarea class="form-textarea" id="du-changes" rows="4" placeholder="¿Qué debe agregarse, modificarse o eliminarse?"></textarea></div>
+    <div class="form-group"><label class="form-label">Link o referencia de apoyo</label><input class="form-input" id="du-link" placeholder="Link de referencia (opcional)"></div>
+    <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;renderDocs()">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('update')">📤 Enviar</button></div>
+  </div>`;
+}
+function toggleDocGroup(cat){ state.docOpen=state.docOpen||{}; state.docOpen[cat]=!state.docOpen[cat]; renderDocResults(); }
+function docToggleShowAll(cat){ state.docShowAll=state.docShowAll||{}; state.docShowAll[cat]=!state.docShowAll[cat]; renderDocResults(); }
+function docToggleFav(i){ const d=state.documents[i]; if(!d) return; d._fav=!d._fav; saveState(); renderDocResults(); }
+function copyDocLink(i){ const doc=state.documents[i]; if(!doc) return; const u=docUrlOf(doc); if(!u){ toast('⚠️ Sin link','Este documento aún no tiene link.','warning'); return; }
+  const done=()=>toast('📋 Link copiado',doc.name,'success');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(done).catch(()=>{ try{const t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}catch(e){ toast('Link',u,'info'); } }); }
+  else { try{const t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}catch(e){ toast('Link',u,'info'); } }
+}
+function requestDocUpdateFor(i){ const doc=state.documents[i]; if(!doc) return; state.docsSecondary='solicitudes'; state.docReqForm='update'; state.docReqPrefill=doc.name; renderDocs(); }
+function docTogglePublish(i){ const d=state.documents[i]; if(!d) return; const pub=docStatusOf(d)==='Publicado'; d.status=pub?'Borrador':'Publicado'; d.published=!pub; saveState(); if(!pub) addNotification('document','✅ Documento publicado',d.name); renderDocs(); toast(pub?'⏳ Movido a borrador':'✅ Publicado',d.name,'success'); }
+function closeDhPop(){ const p=document.getElementById('dh-pop'); if(p) p.style.display='none'; }
+function docKebab(i,ev){ ev.stopPropagation(); const d=state.documents[i]; if(!d) return; const admin=state.isAdmin; const pub=docStatusOf(d)==='Publicado';
+  let p=document.getElementById('dh-pop'); if(!p){ p=document.createElement('div'); p.id='dh-pop'; p.className='dh-pop'; document.body.appendChild(p); }
+  p.innerHTML=`<button onclick="copyDocLink(${i});closeDhPop()">📋 Copiar link</button><button onclick="requestDocUpdateFor(${i});closeDhPop()">✏️ Solicitar actualización</button>${admin?`<button onclick="docTogglePublish(${i});closeDhPop()">${pub?'⏳ Pasar a borrador':'📢 Publicar'}</button>`:''}${admin?`<button class="dh-pop-danger" onclick="closeDhPop();deleteDoc(${i})">🗑 Eliminar</button>`:''}`;
+  const r=ev.target.getBoundingClientRect(); p.style.top=(r.bottom+window.scrollY+4)+'px'; p.style.left=Math.max(8,(r.right+window.scrollX-190))+'px'; p.style.display='block';
+}
+function openAddDocModal(){
+  let m=document.getElementById('modal-adddoc');
+  const today=new Date().toISOString().split('T')[0];
+  const catOpts=DOC_HUB_CATS.map(c=>`<option value="${c.key}">${c.icon} ${c.key}</option>`).join('');
+  const subOpts=['','Playbook','SOP','Estándar','Business Case','Template','Política','Checklist','Guía','Lineamiento'].map(x=>`<option value="${x}">${x||'— Subtipo —'}</option>`).join('');
+  const stOpts=['Borrador','Publicado','Por revisar','Desactualizado'].map(x=>`<option value="${x}">${x}</option>`).join('');
+  const html=`<div class="modal" style="max-width:580px;width:96vw" onclick="event.stopPropagation()">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0F766E,#008080)"><h3 class="modal-title">＋ Agregar documento</h3><button class="modal-close" onclick="closeModal('modal-adddoc')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label form-required">Nombre</label><input class="form-input" id="ad-name" placeholder="Ej: Playbook Comercial VCN"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="ad-cat">${catOpts}</select></div>
+        <div class="form-group"><label class="form-label">Subtipo</label><select class="form-select" id="ad-sub">${subOpts}</select></div>
+        <div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="ad-status">${stOpts}</select></div>
+        <div class="form-group"><label class="form-label">Versión</label><input class="form-input" id="ad-ver" placeholder="1.0"></div>
+        <div class="form-group"><label class="form-label">Owner</label><input class="form-input" id="ad-owner" placeholder="Responsable"></div>
+        <div class="form-group"><label class="form-label">Área</label><input class="form-input" id="ad-area" placeholder="Ej: Comercial"></div>
+        <div class="form-group"><label class="form-label">Última actualización</label><input type="date" class="form-input" id="ad-date" value="${today}"></div>
+        <div class="form-group"><label class="form-label">Próxima revisión</label><input type="date" class="form-input" id="ad-review"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción corta</label><input class="form-input" id="ad-desc" placeholder="Una línea que describa el documento"></div>
+      <div class="form-group"><label class="form-label">Link oficial</label><input class="form-input" id="ad-url" placeholder="https://drive.google.com/…  (deja vacío si aún no hay)"></div>
+      <div class="form-group"><label class="form-label">Tags (separados por coma)</label><input class="form-input" id="ad-tags" placeholder="VCN, Q2, Pricing"></div>
+      <div class="form-group"><label class="form-label">Notas de versión</label><input class="form-input" id="ad-notes" placeholder="Qué incluye esta versión inicial"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-adddoc')">Cancelar</button><button class="btn btn-primary" onclick="saveNewDoc()">✅ Agregar documento</button></div>
+  </div>`;
+  if(!m){ m=document.createElement('div'); m.id='modal-adddoc'; m.className='modal-overlay'; m.addEventListener('click',e=>{ if(e.target===m) closeModal('modal-adddoc'); }); document.body.appendChild(m); }
+  m.innerHTML=html; openModal('modal-adddoc');
+}
+function _ensureDocHubCss(){
+  if(!window._dhPopBound){ document.addEventListener('click',e=>{ const p=document.getElementById('dh-pop'); if(p&&p.style.display==='block'&&!p.contains(e.target)&&!(e.target.classList&&e.target.classList.contains('dh-kebab'))) closeDhPop(); }); window._dhPopBound=true; }
+  if(document.getElementById('dochub-css')) return;
+  const st=document.createElement('style'); st.id='dochub-css';
+  st.textContent=' .dh-wrap{max-width:1320px;margin:0 auto;padding:2px} .dh-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px} .dh-title{font-size:28px;font-weight:800;color:var(--text-primary);letter-spacing:-0.5px} .dh-sub{font-size:13.5px;color:var(--text-muted);margin-top:4px} .dh-add{font-size:14px;font-weight:700;padding:11px 20px;border-radius:12px;box-shadow:0 6px 16px rgba(0,128,128,0.22)} .dh-searchrow{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap} .dh-search{flex:1;min-width:280px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:13px 16px;box-shadow:0 2px 10px rgba(0,80,80,0.05)} .dh-search span{font-size:16px;opacity:.6} .dh-search input{flex:1;border:none;background:transparent;outline:none;font-size:14.5px;color:var(--text-primary)} .dh-kbd{font-size:11px;font-weight:700;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:3px 8px} .dh-reqbtn{font-size:13px;font-weight:600;border-radius:12px;padding:11px 16px;white-space:nowrap} .dh-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px} .dh-kpi{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,80,80,0.05);transition:transform .15s,box-shadow .15s} .dh-kpi:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,80,80,0.10)} .dh-kpi-tile{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0} .dh-kpi-val{font-size:26px;font-weight:800;color:var(--text-primary);line-height:1} .dh-kpi-lbl{font-size:13px;font-weight:700;color:var(--text-primary);margin-top:4px} .dh-kpi-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px} .dh-filtcard{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,80,80,0.05);margin-bottom:18px} .dh-filt-l,.dh-filt-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap} .dh-filt-lbl{font-size:12px;font-weight:700;color:var(--text-muted)} .dh-chips{display:flex;flex-wrap:wrap;gap:6px} .dh-chip{border:1px solid var(--border);background:#fff;color:var(--text-secondary);font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:999px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px} .dh-chip:hover{border-color:var(--primary);color:var(--primary)} .dh-chip.active{background:var(--primary);border-color:var(--primary);color:#fff} .dh-chip.dh-dot.active{background:var(--primary-light);color:var(--primary)} .dh-dotc{width:8px;height:8px;border-radius:50%;display:inline-block} .dh-clear{border:none;background:none;color:var(--text-muted);font-size:12.5px;font-weight:600;cursor:pointer;padding:6px 4px} .dh-clear:hover{color:var(--primary)} .dh-catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:14px;margin-bottom:18px} .dh-catcard{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;box-shadow:0 2px 12px rgba(0,80,80,0.05)} .dh-catcard:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,80,80,0.12);border-color:var(--primary)} .dh-catcard-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px} .dh-catcard-title{font-size:15px;font-weight:800;color:var(--text-primary)} .dh-catcard-desc{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.45;min-height:34px} .dh-catcard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px} .dh-catcard-count{background:var(--primary-light);color:var(--primary);font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px} .dh-catcard-chev{color:var(--text-muted);font-size:18px;font-weight:700} .dh-card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 12px rgba(0,80,80,0.05)} .dh-bottom{padding:8px 10px 14px} .dh-bottom-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border-light);padding:8px 8px 0} .dh-tabs{display:flex;gap:4px;flex-wrap:wrap} .dh-tab{border:none;background:none;color:var(--text-secondary);font-size:13px;font-weight:700;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px} .dh-tab:hover{color:var(--primary)} .dh-tab.active{color:var(--primary);border-bottom-color:var(--primary)} .dh-seg{display:inline-flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:3px;margin:4px 0} .dh-seg-btn{border:none;background:transparent;color:var(--text-secondary);font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:8px;cursor:pointer;transition:all .15s;white-space:nowrap} .dh-seg-btn:hover{color:var(--primary)} .dh-seg-btn.active{background:#fff;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,0.08)} .dh-group{margin-top:10px} .dh-l-grid{display:grid;grid-template-columns:26px 34px minmax(210px,1fr) 104px 138px 60px 168px 116px 240px;align-items:center;gap:10px} .dh-lh{padding:10px 12px;border-bottom:1px solid var(--border-light)} .dh-lh-title{font-size:14px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px} .dh-lh-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:none} .dh-gh-ic{font-size:16px} .dh-gh-caret{color:var(--text-muted);font-size:12px} .dh-group-n{background:var(--primary-light);color:var(--primary);font-size:11px;font-weight:700;padding:1px 9px;border-radius:999px} .dh-l-wrap{border-bottom:1px solid var(--border-light)} .dh-l-row{padding:12px;transition:background .12s} .dh-l-row:hover{background:var(--primary-lighter)} .dh-star{border:none;background:none;cursor:pointer;font-size:15px;color:#CBD5E1;padding:0} .dh-star.on{color:#F59E0B} .dh-row-ic-sm{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px} .dh-l-title{min-width:0} .dh-l-name{font-size:13.5px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .dh-l-desc{font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px} .dh-l-status{display:flex;flex-direction:column;align-items:flex-start;gap:4px} .dh-l-ver{font-size:12.5px;font-weight:700;color:var(--text-secondary)} .dh-l-owner{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-secondary);min-width:0} .dh-l-owner>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .dh-av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0} .dh-l-date{font-size:12px;color:var(--text-muted)} .dh-l-act{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:wrap} .dh-act{border:none;background:none;color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;padding:3px 4px;border-radius:6px} .dh-act:hover{color:var(--primary);background:var(--primary-light)} .dh-act.dis{color:#CBD5E1;cursor:default} .dh-kebab{border:none;background:none;color:var(--text-muted);font-size:16px;font-weight:700;cursor:pointer;padding:0 4px;border-radius:6px} .dh-kebab:hover{color:var(--primary)} .dh-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap} .dh-tipo{background:var(--surface2);color:var(--text-secondary);border:1px solid var(--border)} .dh-mini-alert{font-size:10px;font-weight:700;color:#B91C1C;background:#FEE2E2;border:1px solid #FECACA;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:3px} .dh-more{text-align:center;padding:12px;font-size:12.5px;font-weight:700;color:var(--primary);cursor:pointer} .dh-more:hover{text-decoration:underline} .dh-muted{color:var(--text-muted);font-size:12px} .dh-hist{margin:0 12px 8px;padding-left:64px} .dh-hist summary{font-size:11.5px;font-weight:700;color:var(--text-muted);cursor:pointer;user-select:none;padding:4px 0} .dh-hist-tbl{width:100%;border-collapse:collapse;margin-top:6px} .dh-hist-tbl th{font-size:10px;font-weight:700;color:var(--text-muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-light)} .dh-hist-tbl td{font-size:11px;color:var(--text-secondary);padding:4px 8px;border-bottom:1px solid var(--border-light)} .dh-hist-tbl a{color:var(--primary);font-weight:700;text-decoration:none} .dh-vform{margin:0 12px 12px 64px;background:var(--surface2);border:1px solid var(--border-light);border-radius:12px;padding:14px} .dh-vform-title{font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:10px} .dh-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px} .dh-form-title{font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:14px} .dh-table{width:100%;border-collapse:collapse;min-width:840px} .dh-table th{font-size:10.5px;font-weight:700;color:var(--text-muted);text-align:left;padding:10px 12px;background:var(--primary-lighter);border-bottom:2px solid var(--primary-light);white-space:nowrap} .dh-table td{font-size:12px;color:var(--text-secondary);padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:top} .dh-table tr:hover td{background:var(--primary-lighter)} .dh-td-name{font-size:12.5px;font-weight:700;color:var(--text-primary)} .dh-td-desc{font-size:11px;color:var(--text-muted);margin-top:2px;max-width:260px} .dh-td-act{white-space:nowrap;display:flex;gap:5px} .dh-iconbtn{width:30px;height:30px;border-radius:9px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all .15s;color:var(--text-secondary)} .dh-iconbtn:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary)} .dh-empty{text-align:center;padding:50px 20px;color:var(--text-muted)} .dh-empty-ic{font-size:42px;margin-bottom:12px} .dh-empty-t{font-size:15px;font-weight:700;color:var(--text-secondary)} .dh-empty-s{font-size:12.5px;margin-top:4px} .dh-reqbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px} .dh-pop{position:absolute;z-index:9500;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.16);padding:6px;display:none;min-width:188px} .dh-pop button{display:block;width:100%;text-align:left;border:none;background:none;font-size:13px;color:var(--text-primary);padding:9px 12px;border-radius:8px;cursor:pointer} .dh-pop button:hover{background:var(--primary-light);color:var(--primary)} .dh-pop .dh-pop-danger{color:var(--error)} .dh-pop .dh-pop-danger:hover{background:#FEE2E2;color:var(--error)} @media(max-width:1100px){.dh-kpis{grid-template-columns:repeat(2,1fr)}.dh-bottom{overflow-x:auto}.dh-l-grid{min-width:1040px}} @media(max-width:560px){.dh-kpis{grid-template-columns:1fr}.dh-title{font-size:22px}} ';
+  document.head.appendChild(st);
 }
 
 function switchDocsTab(t) {
@@ -3335,7 +3506,7 @@ function submitDocRequest(type) {
   addNotification('new_request','📄 Solicitud de documento',`"${title}" registrada con ID ${newReq.id}`);
   updateNavBadges();
   toast('✅ Solicitud enviada', newReq.id, 'success');
-  switchDocsTab(0);
+  state.docsSecondary='solicitudes'; state.docReqForm=null; state.docReqPrefill=''; renderDocs();
 }
 
 function showDocsVersionForm(di) {
@@ -3361,29 +3532,33 @@ function saveDocsVersion(di) {
   renderDocs();
   toast('✅ Versión guardada', `${doc.name} v${ver}`, 'success');
 }
-function saveNewDoc() {
-  const name = document.getElementById('nd2-name').value.trim();
-  const desc = document.getElementById('nd2-desc').value.trim();
-  const ver = document.getElementById('nd2-ver').value.trim() || '1.0';
-  const date = document.getElementById('nd2-date').value;
-  const url = document.getElementById('nd2-url').value.trim();
-  const notes = document.getElementById('nd2-notes').value.trim();
-  const publishedEl = document.getElementById('nd2-published');
-  const published = publishedEl ? publishedEl.checked : false;
-  if(!name) { toast('⚠️ Requerido','Ingresa el nombre del documento.','warning'); return; }
-  if(!url) { toast('⚠️ Requerido','Ingresa el link al documento.','warning'); return; }
-  if(!state.documents) state.documents = [];
-  const docCatEl = document.getElementById('nd2-cat');
-  const docCategory = docCatEl ? docCatEl.value : 'Otros';
-  state.documents.push({ id:`doc-${Date.now()}`, name, description:desc, published, doc_category:docCategory,
-    versions:[{ version:ver, date:date||new Date().toISOString().split('T')[0], url, notes, updated_by:state.currentUser||'Admin' }]
-  });
+function saveNewDoc(){
+  const g=id=>document.getElementById(id);
+  const name=g('ad-name')?g('ad-name').value.trim():'';
+  if(!name){ toast('⚠️ Requerido','Ingresa el nombre del documento.','warning'); return; }
+  const cat=g('ad-cat')?g('ad-cat').value:'Procesos';
+  const sub=g('ad-sub')?g('ad-sub').value:'';
+  const status=g('ad-status')?g('ad-status').value:'Borrador';
+  const ver=(g('ad-ver')&&g('ad-ver').value.trim())||'1.0';
+  const owner=g('ad-owner')?g('ad-owner').value.trim():'';
+  const area=g('ad-area')?g('ad-area').value.trim():'';
+  const date=g('ad-date')?g('ad-date').value:'';
+  const review=g('ad-review')?g('ad-review').value:'';
+  const desc=g('ad-desc')?g('ad-desc').value.trim():'';
+  const url=g('ad-url')?g('ad-url').value.trim():'';
+  const notes=g('ad-notes')?g('ad-notes').value.trim():'';
+  const tags=(g('ad-tags')&&g('ad-tags').value.trim())?g('ad-tags').value.split(',').map(t=>t.trim()).filter(Boolean):[];
+  const today=new Date().toISOString().split('T')[0];
+  if(!state.documents) state.documents=[];
+  state.documents.push({ id:'doc-'+Date.now(), name, description:desc, category:cat, doc_category:cat, subtype:sub, status, published:(status==='Publicado'), owner, area, next_review:review, tags, updated_at:(date||today),
+    versions:[{ version:ver, date:(date||today), url, notes, updated_by:state.currentUser||'Admin' }] });
   saveState();
-  addNotification('document', published?'✅ Documento publicado':'📄 Documento agregado (borrador)', name);
-  document.getElementById('docs-add-form').style.display = 'none';
+  addNotification('document', status==='Publicado'?'✅ Documento publicado':'📄 Documento agregado', name);
+  closeModal('modal-adddoc');
   renderDocs();
-  toast('✅ Documento agregado', published?`${name} — Publicado`:`${name} — Borrador (pendiente de publicación)`, 'success');
+  toast('✅ Documento agregado', name+' · '+status, 'success');
 }
+
 function deleteDoc(di) {
   if(!confirm('¿Eliminar este documento?')) return;
   state.documents.splice(di, 1);
@@ -3736,7 +3911,6 @@ function submitIntake() {
   const date = document.getElementById('i-date') ? document.getElementById('i-date').value : '';
   const prio = document.getElementById('i-prio') ? document.getElementById('i-prio').value : 'Media';
   const linkInput = document.getElementById('i-link');
-  if(linkInput && linkInput.value.trim()) intakeData.support_links.push(linkInput.value.trim());
 
   if(!name) { toast('⚠️ Campo requerido','Por favor ingresa tu nombre.','warning'); return; }
   if(!area) { toast('⚠️ Campo requerido','Selecciona tu área.','warning'); return; }
@@ -3745,6 +3919,14 @@ function submitIntake() {
   if(!title) { toast('⚠️ Campo requerido','Agrega un título a tu solicitud.','warning'); return; }
   if(!desc) { toast('⚠️ Campo requerido','Describe tu solicitud con detalle.','warning'); return; }
   if(!date) { toast('⚠️ Campo requerido','Indica la fecha en que necesitas la solicitud.','warning'); return; }
+
+  // ── Validaciones de robustez (longitud, fecha vencida, duplicado) ──
+  if(title.length > 140) { toast('⚠️ Título muy largo','El título no puede exceder 140 caracteres.','warning'); return; }
+  if(desc.length > 8000) { toast('⚠️ Descripción muy larga','La descripción no puede exceder 8000 caracteres.','warning'); return; }
+  const _todayStr = new Date().toISOString().split('T')[0];
+  if(date < _todayStr && !confirm('La fecha requerida ('+date+') ya pasó. ¿Registrar la solicitud de todos modos?')) return;
+  const _dup = state.requests.find(r => (r.title||'').trim().toLowerCase()===title.toLowerCase() && r.category===cat && !['Concluida','Cancelada'].includes(r.status));
+  if(_dup && !confirm('Ya existe una solicitud abierta con un título idéntico en esta categoría ('+_dup.id+'). ¿Crear otra de todos modos?')) return;
 
   const now = new Date().toISOString();
   const newReq = {
@@ -3761,7 +3943,7 @@ function submitIntake() {
     needed_by: date,
     requester_priority: prio,
     expected_impact: '',
-    support_links: [...intakeData.support_links],
+    support_links: [...new Set([...(intakeData.support_links||[]), ...(linkInput && linkInput.value.trim() ? [linkInput.value.trim()] : [])])],
     additional_comments: '',
     status: 'Backlog', assigned_owner: '', admin_priority: '',
     complexity: 'Media', internal_only: false,
@@ -4202,6 +4384,7 @@ function saveTaskField(id, field, value) {
   if(!req) return;
   req[field] = value;
   req.updated_at = new Date().toISOString();
+  req.updated_by = state.currentUser||'Sistema';
   saveState();
   toast('💾 Guardado', field === 'description' ? 'Descripción actualizada.' : 'Objetivo actualizado.', 'success');
 }
@@ -4233,14 +4416,22 @@ function populateLinkMilestones(reqId) {
 }
 
 function deleteRequest(id) {
+  if(state.isViewer || state.isRequester){ toast('🔒 Sin permiso','Tu rol no permite eliminar solicitudes.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
-  if(!confirm(`¿Eliminar la solicitud "${req.title}"?\nEsta acción no se puede deshacer.`)) return;
+  if(!confirm(`¿Enviar a la papelera la solicitud "${req.title}"?\nNo se borra de inmediato: podrás restaurarla desde Sincronización › Papelera.`)) return;
+  req._deleted_at = new Date().toISOString();
+  req._deleted_by = state.currentUser||'Sistema';
+  if(!Array.isArray(state.trash)) state.trash = [];
+  state.trash.unshift(req);
+  if(state.trash.length>200) state.trash = state.trash.slice(0,200);
   state.requests = state.requests.filter(r=>r.id!==id);
+  _lastDeletedId = id;
   saveState();
+  if(typeof currentTaskId!=='undefined' && currentTaskId===id) closeModal('modal-task');
   if(state.currentView==='backlog') renderBacklog();
   else if(state.currentView==='kanban') renderKanban();
-  toast('🗑 Eliminada','Solicitud eliminada correctamente.','info');
+  toastAction('🗑 Enviada a papelera', (req.title||'').slice(0,42), '↩️ Deshacer', 'restoreLastDeleted');
 }
 
 function deleteInitiative(id) {
@@ -4296,6 +4487,7 @@ function renderBacklog() {
     </tr>
   `).join('');
 
+  const _myTasksBtn = (state.isTeam||state.isAdmin) ? '<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;renderBacklog()" style="'+(myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)')+';border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">\u{1F464} Mis Tareas</button>' : '';
   document.getElementById('view-backlog').innerHTML = `
     <div class="filters-bar">
       <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;renderBacklog()">
@@ -4312,11 +4504,11 @@ function renderBacklog() {
         <option value="">Todas las prioridades</option>${prioOpts}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};renderBacklog()">✕ Limpiar</button>
-      ${state.isTeam||state.isAdmin ? `<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;renderBacklog()" style="${myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)'};border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">👤 Mis Tareas</button>` : ''}
+      ${_myTasksBtn}
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:15px;font-weight:700;color:var(--text-primary)">\${reqs.length} solicitud\${reqs.length!==1?'es':''}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary)">${reqs.length} solicitud${reqs.length!==1?'es':''}</div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-secondary btn-sm" onclick="uploadBacklogFileClick()" title="Cargar backlog desde archivo Excel/CSV">⬆️ Cargar Backlog</button>
         <input type="file" id="backlog-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processBacklogUpload(this)">
@@ -4386,9 +4578,9 @@ function renderKanban() {
     const isAddable = (state.isTeam||state.isAdmin) && status==='Backlog';
     return `
       <div class="kanban-col">
-        <div class="kanban-col-header" style="border-top:3px solid ${colorMap[status]}">
-          <span class="kanban-col-title">${status.toUpperCase()}</span>
-          <span class="kanban-col-count" style="background:${STATUS_BG[status]};color:${STATUS_COLORS[status]}">${cards.length}</span>
+        <div class="kanban-col-header" style="border-top:3px solid ${colorMap[status]};background:linear-gradient(135deg,${colorMap[status]}18 0%,transparent 100%)">
+          <span class="kanban-col-title" style="color:${colorMap[status]};font-weight:800">${status.toUpperCase()}</span>
+          <span class="kanban-col-count" style="background:${colorMap[status]}22;color:${colorMap[status]};border:1px solid ${colorMap[status]}44">${cards.length}</span>
         </div>
         <div class="kanban-cards" id="kcol-${status.replace(/ /g,'-')}"
           ondragover="dragOver(event)"
@@ -4445,6 +4637,8 @@ function dropCard(e, newStatus) {
     const oldStatus = req.status;
     req.status = newStatus;
     req.updated_at = new Date().toISOString();
+    req.updated_by = state.currentUser||'Sistema';
+    if(!Array.isArray(req.activity_log)) req.activity_log = [];
     req.activity_log.push({type:'status', author:state.currentUser||'Sistema', content:`Cambio de estado: ${oldStatus} → ${newStatus}`, created_at:new Date().toISOString()});
     saveState();
     renderKanban();
@@ -6067,6 +6261,7 @@ function updateField(id, field, value) {
   const oldVal = req[field];
   req[field] = value;
   req.updated_at = new Date().toISOString();
+  req.updated_by = state.currentUser||'Sistema';
   if((field==='admin_priority'||field==='assigned_owner') && oldVal!==value) {
     if(!req.activity_log) req.activity_log=[];
     const labels = {admin_priority:'Prioridad', assigned_owner:'Responsable'};
@@ -6276,6 +6471,9 @@ function submitQuickTask() {
   const desc = document.getElementById('qt-desc').value.trim();
   if(!title) { toast('⚠️ Campo requerido','Agrega un título.','warning'); return; }
   if(!desc) { toast('⚠️ Campo requerido','Agrega una descripción.','warning'); return; }
+  if(title.length > 140) { toast('⚠️ Título muy largo','El título no puede exceder 140 caracteres.','warning'); return; }
+  const _dupq = state.requests.find(r => (r.title||'').trim().toLowerCase()===title.toLowerCase() && r.category===cat && !['Concluida','Cancelada'].includes(r.status));
+  if(_dupq && !confirm('Ya existe una tarea abierta con un título idéntico en esta categoría ('+_dupq.id+'). ¿Crear otra de todos modos?')) return;
   const now = new Date().toISOString();
   const types = CATEGORIES[cat]?.types||['General'];
   const newReq = {
@@ -6296,6 +6494,100 @@ function submitQuickTask() {
   updateNavBadges();
   if(state.currentView==='kanban') renderKanban();
   if(state.currentView==='backlog') renderBacklog();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA NORMALIZATION (defensive guards against malformed records)
+// ═══════════════════════════════════════════════════════════
+function normalizeRequest(r) {
+  if(!r || typeof r !== 'object') return r;
+  if(!Array.isArray(r.activity_log)) r.activity_log = [];
+  if(!Array.isArray(r.files)) r.files = [];
+  if(!Array.isArray(r.milestones)) r.milestones = [];
+  if(!Array.isArray(r.support_links)) r.support_links = [];
+  if(!r.created_at) r.created_at = r.updated_at || new Date().toISOString();
+  if(!r.updated_at) r.updated_at = r.created_at;
+  if(!r.status) r.status = 'Backlog';
+  return r;
+}
+function normalizeState() {
+  (state.requests||[]).forEach(normalizeRequest);
+  if(!Array.isArray(state.trash)) state.trash = [];
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRASH (soft delete) + actionable toast
+// ═══════════════════════════════════════════════════════════
+function toastAction(title, msg, btnLabel, fnName) {
+  const container = document.getElementById('toast-container');
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast toast-info';
+  el.innerHTML = `<span class="toast-icon">🗑</span>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      ${msg?`<div class="toast-msg">${msg}</div>`:''}
+      <button onclick="${fnName}();this.closest('.toast').remove()" style="margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">${btnLabel}</button>
+    </div>`;
+  container.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(100px)'; el.style.transition='all 0.3s ease'; setTimeout(()=>el.remove(),300); }, 9000);
+}
+function openTrash() {
+  let m = document.getElementById('modal-trash');
+  if(!m) {
+    m = document.createElement('div');
+    m.id = 'modal-trash'; m.className = 'modal-overlay';
+    m.addEventListener('click', e=>{ if(e.target===m) closeModal('modal-trash'); });
+    m.innerHTML = `<div class="modal modal-sm" onclick="event.stopPropagation()">
+      <div class="modal-header" style="background:linear-gradient(135deg,#7F1D1D,#DC2626)">
+        <h3 class="modal-title">🗑 Papelera</h3>
+        <button class="modal-close" onclick="closeModal('modal-trash')">✕</button>
+      </div>
+      <div class="modal-body" id="trash-body"></div>
+    </div>`;
+    document.body.appendChild(m);
+  }
+  renderTrash();
+  openModal('modal-trash');
+}
+function renderTrash() {
+  const body = document.getElementById('trash-body'); if(!body) return;
+  const items = state.trash || [];
+  if(!items.length) { body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:30px 10px;font-size:13px">La papelera está vacía.</div>'; return; }
+  body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">'+items.length+' elemento(s). Las solicitudes eliminadas se conservan aquí para restaurarlas.</div>' +
+    items.map(r=>`
+      <div style="border:1px solid var(--border-light);border-radius:8px;padding:10px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${(r.title||'(sin título)')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin:2px 0 8px">${r.id} · eliminada por ${r._deleted_by||'?'} · ${fmtDateTime(r._deleted_at)}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-primary" onclick="restoreFromTrash('${r.id}')">↩️ Restaurar</button>
+          <button class="btn btn-sm btn-danger" onclick="purgeFromTrash('${r.id}')">🔥 Borrar definitivo</button>
+        </div>
+      </div>`).join('');
+}
+function restoreFromTrash(id) {
+  if(!Array.isArray(state.trash)) return;
+  const idx = state.trash.findIndex(r=>r.id===id); if(idx<0) return;
+  const [req] = state.trash.splice(idx,1);
+  delete req._deleted_at; delete req._deleted_by;
+  req.updated_at = new Date().toISOString();
+  normalizeRequest(req);
+  state.requests.unshift(req);
+  if(_lastDeletedId===id) _lastDeletedId = null;
+  saveState();
+  renderTrash();
+  if(['backlog','kanban','calendar','dashboard'].includes(state.currentView)) navigate(state.currentView);
+  toast('↩️ Restaurada', (req.title||'').slice(0,42), 'success');
+}
+function purgeFromTrash(id) {
+  if(!Array.isArray(state.trash)) return;
+  if(!confirm('Eliminar DEFINITIVAMENTE este elemento. Esta acción no se puede deshacer. ¿Continuar?')) return;
+  state.trash = state.trash.filter(r=>r.id!==id);
+  saveState();
+  renderTrash();
+}
+function restoreLastDeleted() {
+  if(_lastDeletedId) restoreFromTrash(_lastDeletedId);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -6320,6 +6612,9 @@ function init() {
 
   // Seed if needed
   seedData();
+
+  // Normalize records (defensive: ensure arrays/dates exist)
+  normalizeState();
 
   // Update UI
   updateUserUI();
@@ -6358,6 +6653,17 @@ function init() {
       }
     }
   }, 60000);
+
+  // Pull collaborators' changes every 25s (multi-user freshness).
+  // Skipped while the user is actively editing to avoid disrupting input.
+  setInterval(async () => {
+    if(!_fileHandle || _isSaving) return;
+    if(!(state.isAdmin || state.isTeam)) return;
+    if(typeof currentTaskId!=='undefined' && currentTaskId) return;
+    const ae = document.activeElement;
+    if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
+    try { await loadFromFile(false); } catch(e){}
+  }, 25000);
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e=>{
@@ -6530,7 +6836,7 @@ function renderCalendar() {
 
   const calRows = weeks.map(week=>{
     const cells = week.map(day=>{
-      if(!day) return `<td style="background:var(--surface2);border:1px solid var(--border-light);padding:6px;vertical-align:top;min-height:80px"></td>`;
+      if(!day) return `<td style="background:var(--surface2);border:1px solid var(--border-light);padding:6px;vertical-align:top;height:90px;width:14.28%"></td>`;
       const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const tasks = tasksByDate[dateStr]||[];
       const isToday = dateStr===todayStr;
@@ -6539,7 +6845,7 @@ function renderCalendar() {
         <div onclick="openTask('${t.id}')" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${statusColors2[t.status]||'#6B7280'}18;color:${statusColors2[t.status]||'#6B7280'};border-left:2px solid ${statusColors2[t.status]||'#6B7280'}" title="${t.title}">${t.title}</div>
       `).join('');
       const more = tasks.length>3 ? `<div style="font-size:10px;color:var(--text-muted);font-weight:600">+${tasks.length-3} más</div>` : '';
-      return `<td style="background:${isToday?'var(--primary-light)':'var(--surface)'};border:1px solid ${isToday?'var(--primary)':'var(--border-light)'};padding:6px;vertical-align:top;min-height:80px;width:14.28%">
+      return `<td style="background:${isToday?'var(--primary-light)':'var(--surface)'};border:1px solid ${isToday?'var(--primary)':'var(--border-light)'};padding:6px;vertical-align:top;height:90px;width:14.28%;overflow:hidden">
         <div style="font-size:13px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--primary)':isOverdueDay&&tasks.length?'var(--error)':'var(--text-secondary)'};margin-bottom:4px">${day}</div>
         ${taskPills}${more}
       </td>`;
@@ -6551,9 +6857,9 @@ function renderCalendar() {
 
   const monthTasks = state.requests.filter(r=>{
     if(!r.needed_by) return false;
-    const d = new Date(r.needed_by);
+    const d = parseLocalDate(r.needed_by); if(!d) return false;
     return d.getMonth()===calMonth && d.getFullYear()===calYear && !['Concluida','Cancelada'].includes(r.status);
-  }).sort((a,b)=>new Date(a.needed_by)-new Date(b.needed_by));
+  }).sort((a,b)=>parseLocalDate(a.needed_by)-parseLocalDate(b.needed_by));
 
   document.getElementById('view-calendar').innerHTML = `
     <div style="max-width:1100px;margin:0 auto">
@@ -6569,10 +6875,10 @@ function renderCalendar() {
         </div>
       </div>
 
-      <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px">
-        <table style="width:100%;border-collapse:collapse">
+      <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;overflow-x:auto;margin-bottom:20px">
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:700px">
           <thead>
-            <tr>${DOW_LABELS.map(d=>`<th style="padding:10px;text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);background:var(--primary-lighter);border:1px solid var(--border-light)">${d}</th>`).join('')}</tr>
+            <tr>${DOW_LABELS.map(d=>`<th style="padding:10px;text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);background:var(--primary-lighter);border:1px solid var(--border-light);width:14.28%;min-width:80px">${d}</th>`).join('')}</tr>
           </thead>
           <tbody>${calRows}</tbody>
         </table>
@@ -6807,48 +7113,46 @@ function processOKRUpload(input) {
 document.addEventListener('DOMContentLoaded', init);
 </script>
 
-<!-- ══ AI Chess Assistant ══ -->
+<!-- ══ AI Assistant — VEMO Dark ══ -->
 <style>
-#ai-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:52px;height:52px;border-radius:50%;background:#1a1a2e;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
-#ai-fab:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(0,0,0,0.45)}
-#ai-fab .ai-q{font-size:22px;font-weight:800;color:#fff;line-height:1;font-family:var(--font-sans)}
-#multitab-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8991;
-  background:#FEE2E2;color:#991B1B;padding:7px 16px;font-size:12px;text-align:center;
-  border-bottom:2px solid #EF4444;font-weight:500}
-#nosync-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8990;
-  background:#FEF3C7;color:#92400E;padding:7px 16px;font-size:12px;text-align:center;
-  border-bottom:2px solid #F59E0B;font-weight:500}
-#nosync-banner a{color:#92400E;font-weight:700;text-decoration:underline;cursor:pointer}
-#ai-overlay{position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,0.35);display:none}
+#ai-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.08);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.18);cursor:pointer;box-shadow:0 0 24px rgba(114,54,255,0.22),0 4px 16px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;transition:transform .18s cubic-bezier(0.34,1.56,0.64,1),box-shadow .18s}
+#ai-fab:hover{transform:scale(1.09);box-shadow:0 0 36px rgba(114,54,255,0.38),0 6px 22px rgba(0,0,0,0.45)}
+#multitab-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8991;background:rgba(248,113,113,0.14);color:#FCA5A5;padding:7px 16px;font-size:12px;text-align:center;border-bottom:1px solid rgba(248,113,113,0.25);font-weight:500;backdrop-filter:blur(10px)}
+#nosync-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:8990;background:rgba(252,211,77,0.12);color:#FCD34D;padding:7px 16px;font-size:12px;text-align:center;border-bottom:1px solid rgba(252,211,77,0.22);font-weight:500;backdrop-filter:blur(10px)}
+#nosync-banner a{color:#FCD34D;font-weight:700;text-decoration:underline;cursor:pointer}
+#ai-overlay{position:fixed;inset:0;z-index:8999;background:rgba(0,8,8,0.50);backdrop-filter:blur(4px);display:none}
 #ai-overlay.open{display:block}
-#ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:9000;width:360px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 32px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+#ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:9000;width:360px;max-width:95vw;background:rgba(8,6,24,0.90);backdrop-filter:blur(32px) saturate(1.8);border-left:1px solid rgba(255,255,255,0.10);box-shadow:-8px 0 48px rgba(0,0,0,0.40);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
 #ai-panel.open{transform:translateX(0)}
-#ai-panel-header{padding:14px 16px;background:#1a1a2e;display:flex;align-items:center;gap:10px}
+#ai-panel-header{padding:14px 16px;background:rgba(114,54,255,0.12);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px}
 #ai-panel-header svg{flex-shrink:0}
 #ai-panel-htxt{flex:1}
-#ai-panel-htxt .ai-name{font-size:14px;font-weight:700;color:#fff}
-#ai-panel-htxt .ai-sub{font-size:11px;color:#94a3b8}
-#ai-close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px}
-#ai-close-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
+#ai-panel-htxt .ai-name{font-size:14px;font-weight:700;color:rgba(255,255,255,0.95)}
+#ai-panel-htxt .ai-sub{font-size:11px;color:rgba(255,255,255,0.38)}
+#ai-close-btn{background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px;transition:all .15s}
+#ai-close-btn:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.08)}
 #ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:160px;max-height:340px}
 .ai-msg{padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.5;max-width:92%}
-.ai-msg.bot{background:var(--surface2);color:var(--text-primary);border:1px solid var(--border-light);align-self:flex-start;border-bottom-left-radius:4px}
-.ai-msg.user{background:#1a1a2e;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-#ai-chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 4px;border-top:1px solid var(--border-light)}
-.ai-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--text-secondary);transition:background .1s}
-.ai-chip:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-#ai-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--border-light)}
-#ai-input{flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;background:var(--surface2);color:var(--text-primary);outline:none}
-#ai-input:focus{border-color:var(--primary)}
-#ai-send{background:#1a1a2e;border:none;border-radius:8px;padding:7px 12px;color:#fff;cursor:pointer;font-size:13px}
-#ai-send:hover{background:#2d2d5e}
+.ai-msg.bot{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.10);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-msg.user{background:rgba(114,54,255,0.20);color:rgba(255,255,255,0.90);border:1px solid rgba(114,54,255,0.28);align-self:flex-end;border-bottom-right-radius:4px}
+#ai-chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 4px;border-top:1px solid rgba(255,255,255,0.06)}
+.ai-chip{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;color:rgba(255,255,255,0.50);transition:all .15s}
+.ai-chip:hover{background:rgba(114,54,255,0.18);color:#C4B5FD;border-color:rgba(114,54,255,0.30)}
+#ai-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.06)}
+#ai-input{flex:1;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;font-size:12px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.90);outline:none;transition:border-color .15s}
+#ai-input::placeholder{color:rgba(255,255,255,0.28)}
+#ai-input:focus{border-color:rgba(114,54,255,0.50)}
+#ai-send{background:linear-gradient(135deg,#3B1FA0,#7236ff);border:none;border-radius:8px;padding:7px 12px;color:#fff;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;box-shadow:0 0 14px rgba(114,54,255,0.28)}
+#ai-send:hover{transform:scale(1.04);box-shadow:0 0 22px rgba(114,54,255,0.45)}
 </style>
 
 <!-- Floating ? button -->
 <button id="ai-fab" onclick="toggleAIPanel()" title="Jason — Copiloto Ops">
-  <svg width="30" height="30" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21,40 Q12,40 11,34 L11,29 Q11,26 14,24 L17,23 Q13,19 13,15 L13,12 Q13,7 18,5 L20,4 Q18,2 19,1 Q20,0 22,0.5 Q24,1 24,3 L26,2 Q28,1 30,3 Q31,5 29,7 L32,8 Q35,10 35,14 L34,18 Q32,21 29,22 L31,24 Q33,26 33,30 L33,34 Q33,40 24,40 Z" fill="#34d399"/>
-    <circle cx="28" cy="10" r="1.4" fill="#0d2137"/>
+  <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M35,95 L65,95 L62,80 L38,80 Z" fill="white" opacity="0.95"/>
+    <path d="M38,80 L62,80 L60,68 L40,68 Z" fill="white" opacity="0.95"/>
+    <path d="M40,68 L60,68 L58,58 Q70,52 72,40 Q74,28 66,20 Q62,16 58,14 Q60,10 58,6 Q56,2 52,2 Q48,2 46,5 Q42,3 38,6 Q34,9 34,14 Q28,16 26,22 Q22,30 28,40 Q32,50 40,58 Z" fill="white" opacity="0.95"/>
+    <ellipse cx="60" cy="18" rx="4" ry="3" fill="#008080" opacity="0.6"/>
   </svg>
 </button>
 
@@ -6862,28 +7166,4 @@ document.addEventListener('DOMContentLoaded', init);
       <circle cx="21" cy="21" r="21" fill="#0d2137"/>
       <g clip-path="url(#knight-circle)">
         <!-- Knight silhouette — solid, clean, head facing right -->
-        <path d="M21,40 Q12,40 11,34 L11,29 Q11,26 14,24 L17,23 Q13,19 13,15 L13,12 Q13,7 18,5 L20,4 Q18,2 19,1 Q20,0 22,0.5 Q24,1 24,3 L26,2 Q28,1 30,3 Q31,5 29,7 L32,8 Q35,10 35,14 L34,18 Q32,21 29,22 L31,24 Q33,26 33,30 L33,34 Q33,40 24,40 Z" fill="#34d399"/>
-        <circle cx="28" cy="10" r="1.4" fill="#0d2137"/>
-      </g>
-    </svg>
-    <div id="ai-panel-htxt">
-      <div class="ai-name">Jason — Copiloto Ops</div>
-      <div class="ai-sub">Strategic Ops Hub · VEMO</div>
-    </div>
-    <button id="ai-close-btn" onclick="toggleAIPanel()">✕</button>
-  </div>
-  <div id="ai-messages"></div>
-  <div id="ai-chips">
-    <span class="ai-chip" onclick="aiQuick('resumen')">📊 Resumen del día</span>
-    <span class="ai-chip" onclick="aiQuick('pendientes')">⏳ Pendientes</span>
-    <span class="ai-chip" onclick="aiQuick('iniciativas')">🗺️ Iniciativas</span>
-    <span class="ai-chip" onclick="aiQuick('ayuda')">❓ Cómo usar</span>
-  </div>
-  <div id="ai-input-row">
-    <input id="ai-input" type="text" placeholder="Pregunta algo…" onkeydown="if(event.key==='Enter')aiSend()">
-    <button id="ai-send" onclick="aiSend()">↑</button>
-  </div>
-</div>
-
-</body>
-</html>
+        <path d="M21,40 Q12,40 11,34 L11,29 Q11
