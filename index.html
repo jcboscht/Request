@@ -5456,33 +5456,7 @@ function renderRoadmap() {
     </div>`;
   }).join('');
 
-  // Standalone tasks (linked to filtered-out or no initiative)
-  const linkedIds = new Set(state.initiatives.map(x=>x.id));
-  const standaloneTasks = state.requests.filter(r=>
-    !['Concluida','Cancelada'].includes(r.status) &&
-    (!r.linked_initiative_id || !linkedIds.has(r.linked_initiative_id)) &&
-    (rf.owner ? r.assigned_owner===rf.owner : true) &&
-    (rf.category ? r.category===rf.category : true) &&
-    (rf.status ? r.status===rf.status : true)
-  );
-  const standaloneHtml = standaloneTasks.length ? `
-    <div style="margin-top:24px">
-      <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-        📋 Tareas independientes
-        <span style="font-size:11px;font-weight:400;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 8px">${standaloneTasks.length}</span>
-      </div>
-      ${standaloneTasks.map(r=>{
-        const catInfo=CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
-        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;cursor:pointer" onclick="openTask('${r.id}')">
-          <span style="font-size:10px;background:${catInfo.bg};color:${catInfo.color};border-radius:4px;padding:2px 6px">${catInfo.icon}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.title}</div>
-            <div style="font-size:11px;color:var(--text-muted)">${r.category} · ${r.assigned_owner||'Sin owner'} · ${statusBadge(r.status)}</div>
-          </div>
-          <div style="font-size:11px;color:${isOverdue(r.needed_by)?'var(--error)':'var(--text-muted)'};flex-shrink:0">${fmtDateShort(r.needed_by)}</div>
-        </div>`;
-      }).join('')}
-    </div>` : '';
+  // Tareas independientes no se muestran en Roadmap — solo en Backlog/Kanban/Calendario
 
   // Filter selects
   const catOpts2 = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${rf.category===c?'selected':''}>${CATEGORIES[c].icon} ${c}</option>`).join('');
@@ -5495,7 +5469,7 @@ function renderRoadmap() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
       <div>
         <div style="font-size:18px;font-weight:800">🗺️ Roadmap de Iniciativas</div>
-        <div style="font-size:12px;color:var(--text-muted)">${filteredInits.length} de ${state.initiatives.length} iniciativas${standaloneTasks.length?' · '+standaloneTasks.length+' tareas independientes':''}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${filteredInits.length} de ${state.initiatives.length} iniciativas</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
@@ -5521,7 +5495,6 @@ function renderRoadmap() {
       ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.roadmapFilter={category:'',owner:'',status:'',dateFrom:'',dateTo:''};renderRoadmap()" style="font-size:11px">✕ Limpiar</button>`:''}
     </div>
     ${filteredInitCards||`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-title">Sin iniciativas</div><div class="empty-sub">Ajusta los filtros o agrega una nueva iniciativa.</div></div>`}
-    ${standaloneHtml}
   `;
 }
 
