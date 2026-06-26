@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -63,12 +63,29 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;scroll-behavior:smooth;}
 body{
-  font-family:'Helvetica Neue',Helvetica,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
   font-size:14px;line-height:1.5;
   color:var(--text-primary);
   background:var(--bg);
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
+}
+/* Títulos y subtítulos → Space Grotesk · todo lo demás → Poppins */
+h1,h2,h3,h4,h5,h6,
+.nav-section-label,.topbar-title,
+.card-title,.card-subtitle,
+.kpi-label,.kpi-value,.kpi-sub,
+.modal-title,.kanban-col-title,
+.hero-title,.hero-sub,
+.section-title,.section-sub,
+.cat-card-name,.day-panel-title,.chart-title,
+.empty-title,.empty-sub,
+.toast-title,
+.logo-text,.logo-sub,
+.ai-name,.ai-sub,
+.login-brand-text,.login-brand-sub,.login-title,.login-subtitle,
+.kpi-group-label,.kpi-sub-title,.kpi-item-name,.kpi-detail-title{
+  font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 button{cursor:pointer;border:none;background:none;font-family:inherit;}
 input,textarea,select{font-family:inherit;outline:none;}
@@ -180,6 +197,25 @@ img{max-width:100%;}
 
 /* Page container */
 #content{flex:1;padding:24px;overflow-x:hidden;}
+
+/* Roadmap → grid responsivo que aprovecha todo el ancho */
+.roadmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:16px;align-items:start;}
+.roadmap-grid > .card{margin-bottom:0!important;}
+@media(max-width:760px){.roadmap-grid{grid-template-columns:1fr;}}
+
+/* KPIs por iniciativa */
+.kpi-ini-card{transition:transform .15s ease,box-shadow .15s ease;}
+.kpi-ini-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,0.10);}
+.kpi-group-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.4px;padding:7px 14px;border-radius:8px;}
+.kpi-sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;align-items:start;}
+.kpi-sub-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px 8px;box-shadow:var(--shadow);}
+.kpi-sub-title{font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;}
+.kpi-item{padding:10px 0;border-top:1px solid var(--border-light);}
+.kpi-item-name{font-size:13px;font-weight:600;color:var(--text-primary);}
+.kpi-item-desc{font-size:11.5px;color:var(--text-muted);margin-top:2px;line-height:1.45;}
+.kpi-metric{background:var(--surface2);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px 14px;text-align:center;}
+.kpi-metric-val{font-size:22px;font-weight:800;color:var(--primary);line-height:1;font-family:'Space Grotesk',sans-serif;}
+.kpi-metric-lbl{font-size:10.5px;font-weight:600;color:var(--text-muted);margin-top:5px;text-transform:uppercase;letter-spacing:.3px;}
 
 /* Bottom nav (mobile) */
 #bottom-nav{
@@ -1021,6 +1057,9 @@ td.td-action{white-space:nowrap;}
         <div class="nav-item" data-view="roadmap" onclick="navigate('roadmap')">
           <span class="nav-icon">🗺️</span><span>Roadmap</span>
         </div>
+        <div class="nav-item" data-view="kpis" onclick="navigate('kpis')">
+          <span class="nav-icon">📊</span><span>KPIs</span>
+        </div>
         <div class="nav-item" data-view="planeacion" onclick="navigate('planeacion')">
           <span class="nav-icon">🎯</span><span>OKRs Transversales</span>
         </div>
@@ -1035,6 +1074,9 @@ td.td-action{white-space:nowrap;}
         <div class="nav-section-label">Administrador</div>
         <div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
           <span class="nav-icon">📊</span><span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-view="historico" onclick="navigate('historico')">
+          <span class="nav-icon">🗄️</span><span>Backlog Histórico</span>
         </div>
         <div class="nav-item" data-view="heatmap" onclick="navigate('heatmap')">
           <span class="nav-icon">🔥</span><span>Bandwidth</span>
@@ -1090,10 +1132,12 @@ td.td-action{white-space:nowrap;}
       <div id="view-heatmap" class="hidden"></div>
       <div id="view-library" class="hidden"></div>
       <div id="view-roadmap" class="hidden"></div>
+      <div id="view-kpis" class="hidden"></div>
       <div id="view-docs" class="hidden"></div>
       <div id="view-reports" class="hidden"></div>
       <div id="view-config" class="hidden"></div>
       <div id="view-planeacion" class="hidden"></div>
+      <div id="view-historico" class="hidden"></div>
     </div>
   </div>
 
@@ -1481,6 +1525,13 @@ td.td-action{white-space:nowrap;}
           <option value="requester">📬 Solicitante — solo puede levantar y ver sus propias solicitudes</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">Área</label>
+        <select class="form-select" id="user-modal-area">
+          <option value="">— Sin área —</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Se precarga automáticamente al levantar una nueva solicitud.</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-user')">Cancelar</button>
@@ -1519,8 +1570,21 @@ td.td-action{white-space:nowrap;}
         <input type="text" class="form-input" id="ms-modal-name" placeholder="Ej. Lanzar MVP, Entrega a cliente..." style="font-size:13px">
       </div>
       <div class="form-group" style="margin-bottom:14px">
-        <label class="form-label">Fecha objetivo</label>
+        <label class="form-label" id="ms-modal-date-label">Fecha objetivo</label>
         <input type="date" class="form-input" id="ms-modal-date" style="font-size:13px">
+      </div>
+      <div class="form-group" id="ms-modal-duration-group" style="margin-bottom:14px;display:none">
+        <label class="form-label">Fecha fin (opcional — define una duración)</label>
+        <input type="date" class="form-input" id="ms-modal-end" style="font-size:13px">
+        <label class="form-label" style="margin-top:10px">Recurrencia</label>
+        <select class="form-select" id="ms-modal-recur" style="font-size:13px">
+          <option value="">Sin recurrencia (puntual / duración única)</option>
+          <option value="Semanal">🔁 Semanal</option>
+          <option value="Quincenal">🔁 Quincenal</option>
+          <option value="Mensual">🔁 Mensual</option>
+          <option value="Bimestral">🔁 Bimestral</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Usa "Fecha objetivo" como inicio. La recurrencia repite el hito en la barra (p. ej. comunicación periódica).</div>
       </div>
       <div class="form-group" style="margin-bottom:14px">
         <label class="form-label">Owner</label>
@@ -1605,6 +1669,8 @@ const CATEGORIES = {
 };
 
 const STATUSES = ['Backlog','En proceso','Ejecutada','Validada','Concluida','Requiere Cambios','Cancelada'];
+// Estados terminales → salen del backlog de trabajo y pasan al Backlog Histórico
+const ARCHIVED_STATUSES = ['Concluida','Cancelada'];
 const STATUS_COLORS = {
   'Backlog':'#6B7280','En proceso':'#008080','Ejecutada':'#D97706',
   'Validada':'#16A34A','Concluida':'#15803D','Requiere Cambios':'#EA580C','Cancelada':'#DC2626'
@@ -2803,15 +2869,16 @@ function updateUserUI() {
 const VIEW_TITLES = {
   home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',calendar:'📆 Calendario de Tareas',
   dashboard:'Dashboard Ejecutivo',heatmap:'Bandwidth del Equipo',library:'Biblioteca Documental',
-  roadmap:'Roadmap',reports:'Reporte Semanal',config:'Configuración',
+  roadmap:'Roadmap',kpis:'📊 KPIs por Iniciativa',reports:'Reporte Semanal',config:'Configuración',
   docs:'Documentos para Consulta',
-  planeacion:'🎯 OKRs Transversales'
+  planeacion:'🎯 OKRs Transversales',
+  historico:'🗄️ Backlog Histórico'
 };
 function navigate(view) {
   if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
-  const adminViews = ['dashboard','heatmap','library','reports','config'];
+  const adminViews = ['dashboard','heatmap','library','reports','config','historico'];
   const requesterViews = ['intake']; // requester can ONLY access these
-  const teamViews = ['backlog','kanban','calendar','roadmap','docs','planeacion','home','intake'];
+  const teamViews = ['backlog','kanban','calendar','roadmap','kpis','docs','planeacion','home','intake'];
   if(state.isRequester && !requesterViews.includes(view)) {
     // Requester sees only their own requests view
     view = 'myRequests';
@@ -2843,7 +2910,9 @@ function navigate(view) {
     kanban:renderKanban, calendar:renderCalendar, dashboard:renderDashboard, heatmap:renderHeatmap,
     library:renderLibrary, roadmap:renderRoadmap, reports:renderReports, config:renderConfig,
     docs:renderDocs,
-    planeacion:renderPlaneacion
+    planeacion:renderPlaneacion,
+    historico:renderHistorico,
+    kpis:renderKpis
   };
   if(renders[view]) renders[view]();
   updateNavBadges();
@@ -4017,7 +4086,7 @@ function saveNewDocument() {
 // ═══════════════════════════════════════════════════════════
 let intakeData = { category:'', request_type:'', title:'', description:'',
   needed_by:'', requester_priority:'Media', support_links:[],
-  requester_name:'', requester_area:'' };
+  requester_name:'', requester_area:'', stakeholders:[] };
 
 function startIntakeWithCategory(cat) {
   intakeData.category = cat;
@@ -4072,6 +4141,11 @@ function renderMyRequests() {
 function renderIntake() {
   // Pre-fill name from logged-in user if not already set
   if(!intakeData.requester_name && state.currentUser) intakeData.requester_name = state.currentUser;
+  // Pre-fill área from the logged-in user's saved área
+  if(!intakeData.requester_area && state.currentUserId) {
+    const me = (state.config.users||[]).find(u=>u.id===state.currentUserId);
+    if(me && me.area) intakeData.requester_area = me.area;
+  }
   const catOptions = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${intakeData.category===c?'selected':''}>${CATEGORIES[c].icon} ${c}</option>`).join('');
   const areaOptions = AREAS.map(a=>`<option value="${a}" ${intakeData.requester_area===a?'selected':''}>${a}</option>`).join('');
 
@@ -4100,6 +4174,13 @@ function renderIntake() {
               ${areaOptions}
             </select>
             <input type="text" class="form-input" id="i-area-otro" placeholder="Especifica tu área..." style="margin-top:8px;display:none">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stakeholders</label>
+            <select class="form-select" id="i-stakeholders" multiple size="4" style="height:auto">
+              ${(state.config.team||[]).map(m=>`<option value="${m}" ${(intakeData.stakeholders||[]).includes(m)?'selected':''}>${m}</option>`).join('')}
+            </select>
+            <div class="form-hint">Personas complementarias a la tarea (Ctrl / Cmd para elegir varias)</div>
           </div>
 
           <!-- SOLICITUD -->
@@ -4217,6 +4298,8 @@ function submitIntake() {
   const desc = document.getElementById('i-desc') ? document.getElementById('i-desc').value.trim() : '';
   const date = document.getElementById('i-date') ? document.getElementById('i-date').value : '';
   const prio = document.getElementById('i-prio') ? document.getElementById('i-prio').value : 'Media';
+  const stakeholdersEl = document.getElementById('i-stakeholders');
+  const stakeholders = stakeholdersEl ? Array.from(stakeholdersEl.selectedOptions).map(o=>o.value) : [];
   const linkInput = document.getElementById('i-link');
 
   if(!name) { toast('⚠️ Campo requerido','Por favor ingresa tu nombre.','warning'); return; }
@@ -4254,6 +4337,7 @@ function submitIntake() {
     additional_comments: '',
     status: 'Backlog', assigned_owner: '', admin_priority: '',
     complexity: 'Media', internal_only: false,
+    stakeholders: stakeholders,
     activity_log: [], files: [], milestones: []
   };
   state.requests.unshift(newReq);
@@ -4261,7 +4345,7 @@ function submitIntake() {
   addNotification('new_request', `📬 Nueva solicitud: ${newReq.title}`, `${newReq.id} · ${newReq.category} · ${newReq.requester_name}`);
   intakeData = { category:'', request_type:'', title:'', description:'',
     needed_by:'', requester_priority:'Media', support_links:[],
-    requester_name:'', requester_area:'' };
+    requester_name:'', requester_area:'', stakeholders:[] };
   document.getElementById('view-intake').innerHTML = `
     <div style="max-width:540px;margin:0 auto;text-align:center;padding:60px 24px">
       <div style="font-size:64px;margin-bottom:20px">🎉</div>
@@ -4416,8 +4500,16 @@ function renderPlaneacion() {
     </div>`;
 }
 
+function togglePlanGanttExpand(id) {
+  state.planGanttExpanded = state.planGanttExpanded || {};
+  state.planGanttExpanded[id] = !state.planGanttExpanded[id];
+  renderPlaneacion();
+}
+
 function renderPlaneacionGantt(allItems) {
   if(!allItems.length) return `<div style="text-align:center;padding:60px;color:var(--text-muted)"><div style="font-size:48px;margin-bottom:16px">📭</div><div>Sin iniciativas para mostrar en Gantt</div></div>`;
+
+  state.planGanttExpanded = state.planGanttExpanded || {};
 
   // Config
   const startD    = new Date('2026-01-01');
@@ -4426,6 +4518,7 @@ function renderPlaneacionGantt(allItems) {
   const svgW      = 1100;
   const leftPad   = 210;
   const rowH      = 46;
+  const msRowH    = 30;   // milestone sub-row height (when expanded)
   const secH      = 28;   // area separator height
   const headerH   = 44;
   const chartW    = svgW - leftPad - 16;
@@ -4452,11 +4545,16 @@ function renderPlaneacionGantt(allItems) {
   let rowDefs = [];
   areasPresent.forEach(area => {
     rowDefs.push({type:'section', area});
-    allItems.filter(i=>i.area===area).forEach(item => rowDefs.push({type:'row', area, item}));
+    allItems.filter(i=>i.area===area).forEach(item => {
+      rowDefs.push({type:'row', area, item});
+      if(state.planGanttExpanded[item.id] && (item.milestones||[]).length) {
+        (item.milestones||[]).forEach(ms => rowDefs.push({type:'msrow', area, item, ms}));
+      }
+    });
   });
 
   // Total SVG height
-  const svgH = headerH + rowDefs.reduce((acc,r)=> acc + (r.type==='section'?secH:rowH), 0) + 20;
+  const svgH = headerH + rowDefs.reduce((acc,r)=> acc + (r.type==='section'?secH : r.type==='msrow'?msRowH : rowH), 0) + 20;
 
   // Quarter backgrounds
   let qBg = quarters.map((q,qi)=>{
@@ -4486,6 +4584,28 @@ function renderPlaneacionGantt(allItems) {
         <line x1="0" y1="${y}" x2="${svgW}" y2="${y}" stroke="${c.border}" stroke-width="1" opacity="0.4"/>
         <line x1="0" y1="${y+secH}" x2="${svgW}" y2="${y+secH}" stroke="${c.border}" stroke-width="1" opacity="0.3"/>`;
     }
+    // MILESTONE SUB-ROW (only present when its parent initiative is expanded)
+    if(rd.type === 'msrow') {
+      const ms = rd.ms;
+      const y = yOffset;
+      yOffset += msRowH;
+      const midY = y + msRowH/2;
+      const mFill = msColors[ms.status] || '#9CA3AF';
+      const mStroke = ms.status === 'Completado' ? '#166534' : (ms.status === 'En proceso' ? '#005555' : '#6B7280');
+      const mx = (ms.date ? toX(ms.date) : leftPad);
+      const nameTxt = ms.name.length > 30 ? ms.name.slice(0,30)+'…' : ms.name;
+      const diamond = (ms.date && mx >= leftPad && mx <= svgW)
+        ? `<polygon points="${mx},${midY-6} ${mx+6},${midY} ${mx},${midY+6} ${mx-6},${midY}" fill="${mFill}" stroke="${mStroke}" stroke-width="1" opacity="0.95"><title>${ms.name} — ${ms.date||'—'} (${ms.status})</title></polygon>
+           <text x="${mx+10}" y="${midY}" dominant-baseline="middle" font-size="8" fill="#6B7280">${ms.date||''}</text>`
+        : '';
+      return `<rect x="0" y="${y}" width="${svgW}" height="${msRowH}" fill="#F8FCFF"/>
+        <rect x="0" y="${y}" width="${leftPad-6}" height="${msRowH}" fill="#F8FCFF"/>
+        <line x1="40" y1="${y+msRowH/2}" x2="46" y2="${y+msRowH/2}" stroke="#CBD5E1" stroke-width="1"/>
+        <circle cx="36" cy="${midY}" r="3.5" fill="${mFill}" stroke="#fff" stroke-width="1"/>
+        <text x="50" y="${midY}" dominant-baseline="middle" font-size="9" fill="#475569">${nameTxt}</text>
+        <line x1="0" y1="${y+msRowH-1}" x2="${svgW}" y2="${y+msRowH-1}" stroke="#EEF2F6" stroke-width="1"/>
+        ${diamond}`;
+    }
     // ROW
     const item = rd.item;
     const c = CROSS_AREA_COLORS[item.area] || {border:'#9CA3AF', text:'#374151', dot:'#9CA3AF'};
@@ -4500,28 +4620,40 @@ function renderPlaneacionGantt(allItems) {
     const barHeight = 18;
     const midY = y + rowH/2;
 
-    // Title (truncated)
-    const titleMax = 28;
-    const titleTxt = item.title.length > titleMax ? item.title.slice(0, titleMax) + '…' : item.title;
-
-    // Milestones
+    // Expand / collapse state
     const milestones = item.milestones || [];
-    const msSvg = milestones.map(ms => {
+    const hasMs = milestones.length > 0;
+    const expanded = !!state.planGanttExpanded[item.id];
+    const caret = hasMs
+      ? `<text x="6" y="${midY}" dominant-baseline="middle" font-size="11" font-weight="700" fill="#008080" style="cursor:pointer" onclick="togglePlanGanttExpand('${item.id}')">${expanded?'▾':'▸'}</text>`
+      : '';
+    const labelX = hasMs ? 20 : 18;
+
+    // Title (truncated)
+    const titleMax = 26;
+    const titleTxt = item.title.length > titleMax ? item.title.slice(0, titleMax) + '…' : item.title;
+    const msCount = hasMs ? ` · ${milestones.length} MS` : '';
+
+    // Milestone diamonds on the bar — only when collapsed (expanded shows sub-rows)
+    const msSvg = expanded ? '' : milestones.map(ms => {
+      if(!ms.date) return '';
       const mx = toX(ms.date);
       if(mx < leftPad || mx > svgW) return '';
       const mFill = msColors[ms.status] || '#9CA3AF';
       const mStroke = ms.status === 'Completado' ? '#166534' : (ms.status === 'En proceso' ? '#005555' : '#6B7280');
-      const nameShort = ms.name.length > 16 ? ms.name.slice(0,16)+'…' : ms.name;
       return `<polygon points="${mx},${barY-1} ${mx+6},${barY+barHeight/2} ${mx},${barY+barHeight+1} ${mx-6},${barY+barHeight/2}" fill="${mFill}" stroke="${mStroke}" stroke-width="1" opacity="0.9">
         <title>${ms.name} — ${ms.date} (${ms.status})</title>
-      </polygon>
-      <text x="${mx}" y="${barY-5}" text-anchor="middle" font-size="8" fill="${mFill}" font-weight="600">${nameShort}</text>`;
+      </polygon>`;
     }).join('');
+
+    const titleCursor = hasMs ? 'cursor:pointer' : '';
+    const titleClick = hasMs ? `onclick="togglePlanGanttExpand('${item.id}')"` : '';
 
     return `<rect x="0" y="${y}" width="${svgW}" height="${rowH}" fill="${rowBg}"/>
       <rect x="0" y="${y}" width="${leftPad-6}" height="${rowH}" fill="${rowBg}"/>
-      <text x="18" y="${midY-4}" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#374151">${titleTxt}</text>
-      <text x="18" y="${midY+8}" dominant-baseline="middle" font-size="8.5" fill="#9CA3AF">👤 ${item.owner} · ${item.quarter}</text>
+      ${caret}
+      <text x="${labelX}" y="${midY-4}" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#374151" style="${titleCursor}" ${titleClick}>${titleTxt}</text>
+      <text x="${labelX}" y="${midY+8}" dominant-baseline="middle" font-size="8.5" fill="#9CA3AF">👤 ${item.owner} · ${item.quarter}${msCount}</text>
       <rect x="${x1}" y="${barY}" width="${barW}" height="${barHeight}" rx="4" fill="${barFill}" opacity="0.82"/>
       <line x1="0" y1="${y+rowH-1}" x2="${svgW}" y2="${y+rowH-1}" stroke="#F3F4F6" stroke-width="1"/>
       ${msSvg}`;
@@ -4560,6 +4692,7 @@ function renderPlaneacionGantt(allItems) {
     <div style="padding:12px 16px 8px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <svg width="500" height="26"><g>${legendSvg}</g></svg>
       <svg width="430" height="26" style="margin-left:8px"><g>${msLegendSvg}</g></svg>
+      <span style="font-size:11px;color:var(--text-muted);margin-left:auto">▸ clic en una iniciativa para desplegar sus milestones</span>
     </div>
     <div style="overflow-x:auto">
       <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="min-width:${svgW}px;display:block">
@@ -4757,6 +4890,8 @@ function renderBacklog() {
   // "Mis Tareas" quick filter for team members
   const myTasksActive = state.backlogFilter._myTasks;
   let reqs = state.requests.filter(r=>{
+    // Las tareas concluidas/canceladas salen del backlog de trabajo → Backlog Histórico
+    if(ARCHIVED_STATUSES.includes(r.status)) return false;
     if(myTasksActive) {
       const isOwner = r.assigned_owner === state.currentUser ||
         (r.milestones||[]).some(m=>m.owner===state.currentUser && m.status!=='Completado');
@@ -4774,7 +4909,7 @@ function renderBacklog() {
   });
   reqs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
-  const statusOpts = STATUSES.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
+  const statusOpts = STATUSES.filter(s=>!ARCHIVED_STATUSES.includes(s)).map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
   const catOpts = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c}</option>`).join('');
   const ownerOpts = ['Sin asignar',...state.config.team].map(o=>`<option value="${o}" ${f.owner===o?'selected':''}>${o}</option>`).join('');
   const prioOpts = PRIORITIES.map(p=>`<option value="${p}" ${f.priority===p?'selected':''}>${p}</option>`).join('');
@@ -4832,6 +4967,90 @@ function renderBacklog() {
       </table>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW: BACKLOG HISTÓRICO (tareas concluidas / canceladas — solo Admin)
+// ═══════════════════════════════════════════════════════════
+function renderHistorico() {
+  if(!state.isAdmin) { toast('🔒 Acceso restringido','Solo administradores pueden ver el backlog histórico.','warning'); return; }
+  const f = state.histFilter = state.histFilter || {status:'', owner:'', search:''};
+
+  let reqs = state.requests.filter(r=>{
+    if(!ARCHIVED_STATUSES.includes(r.status)) return false;
+    if(f.status && r.status!==f.status) return false;
+    if(f.owner) { if(f.owner==='Sin asignar'&&r.assigned_owner) return false; if(f.owner!=='Sin asignar'&&r.assigned_owner!==f.owner) return false; }
+    if(f.search) {
+      const q=f.search.toLowerCase();
+      if(!r.id.toLowerCase().includes(q)&&!r.title.toLowerCase().includes(q)&&!(r.requester_name||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  reqs.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+
+  const statusOpts = ARCHIVED_STATUSES.map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
+  const ownerOpts = ['Sin asignar',...state.config.team].map(o=>`<option value="${o}" ${f.owner===o?'selected':''}>${o}</option>`).join('');
+
+  const concluidas = state.requests.filter(r=>r.status==='Concluida').length;
+  const canceladas = state.requests.filter(r=>r.status==='Cancelada').length;
+
+  const rows = reqs.map(r=>`
+    <tr onclick="openTask('${r.id}')" style="cursor:pointer">
+      <td class="td-id">${r.id}</td>
+      <td class="td-title"><span title="${r.title}">${r.title}</span></td>
+      <td>${catBadge(r.category)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.assigned_owner?ownerBadge(r.assigned_owner):`<span style="font-size:11px;color:var(--text-muted)">—</span>`}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${r.requester_name||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${fmtDateShort(r.updated_at)}</td>
+      <td style="text-align:center;width:90px"><button onclick="event.stopPropagation();reopenRequest('${r.id}')" style="background:var(--primary-light);border:1px solid var(--primary);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--primary);font-weight:600;line-height:1" title="Devolver al backlog de trabajo">↩ Reabrir</button></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('view-historico').innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:18px;font-weight:800">🗄️ Backlog Histórico</div>
+      <div style="font-size:12px;color:var(--text-muted)">Tareas concluidas y canceladas, archivadas para consulta · ✅ ${concluidas} concluida${concluidas!==1?'s':''} · ❌ ${canceladas} cancelada${canceladas!==1?'s':''}</div>
+    </div>
+    <div class="filters-bar">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.histFilter.search=this.value;renderHistorico()">
+      <select class="filter-select" onchange="state.histFilter.status=this.value;renderHistorico()">
+        <option value="">Todos (concluidas y canceladas)</option>${statusOpts}
+      </select>
+      <select class="filter-select" onchange="state.histFilter.owner=this.value;renderHistorico()">
+        <option value="">Todos los owners</option>${ownerOpts}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="state.histFilter={status:'',owner:'',search:''};renderHistorico()">✕ Limpiar</button>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Solicitud</th><th>Categoría</th><th>Estado</th>
+          <th>Owner</th><th>Solicitante</th><th>Cerrada</th><th></th>
+        </tr></thead>
+        <tbody>${rows||`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">Aún no hay tareas concluidas o canceladas.</td></tr>`}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function reopenRequest(id) {
+  if(!state.isAdmin) return;
+  const req = state.requests.find(r=>r.id===id);
+  if(!req) return;
+  if(!confirm('¿Reabrir "'+req.title+'" y devolverla al backlog de trabajo?')) return;
+  const old = req.status;
+  req.status = 'Backlog';
+  req.updated_at = new Date().toISOString();
+  if(!Array.isArray(req.activity_log)) req.activity_log=[];
+  req.activity_log.push({type:'status', author:state.currentUser||'Admin', content:`Reabierta desde histórico: ${old} → Backlog`, created_at:new Date().toISOString()});
+  if(!req.change_history) req.change_history=[];
+  req.change_history.push({changed_by:state.currentUser||'Admin',changed_at:new Date().toISOString(),field_name:'status',old_value:old,new_value:'Backlog'});
+  saveState();
+  renderHistorico();
+  updateNavBadges();
+  toast('↩ Tarea reabierta','"'+req.title+'" volvió al backlog de trabajo.','success');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5453,12 +5672,13 @@ function renderRoadmap() {
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ini.description}</div>
           ${linkedTasks.length?`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${linkedTasks.map(r=>`<span style="font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${r.title.substring(0,22)}${r.title.length>22?'…':''}</span>`).join('')}</div>`:''}
         </div>
-        ${state.isAdmin?`
-          <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
+        <div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-start">
+          <button onclick="openInitiativeKpis('${ini.id}');navigate('kpis')" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#15803D" title="Ver KPIs de esta iniciativa">📊 KPIs</button>
+          ${state.isAdmin?`
             <button onclick="editInitiative('${ini.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1D4ED8" title="Editar iniciativa">✏️ Editar</button>
             <button onclick="deleteInitiative('${ini.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#B91C1C" title="Eliminar iniciativa">🗑 Eliminar</button>
-          </div>
-        `:''}
+          `:''}
+        </div>
       </div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -5521,7 +5741,7 @@ function renderRoadmap() {
       <input type="date" class="filter-select" value="${rf.dateTo}" onchange="state.roadmapFilter.dateTo=this.value;renderRoadmap()" style="font-size:12px" title="Fecha hasta">
       ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.roadmapFilter={category:'',owner:'',status:'',dateFrom:'',dateTo:''};renderRoadmap()" style="font-size:11px">✕ Limpiar</button>`:''}
     </div>
-    ${filteredInitCards||`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-title">Sin iniciativas</div><div class="empty-sub">Ajusta los filtros o agrega una nueva iniciativa.</div></div>`}
+    ${filteredInitCards?`<div class="roadmap-grid">${filteredInitCards}</div>`:`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-title">Sin iniciativas</div><div class="empty-sub">Ajusta los filtros o agrega una nueva iniciativa.</div></div>`}
   `;
 }
 
@@ -5548,10 +5768,19 @@ function renderRoadmapGantt() {
 
   state.ganttExpanded = state.ganttExpanded || {};
 
-  // Compute time range across all initiatives + milestones
+  const todayISO = new Date().toISOString().split('T')[0];
+  const msRange = (ms)=>{
+    const s = ms.start_date || ms.target_date || null;
+    const e = ms.end_date || ms.target_date || s;
+    const hasRange = !!(s && e && new Date(e) > new Date(s));
+    const recurring = !!(ms.recurring || ms.recurrence);
+    return { s, e, hasRange, recurring };
+  };
+
+  // Compute time range across all initiatives + milestones (incl. duraciones)
   const allDates = inits.flatMap(ini=>{
     const dates = [ini.start_date, ini.target_close_date].filter(Boolean);
-    (ini.milestones||[]).forEach(ms=>{ if(ms.target_date) dates.push(ms.target_date); });
+    (ini.milestones||[]).forEach(ms=>{ const {s,e}=msRange(ms); if(s)dates.push(s); if(e)dates.push(e); });
     return dates;
   });
   if(!allDates.length) { document.getElementById('view-roadmap').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Sin fechas definidas</div></div>'; return; }
@@ -5563,11 +5792,12 @@ function renderRoadmapGantt() {
   maxDate.setMonth(maxDate.getMonth()+1); maxDate.setDate(1);
   const totalDays = (maxDate-minDate)/(1000*86400);
 
-  const ROW_H = 50;
-  const MS_ROW_H = 36;
-  const LABEL_W = 220;
-  const CHART_W = Math.max(700, totalDays * 3.4);
-  const HEADER_H = 48;
+  const ROW_H   = 56;
+  const NAME_W  = 232;
+  const OWNER_W = 116;
+  const LABEL_W = NAME_W + OWNER_W;   // zona fija izquierda (nombre + owner)
+  const CHART_W = Math.max(640, totalDays * 3.4);
+  const HEADER_H = 50;
   const statusCol = {'En planeación':'#00CC99','En ejecución':'#008080','Concluida':'#22C55E','En pausa':'#EAB308','Cancelada':'#DC2626','Backlog':'#9CA3AF','En revisión':'#D97706'};
   const msStatusCol = {'No iniciado':'#9CA3AF','En proceso':'#3B82F6','Completado':'#22C55E','Reprogramado':'#EAB308','Bloqueado':'#EF4444','Validada':'#16A34A','En revisión':'#7C3AED'};
 
@@ -5576,6 +5806,18 @@ function renderRoadmapGantt() {
     return Math.max(0, Math.min(100, ((dd-minDate)/(maxDate-minDate))*100));
   }
   function xForDate(d) { return LABEL_W + pct(d)/100*CHART_W; }
+  function esc(s){ return String(s==null?'':s); }
+
+  // Celda de owner (avatar + nombre) en la columna OWNER
+  function ownerCell(name, yC, small){
+    const n = (name && String(name).trim()) ? String(name).trim() : '—';
+    const initials = n==='—' ? '–' : n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const cx = NAME_W + 16;
+    const disp = n.length>11 ? n.slice(0,11)+'…' : n;
+    return `<circle cx="${cx}" cy="${yC}" r="${small?8:9}" fill="url(#gantt-owner)"/>
+      <text x="${cx}" y="${yC+0.5}" text-anchor="middle" dominant-baseline="central" font-size="${small?8:8.5}" font-weight="700" fill="#fff" font-family="Poppins,sans-serif">${initials}</text>
+      <text x="${cx+14}" y="${yC+0.5}" dominant-baseline="central" font-size="${small?10.5:11}" fill="#374151" font-family="Poppins,sans-serif">${disp}</text>`;
+  }
 
   // Build month columns for header
   const months = [];
@@ -5610,23 +5852,24 @@ function renderRoadmapGantt() {
   svgRows.forEach(row=>{
     const y = HEADER_H + rowIdx * ROW_H;
     if(row.type === 'milestone' && row.ms.id) {
-      const mx = xForDate(row.ms.target_date || new Date().toISOString().split('T')[0]);
-      msPositions[row.ms.id] = { x: mx, y: y + MS_ROW_H/2 };
+      const {s,e,hasRange} = msRange(row.ms);
+      const anchor = hasRange ? xForDate(s) : xForDate(row.ms.target_date || s || todayISO);
+      msPositions[row.ms.id] = { x: anchor, y: y + ROW_H/2 };
     }
     rowIdx++;
   });
 
   // ── Build SVG rows
   const monthLines = months.map(m=>`
-    <line x1="${m.x}" y1="0" x2="${m.x}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>
-    <text x="${m.x+5}" y="20" font-size="10" fill="#9CA3AF" font-family="Helvetica,Arial,sans-serif">${m.label}</text>
+    <line x1="${m.x}" y1="${HEADER_H}" x2="${m.x}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
+    <text x="${m.x+5}" y="20" font-size="11" fill="#9CA3AF" font-family="Poppins,sans-serif">${m.label}</text>
   `).join('');
 
-  const todayPct = pct(new Date().toISOString().split('T')[0]);
+  const todayPct = pct(todayISO);
   const todayX = LABEL_W + todayPct/100*CHART_W;
   const todayLine = `
-    <line x1="${todayX}" y1="0" x2="${todayX}" y2="${svgH}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
-    <text x="${todayX+4}" y="36" font-size="9" fill="#EF4444" font-family="Helvetica,Arial,sans-serif" font-weight="700">HOY</text>
+    <line x1="${todayX}" y1="${HEADER_H}" x2="${todayX}" y2="${svgH}" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text x="${todayX+4}" y="${HEADER_H-6}" font-size="10" fill="#EF4444" font-family="Poppins,sans-serif" font-weight="700">HOY</text>
   `;
 
   let rowSvg = '';
@@ -5634,62 +5877,99 @@ function renderRoadmapGantt() {
   svgRows.forEach(row=>{
     const ri = rowIdx;
     const y = HEADER_H + ri * ROW_H;
-    const bgColor = ri%2===0?'#f9fafb':'#fff';
+    const midY = y + ROW_H/2;
+    const bgColor = ri%2===0?'#FBFDFC':'#fff';
 
     if(row.type === 'initiative') {
       const ini = row.ini;
       const color = statusCol[ini.status] || '#6B7280';
       const hasMilestones = (ini.milestones||[]).length > 0;
       const expanded = row.expanded;
-      const expandIcon = hasMilestones ? (expanded ? '▾' : '▸') : ' ';
-      const labelText = ini.name.length>26 ? ini.name.slice(0,26)+'…' : ini.name;
+      const expandIcon = hasMilestones ? (expanded ? '▾' : '▸') : '';
+      const labelText = ini.name.length>24 ? ini.name.slice(0,24)+'…' : ini.name;
       const totalMs = (ini.milestones||[]).length;
       const doneMs = (ini.milestones||[]).filter(m=>m.status==='Completado'||m.status==='Validada').length;
       const progress = totalMs>0?doneMs/totalMs:0;
 
-      // Bar uses start→end or earliest/latest milestone dates as fallback
-      const msDates = (ini.milestones||[]).map(m=>m.target_date).filter(Boolean);
+      const msDates = (ini.milestones||[]).flatMap(m=>{const{s,e}=msRange(m);return [s,e].filter(Boolean);});
       const barStartStr = ini.start_date || (msDates.length?msDates.reduce((a,b)=>a<b?a:b):null) || ini.target_close_date;
       const barEndStr = ini.target_close_date || (msDates.length?msDates.reduce((a,b)=>a>b?a:b):null) || barStartStr;
       const barX = xForDate(barStartStr);
       const barEndX = xForDate(barEndStr);
-      const barW = Math.max(6, barEndX - barX);
+      const barW = Math.max(8, barEndX - barX);
+      const BH = 18, barY = midY - BH/2;
 
-      // Milestone diamonds (only when NOT expanded)
+      // Milestone diamonds on the bar (solo colapsado)
       const diamonds = expanded ? '' : (ini.milestones||[]).map(ms=>{
-        const mx = xForDate(ms.target_date || barEndStr);
+        const {s,e,hasRange} = msRange(ms);
+        const mx = xForDate(hasRange ? e : (ms.target_date || e || barEndStr));
         const mc = msStatusCol[ms.status]||'#9CA3AF';
-        return `<g><polygon points="${mx},${y+17} ${mx+6},${y+24} ${mx},${y+31} ${mx-6},${y+24}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${ms.name} — ${ms.status} (${ms.target_date||'—'})</title></g>`;
+        return `<g><polygon points="${mx},${midY-6} ${mx+6},${midY} ${mx},${midY+6} ${mx-6},${midY}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${esc(ms.name)} — ${esc(ms.status)} (${esc(ms.target_date||e||'—')})</title></g>`;
       }).join('');
 
       rowSvg += `<g>
-        <rect x="0" y="${y}" width="${LABEL_W+CHART_W}" height="${ROW_H}" fill="${bgColor}"/>
-        <text x="8" y="${y+18}" font-size="11" fill="${hasMilestones?'var(--primary,#008080)':'#6B7280'}" font-family="Helvetica,Arial,sans-serif" style="cursor:pointer" onclick="toggleGanttExpand('${ini.id}')">${expandIcon}</text>
-        <text x="22" y="${y+18}" font-size="11" font-weight="700" fill="#1f2937" font-family="Helvetica,Arial,sans-serif" clip-path="url(#label-clip)">${labelText}</text>
-        <text x="22" y="${y+33}" font-size="10" fill="#6B7280" font-family="Helvetica,Arial,sans-serif">${ini.primary_owner} · ${ini.status}</text>
-        <line x1="${LABEL_W}" y1="${y}" x2="${LABEL_W+CHART_W}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
-        <rect x="${barX}" y="${y+14}" width="${barW}" height="14" rx="7" fill="${color}30"/>
-        <rect x="${barX}" y="${y+14}" width="${barW*progress}" height="14" rx="7" fill="${color}"/>
-        <rect x="${barX}" y="${y+14}" width="${barW}" height="14" rx="7" fill="none" stroke="${color}" stroke-width="1.5"/>
+        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${bgColor}"/>
+        ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="toggleGanttExpand('${ini.id}')">${expandIcon}</text>`:''}
+        <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#label-clip)" onclick="toggleGanttExpand('${ini.id}')">${esc(labelText)}</text>
+        <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(ini.status)}</text>
+        ${ownerCell(ini.primary_owner, midY, false)}
+        <rect x="${barX}" y="${barY}" width="${barW}" height="${BH}" rx="9" fill="url(#gantt-track)" stroke="#CFEFE6" stroke-width="1"/>
+        <rect x="${barX}" y="${barY}" width="${Math.max(barW*progress, progress>0?6:0)}" height="${BH}" rx="9" fill="url(#gantt-grad)"/>
+        ${progress>0&&progress<1?`<text x="${barX+barW*progress+6}" y="${midY+0.5}" dominant-baseline="central" font-size="10" font-weight="700" fill="#0d9488" font-family="Poppins,sans-serif">${Math.round(progress*100)}%</text>`:''}
         ${diamonds}
+        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
       </g>`;
     } else {
       // Milestone sub-row
       const ms = row.ms;
       const ini = row.ini;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
-      const mx = xForDate(ms.target_date || ini.target_close_date || new Date().toISOString().split('T')[0]);
-      const labelText = ms.name.length>28 ? ms.name.slice(0,28)+'…' : ms.name;
+      const {s,e,hasRange,recurring} = msRange(ms);
+      const labelText = ms.name.length>26 ? ms.name.slice(0,26)+'…' : ms.name;
       const depIcon = ms.depends_on ? '🔗 ' : '';
+      const recIcon = recurring ? '🔁 ' : '';
+
+      // Texto de fecha / rango
+      let dateTxt;
+      if(hasRange) dateTxt = `${esc(s)} → ${esc(e)}`;
+      else dateTxt = esc(ms.target_date || s || '—');
+      if(recurring) dateTxt += ms.recurrence ? ` · ${esc(ms.recurrence)}` : ' · recurrente';
+
+      // Timeline del milestone
+      let bars = '';
+      const BH = 13, barY = midY - BH/2;
+      if(recurring) {
+        // Banda recurrente + marcadores periódicos
+        const rs = s || ini.start_date || todayISO;
+        const re = e || ini.target_close_date || rs;
+        const x1 = xForDate(rs), x2 = xForDate(re);
+        const w = Math.max(10, x2 - x1);
+        const cad = ({'semanal':7,'quincenal':14,'mensual':30,'bimestral':60})[String(ms.recurrence||'').toLowerCase()] || 7;
+        bars += `<rect x="${x1}" y="${barY}" width="${w}" height="${BH}" rx="6.5" fill="url(#gantt-grad-soft)" stroke="#A7F3D0" stroke-width="1" stroke-dasharray="4,3"/>`;
+        let marks=0; const t=new Date(rs);
+        while(t<=new Date(re) && marks<40){ const mx=xForDate(t.toISOString().split('T')[0]); bars += `<polygon points="${mx},${midY-5} ${mx+4.5},${midY} ${mx},${midY+5} ${mx-4.5},${midY}" fill="url(#gantt-grad)" stroke="#fff" stroke-width="1"/>`; t.setDate(t.getDate()+cad); marks++; }
+        bars += `<title>${esc(ms.name)} — recurrente (${esc(ms.recurrence||'periódico')})</title>`;
+      } else if(hasRange) {
+        // Barra de duración con gradiente
+        const x1 = xForDate(s), x2 = xForDate(e);
+        const w = Math.max(10, x2 - x1);
+        bars += `<rect x="${x1}" y="${barY}" width="${w}" height="${BH}" rx="6.5" fill="url(#gantt-grad)" stroke="#fff" stroke-width="1"/>
+          <rect x="${x1}" y="${barY}" width="4" height="${BH}" rx="2" fill="${mc}"/>
+          <title>${esc(ms.name)} — ${esc(ms.status)} · ${esc(s)} → ${esc(e)}</title>`;
+      } else {
+        // Hito puntual (diamante)
+        const mx = xForDate(ms.target_date || s || ini.target_close_date || todayISO);
+        bars += `<polygon points="${mx},${midY-7} ${mx+7},${midY} ${mx},${midY+7} ${mx-7},${midY}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${esc(ms.name)} — ${esc(ms.status)}</title>`;
+      }
 
       rowSvg += `<g>
-        <rect x="0" y="${y}" width="${LABEL_W+CHART_W}" height="${ROW_H}" fill="${ri%2===0?'#f0fdf4':'#f9feff'}"/>
-        <rect x="16" y="${y}" width="4" height="${ROW_H}" fill="${mc}40"/>
-        <text x="28" y="${y+20}" font-size="10" fill="#374151" font-family="Helvetica,Arial,sans-serif" clip-path="url(#label-clip)">${depIcon}${labelText}</text>
-        <text x="28" y="${y+33}" font-size="9" fill="#6B7280" font-family="Helvetica,Arial,sans-serif">${ms.owner||'—'} · ${ms.target_date||'—'}</text>
-        <line x1="${LABEL_W}" y1="${y}" x2="${LABEL_W+CHART_W}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
-        <polygon points="${mx},${y+14} ${mx+7},${y+22} ${mx},${y+30} ${mx-7},${y+22}" fill="${mc}" stroke="#fff" stroke-width="1.5"/>
-        <title>${ms.name} — ${ms.status}</title>
+        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${ri%2===0?'#F4FBF8':'#FAFEFC'}"/>
+        <rect x="18" y="${y+6}" width="3" height="${ROW_H-12}" rx="1.5" fill="${mc}"/>
+        <text x="30" y="${midY-6}" dominant-baseline="central" font-size="12" fill="#1f2937" font-family="Poppins,sans-serif" clip-path="url(#label-clip)">${recIcon}${depIcon}${esc(labelText)}</text>
+        <text x="30" y="${midY+11}" dominant-baseline="central" font-size="10" fill="#6B7280" font-family="Poppins,sans-serif">${dateTxt}</text>
+        ${ownerCell(ms.owner, midY, true)}
+        ${bars}
+        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
       </g>`;
     }
     rowIdx++;
@@ -5736,40 +6016,254 @@ function renderRoadmapGantt() {
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius)">
       ${legendItems}
-      <div style="display:flex;align-items:center;gap:4px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-light)">
+      <div style="display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border-light)">
+        <div style="width:26px;height:8px;border-radius:4px;background:linear-gradient(90deg,#0EA5A5,#22C55E)"></div>
+        <span style="font-size:11px;color:var(--text-secondary)">Duración</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:12px">🔁</span>
+        <span style="font-size:11px;color:var(--text-secondary)">Recurrente</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
         <svg width="14" height="14"><polygon points="7,0 14,7 7,14 0,7" fill="#9CA3AF"/></svg>
-        <span style="font-size:11px;color:var(--text-secondary)">Milestone</span>
+        <span style="font-size:11px;color:var(--text-secondary)">Hito</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <svg width="20" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/></svg>
         <span style="font-size:11px;color:var(--text-secondary)">Dependencia</span>
       </div>
-      <div style="display:flex;align-items:center;gap:4px">
-        <div style="width:20px;height:2px;border-top:2px dashed #EF4444"></div>
-        <span style="font-size:11px;color:var(--text-secondary)">Hoy</span>
-      </div>
       <div style="font-size:11px;color:var(--text-muted);margin-left:auto">▸ clic en iniciativa para expandir milestones</div>
     </div>
-    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff">
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow)">
       <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <clipPath id="label-clip"><rect x="0" y="0" width="${LABEL_W-10}" height="${svgH}"/></clipPath>
+          <clipPath id="label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
+          <linearGradient id="gantt-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0EA5A5"/><stop offset="100%" stop-color="#22C55E"/>
+          </linearGradient>
+          <linearGradient id="gantt-grad-soft" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0EA5A5" stop-opacity="0.16"/><stop offset="100%" stop-color="#22C55E" stop-opacity="0.16"/>
+          </linearGradient>
+          <linearGradient id="gantt-track" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#E6F7F1"/><stop offset="100%" stop-color="#EAFBEF"/>
+          </linearGradient>
+          <linearGradient id="gantt-owner" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/>
+          </linearGradient>
           <marker id="dep-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
             <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/>
           </marker>
         </defs>
-        <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#f3f4f6"/>
-        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#d1d5db" stroke-width="1.5"/>
-        <rect x="0" y="0" width="${LABEL_W}" height="${HEADER_H}" fill="#f3f4f6"/>
-        <text x="8" y="30" font-size="11" font-weight="700" fill="#4B5563" font-family="Helvetica,Arial,sans-serif">INICIATIVA</text>
+        <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#fff"/>
+        <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
+        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
+        <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
+        <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
         ${monthLines}
+        <line x1="0" y1="${HEADER_H}" x2="${svgW}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
         ${todayLine}
         ${rowSvg}
         ${depArrows}
-        <line x1="0" y1="${svgH-1}" x2="${svgW}" y2="${svgH-1}" stroke="#e5e7eb" stroke-width="1"/>
       </svg>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras = avance % milestones · ◆ = fecha objetivo · líneas punteadas = dependencias</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras con gradiente = duración / avance · 🔁 = milestone recurrente · ◆ = hito puntual · líneas punteadas = dependencias</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW: KPIs POR INICIATIVA
+// ═══════════════════════════════════════════════════════════
+// Catálogo de KPIs por defecto (estructura tipo dashboard). Cada iniciativa
+// puede definir su propio `kpi_groups`; si no, se usa esta plantilla.
+const DEFAULT_KPI_GROUPS = [
+  {
+    title:'KPIs de Comunicación', icon:'📣', color:'#EF4444', chipBg:'#FEF2F2',
+    subgroups:[
+      { title:'Alcance & apertura', kpis:[
+        {name:'CTR push notification', desc:'% de usuarios que abren la notificación de la iniciativa.'},
+        {name:'Open rate email', desc:'% de aperturas sobre envíos totales por campaña.'},
+        {name:'CTR WhatsApp', desc:'Clics en enlace / CTA dentro del mensaje.'}
+      ]},
+      { title:'Efectividad del mensaje', kpis:[
+        {name:'Conversión comunicación → acción', desc:'% de usuarios impactados que realizan la acción esperada en las siguientes 24 h.'},
+        {name:'Recordación del beneficio', desc:'% de usuarios que identifican correctamente el beneficio (encuesta).'},
+        {name:'Frecuencia percibida', desc:'¿El usuario siente que recibe demasiados mensajes? (CSAT comms).'}
+      ]},
+      { title:'Salud de la base', kpis:[
+        {name:'Tasa de bajas (opt-out)', desc:'% de usuarios que se dan de baja de notificaciones por canal.'},
+        {name:'Tickets relacionados a comms', desc:'Número de quejas o dudas sobre mensajes recibidos.'},
+        {name:'Reach efectivo', desc:'% de la base objetivo que efectivamente recibió la comunicación.'}
+      ]}
+    ]
+  },
+  {
+    title:'KPIs de Adopción de UI', icon:'📱', color:'#7C3AED', chipBg:'#F5F3FF',
+    subgroups:[
+      { title:'Descubrimiento', kpis:[
+        {name:'% usuarios que visualizan la nueva UI', desc:'Usuarios únicos que abren la nueva pantalla / total de usuarios objetivo.'},
+        {name:'Clics en banner / CTA', desc:'Interacciones con el banner o card de la nueva función en home.'},
+        {name:'Profundidad de navegación', desc:'% que llegan a ver la pantalla de detalle.'}
+      ]},
+      { title:'Engagement con la nueva UI', kpis:[
+        {name:'Tiempo en pantalla', desc:'Segundos promedio en la nueva vista.'},
+        {name:'Sesiones iniciadas desde la nueva UI', desc:'% de sesiones que se originaron en la nueva pantalla.'},
+        {name:'Retorno a la pantalla', desc:'Usuarios que vuelven a la vista en sesiones posteriores.'}
+      ]},
+      { title:'Adopción real', kpis:[
+        {name:'Tasa de adopción acumulada', desc:'% de usuarios objetivo que han usado la función al menos una vez.'},
+        {name:'Recurrencia de uso', desc:'% de usuarios que repiten el uso en semanas siguientes.'},
+        {name:'Bugs / errores de UI reportados', desc:'Incidencias de visualización incorrecta por SO o versión.'}
+      ]}
+    ]
+  },
+  {
+    title:'KPIs de CX', icon:'⭐', color:'#16A34A', chipBg:'#F0FDF4',
+    subgroups:[
+      { title:'Satisfacción & percepción', kpis:[
+        {name:'NPS de la funcionalidad', desc:'¿Qué tan probable es que recomiendes esta función? (0–10).'},
+        {name:'CSAT', desc:'¿Qué tan satisfecho estás con la claridad y experiencia de la función?'},
+        {name:'Percepción de valor', desc:'% de usuarios que perciben el beneficio como "relevante" o "significativo".'}
+      ]},
+      { title:'Facilidad de uso', kpis:[
+        {name:'CES — Customer Effort Score', desc:'¿Qué tan fácil fue entender y usar la función?'},
+        {name:'Claridad del mensaje', desc:'% de usuarios que entienden correctamente cómo y cuándo aplica.'},
+        {name:'Tiempo hasta primer uso', desc:'Días desde que se activa hasta el primer uso real.'}
+      ]},
+      { title:'Impacto en relación', kpis:[
+        {name:'Churn relacionado', desc:'% de usuarios que cancelan o dejan de usar mencionando esta función como razón.'},
+        {name:'Tickets de soporte', desc:'Volumen y tipo de dudas o quejas relacionadas a la función.'},
+        {name:'Resolución en primer contacto', desc:'% de tickets resueltos sin escalar a segunda línea.'}
+      ]}
+    ]
+  }
+];
+
+function getInitiativeKpis(ini){
+  if(ini && Array.isArray(ini.kpi_groups) && ini.kpi_groups.length) return ini.kpi_groups;
+  return DEFAULT_KPI_GROUPS;
+}
+function openInitiativeKpis(id){ state.kpiInitiativeId = id; renderKpis(); }
+function backToKpiList(){ state.kpiInitiativeId = null; renderKpis(); }
+
+function renderKpis(){
+  const el = document.getElementById('view-kpis');
+  if(!el) return;
+  const inits = state.initiatives || [];
+  const iniStatusCol = {'En planeación':'#00CC99','En ejecución':'#008080','Concluida':'#16A34A','En pausa':'#EAB308','Cancelada':'#DC2626','Backlog':'#6B7280','En revisión':'#D97706'};
+
+  // ── LISTA: tarjetas por iniciativa ──
+  if(!state.kpiInitiativeId){
+    if(!inits.length){
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Sin iniciativas</div><div class="empty-sub">Agrega iniciativas en el Roadmap para ver sus KPIs.</div></div>`;
+      return;
+    }
+    const cards = inits.map(ini=>{
+      const totalMs=(ini.milestones||[]).length;
+      const doneMs=(ini.milestones||[]).filter(m=>m.status==='Completado'||m.status==='Validada').length;
+      const pct=totalMs>0?Math.round(doneMs/totalMs*100):0;
+      const catInfo=(typeof CATEGORIES!=='undefined'&&CATEGORIES[ini.category])||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
+      const col=iniStatusCol[ini.status]||'#6B7280';
+      const linked=(state.requests||[]).filter(r=>r.linked_initiative_id===ini.id).length;
+      return `<div class="card kpi-ini-card" style="margin-bottom:0;cursor:pointer" onclick="openInitiativeKpis('${ini.id}')">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <span class="badge" style="background:${catInfo.bg};color:${catInfo.color}">${catInfo.icon} ${ini.category}</span>
+            <span class="badge" style="background:${col}20;color:${col};border:1px solid ${col}40">${ini.status}</span>
+          </div>
+          <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:4px">${ini.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.45">${(ini.description||'').substring(0,120)}${(ini.description||'').length>120?'…':''}</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary)">Avance</span>
+            <span style="font-size:12px;font-weight:700;color:var(--primary)">${pct}%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+            <div style="font-size:11px;color:var(--text-muted)">👤 ${ini.primary_owner||'—'} · ${doneMs}/${totalMs} MS${linked?` · 🔗 ${linked}`:''}</div>
+            <span style="font-size:12px;font-weight:700;color:var(--primary)">Ver KPIs →</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    el.innerHTML = `
+      <div style="margin-bottom:16px">
+        <div style="font-size:18px;font-weight:800">📊 KPIs por Iniciativa</div>
+        <div style="font-size:12px;color:var(--text-muted)">${inits.length} iniciativa${inits.length!==1?'s':''} · selecciona una para ver su tablero de KPIs</div>
+      </div>
+      <div class="roadmap-grid">${cards}</div>`;
+    return;
+  }
+
+  // ── DETALLE: ficha + KPIs de la iniciativa ──
+  const ini = inits.find(i=>i.id===state.kpiInitiativeId);
+  if(!ini){ state.kpiInitiativeId=null; return renderKpis(); }
+  const totalMs=(ini.milestones||[]).length;
+  const doneMs=(ini.milestones||[]).filter(m=>m.status==='Completado'||m.status==='Validada').length;
+  const pct=totalMs>0?Math.round(doneMs/totalMs*100):0;
+  const catInfo=(typeof CATEGORIES!=='undefined'&&CATEGORIES[ini.category])||{color:'#6B7280',bg:'#F9FAFB',icon:'📋'};
+  const col=iniStatusCol[ini.status]||'#6B7280';
+  const linkedTasks=(state.requests||[]).filter(r=>r.linked_initiative_id===ini.id || (ini.request_ids||[]).includes(r.id));
+  const daysClose = (typeof daysUntil==='function' && ini.target_close_date) ? daysUntil(ini.target_close_date) : null;
+
+  const linkedHtml = linkedTasks.length
+    ? linkedTasks.map(r=>`<span onclick="openTask('${r.id}')" style="cursor:pointer;font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 8px">🔗 ${r.id.split('-').slice(-1)[0]} ${(r.title||'').substring(0,24)}${(r.title||'').length>24?'…':''}</span>`).join('')
+    : '<span style="font-size:11px;color:var(--text-muted)">Sin tareas vinculadas</span>';
+
+  const groups = getInitiativeKpis(ini);
+  const groupsHtml = groups.map(g=>`
+    <div style="margin:24px 0 12px">
+      <span class="kpi-group-label" style="background:${g.chipBg||'#F3F4F6'};color:${g.color||'#374151'}">${g.icon||'📊'} ${g.title.toUpperCase()}</span>
+    </div>
+    <div class="kpi-sub-grid">
+      ${(g.subgroups||[]).map(sg=>`
+        <div class="kpi-sub-card" style="border-top:3px solid ${g.color||'#9CA3AF'}">
+          <div class="kpi-sub-title">${sg.title}</div>
+          ${(sg.kpis||[]).map(k=>`
+            <div class="kpi-item">
+              <div class="kpi-item-name">${k.name}</div>
+              <div class="kpi-item-desc">${k.desc||''}</div>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="backToKpiList()">← Todas las iniciativas</button>
+    </div>
+    <!-- Ficha conectada al Roadmap -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+              <span class="badge" style="background:${catInfo.bg};color:${catInfo.color}">${catInfo.icon} ${ini.category}</span>
+              <span class="badge" style="background:${col}20;color:${col};border:1px solid ${col}40">${ini.status}</span>
+            </div>
+            <div class="kpi-detail-title" style="font-size:20px;font-weight:800;color:var(--text-primary)">${ini.name}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5">${ini.description||''}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="navigate('roadmap')" title="Ver esta iniciativa en el Roadmap">🗺️ Ver en Roadmap</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:16px">
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">OWNER PRINCIPAL</div><div style="font-size:13px;font-weight:600">${ini.primary_owner||'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">INICIO → CIERRE</div><div style="font-size:13px;font-weight:600">${ini.start_date?fmtDate(ini.start_date)+' → ':''}${ini.target_close_date?fmtDate(ini.target_close_date):'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">PRÓXIMO PASO</div><div style="font-size:12px;color:var(--text-secondary)">${ini.next_step||'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">RIESGOS</div><div style="font-size:12px;color:var(--text-secondary)">${ini.risks||'—'}</div></div>
+        </div>
+        <!-- Métricas vivas (conexión Roadmap → KPIs) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:18px">
+          <div class="kpi-metric"><div class="kpi-metric-val">${pct}%</div><div class="kpi-metric-lbl">Avance</div></div>
+          <div class="kpi-metric"><div class="kpi-metric-val">${doneMs}/${totalMs}</div><div class="kpi-metric-lbl">Milestones</div></div>
+          <div class="kpi-metric"><div class="kpi-metric-val">${linkedTasks.length}</div><div class="kpi-metric-lbl">Tareas vinculadas</div></div>
+          <div class="kpi-metric"><div class="kpi-metric-val" style="${daysClose!==null&&daysClose<0?'color:var(--error)':''}">${daysClose!==null?(daysClose>=0?daysClose+'d':'Vencida'):'—'}</div><div class="kpi-metric-lbl">Para cierre</div></div>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px">🔗 TAREAS VINCULADAS</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">${linkedHtml}</div>
+        </div>
+      </div>
+    </div>
+    ${groupsHtml}
+    <div style="margin-top:18px;font-size:11px;color:var(--text-muted)">Los KPIs mostrados son el tablero definido para esta iniciativa. Para personalizarlos por iniciativa, define <code>kpi_groups</code> en su ficha del Roadmap.</div>
   `;
 }
 
@@ -6021,6 +6515,7 @@ function renderConfig() {
             <div class="user-row">
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${u.name}</div>
+                ${u.area?`<div style="font-size:10px;color:var(--text-muted)">🏷️ ${u.area}</div>`:''}
                 ${u.id===state.currentUserId?'<div style="font-size:10px;color:var(--primary);font-weight:600">← Tú</div>':''}
               </div>
               <div style="font-size:12px;color:var(--text-muted);font-family:monospace">${u.username}</div>
@@ -6151,6 +6646,12 @@ function openUserModal(id) {
   document.getElementById('user-modal-username').value = user ? user.username : '';
   document.getElementById('user-modal-password').value = '';
   document.getElementById('user-modal-role').value = user ? user.role : 'team';
+  const areaSel = document.getElementById('user-modal-area');
+  if(areaSel) {
+    areaSel.innerHTML = '<option value="">— Sin área —</option>' +
+      AREAS.map(a=>`<option value="${a}">${a}</option>`).join('');
+    areaSel.value = user && user.area ? user.area : '';
+  }
   openModal('modal-user');
   setTimeout(()=>document.getElementById('user-modal-name').focus(), 200);
 }
@@ -6161,6 +6662,7 @@ async function submitUser() {
   const username = document.getElementById('user-modal-username').value.trim().toLowerCase();
   const password = document.getElementById('user-modal-password').value;
   const role     = document.getElementById('user-modal-role').value;
+  const area     = document.getElementById('user-modal-area') ? document.getElementById('user-modal-area').value : '';
   if(!name || !username) { toast('⚠️ Campos requeridos','Nombre y usuario son obligatorios.','warning'); return; }
   if(!state.config.users) state.config.users = [];
   // Check duplicate username (excluding self)
@@ -6172,7 +6674,7 @@ async function submitUser() {
     if(idx>=0) {
       const updatedUser = {
         ...state.config.users[idx],
-        name, username, role
+        name, username, role, area
       };
       if(password) {
         updatedUser.password = await hashPwd(password);
@@ -6186,7 +6688,7 @@ async function submitUser() {
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
     const hashedPwd = await hashPwd(password);
-    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:true, role});
+    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:true, role, area});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -6394,6 +6896,15 @@ function renderTaskDetail(req) {
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">CREADO</div><div style="font-size:12px;color:var(--text-muted)">${fmtDateTime(req.created_at)}</div></div>
         </div>
 
+        <!-- Stakeholders -->
+        ${(req.stakeholders&&req.stakeholders.length)?`
+        <div style="margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px">🤝 STAKEHOLDERS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${req.stakeholders.map(s=>`<span class="badge" style="background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;font-size:11px">👤 ${s}</span>`).join('')}
+          </div>
+        </div>`:''}
+
         <!-- Descripción -->
         <div style="margin-bottom:16px">
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px">📋 Descripción</div>
@@ -6479,6 +6990,14 @@ function renderTaskDetail(req) {
               ${state.config.team.map(m=>`<option value="${m}" ${req.assigned_owner===m?'selected':''}>${m}</option>`).join('')}
             </select>
             <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%" onclick="saveOwnerChange('${req.id}')">💾 Guardar owner</button>
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Stakeholders</label>
+            <select class="form-select" multiple size="4" style="font-size:13px;height:auto" id="stakeholders-select-${req.id}">
+              ${state.config.team.map(m=>`<option value="${m}" ${(req.stakeholders||[]).includes(m)?'selected':''}>${m}</option>`).join('')}
+            </select>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Ctrl / Cmd para elegir varios</div>
+            <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%" onclick="saveStakeholders('${req.id}')">💾 Guardar stakeholders</button>
           </div>
           <div class="form-group" style="margin-bottom:10px">
             <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">Prioridad admin</label>
@@ -6597,6 +7116,19 @@ function saveOwnerChange(id) {
   assignOwnerToTask(id, sel.value);
   const req = state.requests.find(r=>r.id===id);
   if(req) renderTaskDetail(req);
+}
+function saveStakeholders(id) {
+  const sel = document.getElementById(`stakeholders-select-${id}`);
+  const req = state.requests.find(r=>r.id===id);
+  if(!sel || !req) return;
+  const old = (req.stakeholders||[]).join(', ') || '—';
+  req.stakeholders = Array.from(sel.selectedOptions).map(o=>o.value);
+  req.updated_at = new Date().toISOString();
+  if(!req.change_history) req.change_history=[];
+  req.change_history.push({changed_by:state.currentUser||'Admin',changed_at:new Date().toISOString(),field_name:'stakeholders',old_value:old,new_value:req.stakeholders.join(', ')||'—'});
+  saveState();
+  renderTaskDetail(req);
+  toast('✅ Stakeholders actualizados', req.stakeholders.length?req.stakeholders.join(', '):'Sin stakeholders','success');
 }
 
 function toggleActionItemForm(id, typeVal) {
@@ -6726,6 +7258,8 @@ function addMilestone(id) {
     state.config.team.map(m=>`<option value="${m}">${m}</option>`).join('');
   const sg=document.getElementById('ms-modal-status-group'); if(sg) sg.style.display='none';
   const dg=document.getElementById('ms-modal-dep-group'); if(dg) dg.style.display='none';
+  const durG=document.getElementById('ms-modal-duration-group'); if(durG) durG.style.display='none';
+  const dl=document.getElementById('ms-modal-date-label'); if(dl) dl.textContent='Fecha objetivo';
   openModal('modal-milestone');
   setTimeout(()=>document.getElementById('ms-modal-name').focus(), 150);
 }
@@ -6740,6 +7274,8 @@ function editMilestone(reqId, idx) {
   modal.dataset.msIdx = String(idx);
   const sg=document.getElementById('ms-modal-status-group'); if(sg) sg.style.display='none';
   const dg=document.getElementById('ms-modal-dep-group'); if(dg) dg.style.display='none';
+  const durG=document.getElementById('ms-modal-duration-group'); if(durG) durG.style.display='none';
+  const dl=document.getElementById('ms-modal-date-label'); if(dl) dl.textContent='Fecha objetivo';
   document.getElementById('modal-milestone-title') && (document.getElementById('modal-milestone-title').textContent = '✏️ Editar Milestone');
   document.getElementById('ms-modal-name').value = ms.name || '';
   document.getElementById('ms-modal-date').value = ms.target_date || '';
@@ -6777,12 +7313,15 @@ function submitMilestoneModal() {
     if(!ini) { toast('⚠️','Iniciativa no encontrada.','warning'); return; }
     const status = document.getElementById('ms-modal-status')?.value || 'No iniciado';
     const dep = document.getElementById('ms-modal-dep')?.value || null;
+    const endDate = document.getElementById('ms-modal-end')?.value || '';
+    const recurrence = document.getElementById('ms-modal-recur')?.value || '';
+    const startDate = (endDate && date) ? date : (date || '');
     if(!ini.milestones) ini.milestones = [];
     if(msIdx >= 0 && ini.milestones[msIdx]) {
-      ini.milestones[msIdx] = { ...ini.milestones[msIdx], name, owner, target_date:date, description:desc, status, depends_on:dep||null };
+      ini.milestones[msIdx] = { ...ini.milestones[msIdx], name, owner, target_date:date, start_date:startDate, end_date:endDate, recurrence, recurring:!!recurrence, description:desc, status, depends_on:dep||null };
       toast('✅ Milestone actualizado', name, 'success');
     } else {
-      ini.milestones.push({ id:`ms-${Date.now()}`, name, owner, target_date:date, status, description:desc, depends_on:dep||null });
+      ini.milestones.push({ id:`ms-${Date.now()}`, name, owner, target_date:date, start_date:startDate, end_date:endDate, recurrence, recurring:!!recurrence, status, description:desc, depends_on:dep||null });
       toast('📌 Milestone agregado', name, 'success');
     }
     saveState();
@@ -6856,6 +7395,10 @@ function editIniMilestone(iniId, idx) {
     depSel.innerHTML = '<option value="">Sin dependencia</option>' +
       ini.milestones.map((m,i)=> i!==idx ? `<option value="${m.id}" ${ms.depends_on===m.id?'selected':''} >${m.name}</option>` : '').join('');
   }
+  const durG=document.getElementById('ms-modal-duration-group'); if(durG) durG.style.display='block';
+  const dl=document.getElementById('ms-modal-date-label'); if(dl) dl.textContent='Fecha objetivo / inicio';
+  const endEl=document.getElementById('ms-modal-end'); if(endEl) endEl.value = ms.end_date || '';
+  const recEl=document.getElementById('ms-modal-recur'); if(recEl) recEl.value = ms.recurrence || '';
   openModal('modal-milestone');
 }
 
@@ -6885,6 +7428,10 @@ function addIniMilestone(iniId) {
     depSel.innerHTML = '<option value="">Sin dependencia</option>' +
       (ini.milestones||[]).map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   }
+  const durG=document.getElementById('ms-modal-duration-group'); if(durG) durG.style.display='block';
+  const dl=document.getElementById('ms-modal-date-label'); if(dl) dl.textContent='Fecha objetivo / inicio';
+  const endEl=document.getElementById('ms-modal-end'); if(endEl) endEl.value='';
+  const recEl=document.getElementById('ms-modal-recur'); if(recEl) recEl.value='';
   openModal('modal-milestone');
 }
 
@@ -7062,6 +7609,7 @@ function normalizeRequest(r) {
   if(!Array.isArray(r.files)) r.files = [];
   if(!Array.isArray(r.milestones)) r.milestones = [];
   if(!Array.isArray(r.support_links)) r.support_links = [];
+  if(!Array.isArray(r.stakeholders)) r.stakeholders = [];
   if(!r.created_at) r.created_at = r.updated_at || new Date().toISOString();
   if(!r.updated_at) r.updated_at = r.created_at;
   if(!r.status) r.status = 'Backlog';
@@ -7302,51 +7850,94 @@ function aiQuick(type) {
   setTimeout(()=>aiRespond(type), 400);
 }
 
+// Base de conocimiento de "cómo usar la app" — Jason responde paso a paso.
+const JASON_HELP_TOPICS = [
+  { keys:['crear solicitud','nueva solicitud','levantar','levanto','pedir','solicitar','request','crear tarea','nueva tarea','abrir solicitud'],
+    a:'📝 **Crear una solicitud:**\n1. Ve a **Inicio** y pulsa **✏️ Nueva Solicitud** (o el menú **Intake**).\n2. Tu nombre y **área** se precargan desde tu usuario.\n3. Elige **categoría** y **tipo**, pon título, descripción, fecha requerida y prioridad.\n4. Opcional: agrega **stakeholders** y links de soporte.\n5. Pulsa **🚀 Enviar**. La tarea entra al **Backlog**.' },
+  { keys:['stakeholder','interesado','involucrado'],
+    a:'🤝 **Stakeholders:**\n• Al **crear** una solicitud, selecciónalos en el campo *Stakeholders* (Ctrl/Cmd para varios).\n• En una tarea ya creada, ábrela y en el panel **Gestión (Admin)** elige stakeholders y pulsa *Guardar stakeholders*.\nAparecen como chips en el detalle de la tarea.' },
+  { keys:['owner','asignar','responsable','dueño'],
+    a:'👤 **Asignar owner:**\nAbre la tarea → panel **Gestión (Admin)** → *Asignar owner* → elige a la persona → **Guardar owner**. Filtra el Backlog por owner o usa **Mis Tareas**.' },
+  { keys:['backlog histórico','historico','histórico','archivad','concluida','concluidas','terminada'],
+    a:'🗄️ **Backlog Histórico:**\nLas tareas **Concluidas** y **Canceladas** salen del Backlog de trabajo y pasan a **Backlog Histórico** (menú Administrador). Ahí puedes consultarlas, filtrarlas y **↩ Reabrir** una para devolverla al backlog activo.' },
+  { keys:['backlog','solicitudes','pipeline'],
+    a:'📋 **Backlog:**\nLista todas las solicitudes activas. Filtra por estado, categoría, owner o prioridad, busca por ID/título, o usa **👤 Mis Tareas**. Haz clic en una fila para abrir el detalle.' },
+  { keys:['kanban','tablero','mover','arrastr','columna'],
+    a:'⬛ **Kanban:**\nVista de tarjetas por estado. Arrastra una tarjeta entre columnas para cambiar su estado. Útil para gestión visual del flujo.' },
+  { keys:['kpi','kpis','indicador','metrica','métrica','tablero de'],
+    a:'📊 **KPIs por Iniciativa:**\nEn el menú **KPIs** (debajo de Roadmap) verás una tarjeta por iniciativa. Entra a una para ver su **ficha** (conectada al Roadmap) y su tablero de KPIs agrupados (Comunicación, Adopción de UI y CX). También puedes entrar con el botón **📊 KPIs** de cada tarjeta del Roadmap.' },
+  { keys:['roadmap','iniciativa','gantt'],
+    a:'🗺️ **Roadmap:**\nIniciativas con milestones, en vista **Tarjetas** o **Gantt** (clic en una iniciativa del Gantt para desplegar sus milestones). Admin puede crear/editar iniciativas; cada tarjeta tiene botón **📊 KPIs**.' },
+  { keys:['okr','planeación','planeacion','transversal','quarter'],
+    a:'🎯 **OKRs Transversales:**\nPlaneación por área cross y quarter, en Tarjetas o Gantt desplegable. Filtra por área y por Q1–Q4.' },
+  { keys:['milestone','hito'],
+    a:'📌 **Milestones:**\nDentro de una tarea o iniciativa, usa **+ Milestone** para agregarlos (nombre, owner, fecha, estado). El avance % se calcula con los milestones completados.' },
+  { keys:['vincular','vínculo','vinculo','linkear','conectar tarea','enlazar'],
+    a:'🔗 **Vincular tarea a iniciativa:**\nAbre la tarea → sección **Vincular a Iniciativa** → elige iniciativa y (opcional) milestone → **Guardar vínculo**. Esas tareas se reflejan en el Roadmap y en los KPIs de la iniciativa.' },
+  { keys:['área','area','usuario','usuarios','configuración','configuracion','config','rol','permiso'],
+    a:'⚙️ **Usuarios y áreas (Configuración):**\nEn **Configuración › Usuarios** creas usuarios, defines su **rol** y su **área** (esta se precarga al levantar solicitudes). También editas áreas transversales, contraseñas y umbrales.' },
+  { keys:['documento','biblioteca','doc','archivo de consulta'],
+    a:'📚 **Documentos / Biblioteca:**\nConsulta y publica documentos del área. Usa la vista **Documentos** (consulta) o **Biblioteca** (admin) para versiones y estados.' },
+  { keys:['excel','exportar','descargar','importar','cargar','xlsx','csv'],
+    a:'📊 **Exportar / Importar:**\nEn Backlog, Roadmap y OKRs hay botones **⬇️ Excel** para descargar y **⬆️ Cargar / 📥 Importar** para subir desde Excel/CSV/JSON.' },
+  { keys:['sincron','onedrive','guardar','archivo compartido','equipo ve','mismos datos'],
+    a:'📁 **Sincronización (OneDrive):**\nEn **Configuración › Archivo de datos** conecta un archivo *sorh_data.json* en la carpeta compartida para que todo el equipo vea los mismos datos. Sin archivo, los cambios solo viven en tu navegador.' },
+  { keys:['estado','status','cambiar estado','flujo'],
+    a:'🔄 **Flujo de estados:**\nBacklog → En proceso → Ejecutada → Validada → Concluida (y Requiere Cambios / Cancelada). Cámbialo desde el panel **Cambiar estado** dentro de la tarea. Al concluir, la tarea pasa al Backlog Histórico.' }
+];
+
 function aiRespond(q) {
   const req = state.requests||[];
   const ini = state.initiatives||[];
 
-  if(q.includes('resumen') || q.includes('dia') || q.includes('día')) {
+  // ── Intents con datos en vivo ──
+  if(q.includes('resumen') || q==='dia' || q.includes('resumen del')) {
     const active = req.filter(r=>!['Concluida','Cancelada'].includes(r.status));
     const byStatus = {};
     active.forEach(r=>{ byStatus[r.status]=(byStatus[r.status]||0)+1; });
     const lines = Object.entries(byStatus).map(([s,n])=>`• ${s}: **${n}**`).join('\n');
-    aiBot(`📊 **Resumen actual:**\n\n${lines}\n\nTotal activas: **${active.length}** de ${req.length} solicitudes.`);
-
-  } else if(q.includes('pendiente') || q.includes('vencid')) {
+    aiBot(`📊 **Resumen actual:**\n\n${lines||'• Sin solicitudes activas'}\n\nTotal activas: **${active.length}** de ${req.length} solicitudes.`);
+    return;
+  }
+  if(q.includes('pendiente') || q.includes('vencid')) {
     const overdue = req.filter(r=>isOverdue(r.needed_by)&&!['Concluida','Cancelada'].includes(r.status));
     if(!overdue.length) { aiBot('✅ ¡Sin solicitudes vencidas! Todo al corriente.'); return; }
     const list = overdue.slice(0,5).map(r=>`• **${r.id.split('-').slice(-1)[0]}** ${r.title.substring(0,30)} — ${r.assigned_owner||'Sin owner'}`).join('\n');
     aiBot(`⚠️ **${overdue.length} solicitudes vencidas:**\n\n${list}${overdue.length>5?'\n…y más.':''}`);
-
-  } else if(q.includes('iniciativa') || q.includes('roadmap')) {
+    return;
+  }
+  if((q.includes('iniciativa')||q.includes('roadmap')) && !q.includes('como') && !q.includes('cómo') && !q.includes('kpi')) {
     if(!ini.length) { aiBot('No hay iniciativas registradas en el Roadmap todavía.'); return; }
     const list = ini.slice(0,6).map(i=>{
       const linked = req.filter(r=>r.linked_initiative_id===i.id).length;
       return `• **${i.name.substring(0,28)}** — ${i.status}${linked?` 🔗 ${linked} tarea(s)`:''}`;
     }).join('\n');
-    aiBot(`🗺️ **Iniciativas activas:**\n\n${list}`);
-
-  } else if(q.includes('ayuda') || q.includes('como') || q.includes('cómo') || q.includes('uso')) {
-    aiBot('💡 **Guía rápida:**\n\n• **Backlog** — gestiona todas las solicitudes\n• **Kanban** — mueve tarjetas por estado\n• **Roadmap** — iniciativas con milestones\n• **Planeación Q** — roadmaps por área cross\n• **🔗 Vincular** — conecta tareas a iniciativas desde el modal de tarea\n\nSoy Equus, un asistente con datos en tiempo real del hub. Para preguntas más complejas, abre Claude 👇');
-
-  } else if(q.includes('owner') || q.includes('quien') || q.includes('quién')) {
+    aiBot(`🗺️ **Iniciativas activas:**\n\n${list}\n\n_Tip: revisa sus indicadores en la pestaña **KPIs**._`);
+    return;
+  }
+  if((q.includes('owner')||q.includes('quien')||q.includes('quién')||q.includes('carga')) && !q.includes('como') && !q.includes('cómo')) {
     const owners = {};
     req.filter(r=>r.assigned_owner&&!['Concluida','Cancelada'].includes(r.status))
       .forEach(r=>{ owners[r.assigned_owner]=(owners[r.assigned_owner]||0)+1; });
     const list = Object.entries(owners).sort((a,b)=>b[1]-a[1]).map(([o,n])=>`• **${o}**: ${n} tarea(s)`).join('\n');
     aiBot(`👤 **Carga por owner:**\n\n${list||'Sin datos de asignación.'}`);
-
-  } else if(q.includes('canal') || q.includes('claude') || q.includes('más') || q.includes('mas')) {
-    const ctx = `Soy el Strategic Ops Hub de VEMO. Tengo ${req.length} solicitudes (${req.filter(r=>!['Concluida','Cancelada'].includes(r.status)).length} activas) y ${ini.length} iniciativas en roadmap. ¿Puedes ayudarme con: `;
-    const url = 'https://claude.ai/new?q=' + encodeURIComponent(ctx + q);
-    aiBot(`Para consultas avanzadas, te abro Claude con contexto del hub:\n\n<a href="${url}" target="_blank" style="color:#60a5fa;text-decoration:underline">🔗 Preguntar a Claude →</a>`);
-
-  } else {
-    const ctx = `Contexto: Strategic Ops Hub VEMO. ${req.length} solicitudes, ${req.filter(r=>!['Concluida','Cancelada'].includes(r.status)).length} activas, ${ini.length} iniciativas. Pregunta del usuario: ${q}`;
-    const url = 'https://claude.ai/new?q=' + encodeURIComponent(ctx);
-    aiBot(`No tengo esa respuesta directamente, pero puedo preguntarle a Claude con el contexto del hub:\n\n<a href="${url}" target="_blank" style="color:#60a5fa;text-decoration:underline">🔗 Preguntar a Claude →</a>`);
+    return;
   }
+
+  // ── Base de conocimiento: cómo usar la app ──
+  const topic = JASON_HELP_TOPICS.find(t=>t.keys.some(k=>q.includes(k)));
+  if(topic) { aiBot(topic.a); return; }
+
+  // Guía general si pregunta "ayuda / cómo uso esto"
+  if(q.includes('ayuda')||q==='uso'||q.includes('como uso')||q.includes('cómo uso')||q.includes('como funciona')||q.includes('cómo funciona')||q.includes('que puedo')||q.includes('qué puedo')||q.includes('como usar')||q.includes('cómo usar')){
+    aiBot('💡 **Soy Jason, tu copiloto del Hub.** Puedo guiarte en:\n\n• **Solicitudes** — crear, asignar owner, stakeholders, estados\n• **Backlog** y **Backlog Histórico**\n• **Kanban** y **Calendario**\n• **Roadmap** e **iniciativas**\n• **KPIs por iniciativa** 📊\n• **OKRs Transversales**\n• **Configuración** (usuarios, áreas, sync OneDrive)\n• **Exportar/Importar** Excel\n\nPregúntame por ejemplo: *"¿cómo creo una solicitud?"*, *"¿dónde veo los KPIs?"* o *"¿cómo asigno stakeholders?"*');
+    return;
+  }
+
+  // Fallback: menú de temas + opción de Claude
+  const ctx = `Contexto: Strategic Ops Hub VEMO. ${req.length} solicitudes, ${req.filter(r=>!['Concluida','Cancelada'].includes(r.status)).length} activas, ${ini.length} iniciativas. Pregunta del usuario: ${q}`;
+  const url = 'https://claude.ai/new?q=' + encodeURIComponent(ctx);
+  aiBot(`No estoy seguro de haber entendido 🤔. Puedo ayudarte con: **solicitudes**, **backlog**, **kanban**, **roadmap**, **KPIs**, **OKRs**, **usuarios/áreas** o **sincronización**.\n\nEscribe por ejemplo *"¿cómo creo una solicitud?"* — o, para algo más complejo:\n\n<a href="${url}" target="_blank" style="color:#60a5fa;text-decoration:underline">🔗 Preguntar a Claude →</a>`);
 }
 // ═══════════════════════════════════════════════════════════
 
