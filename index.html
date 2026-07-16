@@ -1004,8 +1004,9 @@ td.td-action{white-space:nowrap;}
         <div class="login-brand-sub">VEMO · Strategic Operations</div>
       </div>
     </div>
-    <div class="login-title">Bienvenido</div>
-    <div class="login-subtitle">Ingresa tus credenciales para continuar</div>
+    <div class="login-title" id="login-title">Bienvenido</div>
+    <div class="login-subtitle" id="login-subtitle">Ingresa tus credenciales para continuar</div>
+    <div id="login-form-panel">
     <div class="form-group">
       <label class="form-label">Usuario</label>
       <input type="text" class="form-input" id="login-username"
@@ -1031,6 +1032,49 @@ td.td-action{white-space:nowrap;}
     <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" id="login-btn">
       Iniciar sesión →
     </button>
+    <div style="text-align:center;margin-top:14px">
+      <a href="#" onclick="showRecovery();return false" style="font-size:12px;color:#1D4ED8;text-decoration:none;font-weight:600">¿Olvidaste tu contraseña?</a>
+    </div>
+    </div><!-- /login-form-panel -->
+
+    <!-- ─── RECOVERY: paso 1, correo ─── -->
+    <div id="recovery-email-panel" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="recovery-email"
+          placeholder="tu.correo@vemo.com.mx"
+          autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')verifyRecoveryEmail()">
+      </div>
+      <div id="recovery-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px"></div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="verifyRecoveryEmail()" id="recovery-verify-btn">Verificar correo →</button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" onclick="backToLogin();return false" style="font-size:12px;color:#6B7280;text-decoration:none">← Volver a iniciar sesión</a>
+      </div>
+    </div>
+
+    <!-- ─── RECOVERY: paso 2, nueva contraseña ─── -->
+    <div id="recovery-reset-panel" style="display:none">
+      <div id="recovery-user-badge" style="background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:16px"></div>
+      <div class="form-group">
+        <label class="form-label">Nueva contraseña</label>
+        <div style="position:relative">
+          <input type="password" class="form-input" id="recovery-pwd1" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:44px"
+            onkeydown="if(event.key==='Enter')document.getElementById('recovery-pwd2').focus()">
+          <button class="login-eye-btn" onclick="toggleRecoveryPwd()" id="recovery-eye-btn" title="Mostrar/ocultar">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" class="form-input" id="recovery-pwd2" placeholder="Repite la contraseña" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter')doPasswordReset()">
+      </div>
+      <div id="recovery-reset-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px"></div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="doPasswordReset()">💾 Guardar nueva contraseña</button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" onclick="backToLogin();return false" style="font-size:12px;color:#6B7280;text-decoration:none">← Cancelar</a>
+      </div>
+    </div>
     <div class="login-footer">Sistema de uso interno · VEMO © 2026</div>
   </div>
 </div>
@@ -1592,6 +1636,11 @@ td.td-action{white-space:nowrap;}
         <input type="text" class="form-input" id="user-modal-username" placeholder="Ej: maria" autocomplete="off" style="text-transform:lowercase" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')">
       </div>
       <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="user-modal-email" placeholder="Ej: maria@vemo.com.mx" autocomplete="off" autocapitalize="none">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Necesario para poder recuperar la contraseña desde la pantalla de login</div>
+      </div>
+      <div class="form-group">
         <label class="form-label form-required">Contraseña</label>
         <div style="position:relative">
           <input type="password" class="form-input" id="user-modal-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:44px">
@@ -1825,13 +1874,13 @@ let state = {
     thresholds: {green:5, yellow:12, orange:20},
     crossAreas: [...CROSS_AREAS],
     users: [
-      {id:'u-001',name:'JC Bosch',username:'jc',password:'Admin2026',role:'admin'},
-      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin'},
-      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team'},
-      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team'},
-      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team'},
-      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team'},
-      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team'}
+      {id:'u-001',name:'JC Bosch',username:'jc',password:'Admin2026',role:'admin',email:'juan.bosch@vemo.com.mx'},
+      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin',email:''},
+      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team',email:''},
+      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team',email:''},
+      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team',email:''},
+      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team',email:''},
+      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team',email:''}
     ]
   },
   filters: {backlog:{}, kanban:{owner:'',category:'',priority:''}},
@@ -1875,7 +1924,18 @@ function loadState() {
     const a = localStorage.getItem('sorh_auth');
     if(r) state.requests = JSON.parse(r);
     if(i) state.initiatives = JSON.parse(i);
-    if(c) state.config = {...state.config, ...JSON.parse(c)};
+    if(c) {
+      const seedUsers = state.config.users;
+      state.config = {...state.config, ...JSON.parse(c)};
+      // Self-heal: si el config guardado no trae usuarios, restaura los default (evita bloqueo total)
+      if(!Array.isArray(state.config.users) || !state.config.users.length) state.config.users = seedUsers;
+      // Migración: propaga emails de seed a usuarios existentes sin email
+      seedUsers.forEach(su => {
+        if(!su.email) return;
+        const u = state.config.users.find(x => x.username === su.username);
+        if(u && !u.email) u.email = su.email;
+      });
+    }
     if(a) { const auth = JSON.parse(a); state.isAdmin=auth.isAdmin; state.isTeam=auth.isTeam; state.currentUser=auth.currentUser; state.currentUserId=auth.currentUserId||null; }
     const dd = localStorage.getItem('sorh_documents');
     if(dd) state.documents = JSON.parse(dd);
@@ -2437,6 +2497,9 @@ function checkSessionTimeout() {
 
 // ─── SHA-256 password hashing ──────────────────────────────
 async function hashPwd(pwd) {
+  // crypto.subtle solo existe en contextos seguros (https/localhost/file).
+  // Si el sitio se publica por http, devolvemos el texto plano para no romper el login.
+  if(!(window.crypto && window.crypto.subtle)) return pwd;
   const salt = 'sorh2026_';
   const msgBuf = new TextEncoder().encode(salt + pwd);
   const hashBuf = await crypto.subtle.digest('SHA-256', msgBuf);
@@ -2771,6 +2834,7 @@ function showLoginScreen() {
   const ls = document.getElementById('login-screen');
   const app = document.getElementById('app');
   if(ls) ls.classList.remove('hidden');
+  _loginPanels('form');
   if(app) app.style.display = 'none';
   setTimeout(()=>{
     const u = document.getElementById('login-username');
@@ -2798,7 +2862,10 @@ async function doLogin() {
   const password = document.getElementById('login-password').value||'';
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
-  if(!username || !password) { if(errEl) errEl.style.display='block'; return; }
+  if(!username || !password) {
+    if(errEl) { errEl.textContent = !username ? '❌ Ingresa tu usuario.' : '❌ Ingresa tu contraseña.'; errEl.style.display='block'; }
+    return;
+  }
   if(btn) { btn.disabled=true; btn.textContent='Verificando…'; }
   const users = state.config.users || [];
   const candidate = users.find(u => u.username.toLowerCase()===username);
@@ -2811,16 +2878,21 @@ async function doLogin() {
       // Legacy plaintext — migrate on success
       if(password === candidate.password) {
         matched = true;
-        candidate.password = await hashPwd(password);
-        candidate.password_hashed = true;
+        const h = await hashPwd(password);
+        if(h !== password) { candidate.password = h; candidate.password_hashed = true; }
       }
     }
   }
   if(btn) { btn.disabled=false; btn.textContent='Ingresar'; }
   if(!matched) {
-    if(errEl) errEl.style.display='block';
+    if(errEl) {
+      errEl.textContent = !candidate
+        ? '❌ El usuario "'+username+'" no existe. Verifica que esté bien escrito.'
+        : '❌ La contraseña es incorrecta. Puedes recuperarla con el enlace de abajo.';
+      errEl.style.display='block';
+    }
     document.getElementById('login-password').value='';
-    document.getElementById('login-password').focus();
+    document.getElementById(candidate ? 'login-password' : 'login-username').focus();
     const card = document.querySelector('.login-card');
     if(card) { card.style.animation='shake 0.4s ease'; setTimeout(()=>card.style.animation='',400); }
     return;
@@ -2840,6 +2912,90 @@ async function doLogin() {
   hideLoginScreen();
   navigate(state.isRequester ? 'intake' : 'home');
   toast('👋 Bienvenido','Hola, '+user.name+'! Sesión iniciada correctamente.','success');
+}
+
+// ─── PASSWORD RECOVERY (por correo) ─────────────────────────
+let _recoveryUserId = null;
+
+function _loginPanels(show) {
+  const panels = {form:'login-form-panel', email:'recovery-email-panel', reset:'recovery-reset-panel'};
+  Object.entries(panels).forEach(([k,id])=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = (k===show) ? '' : 'none';
+  });
+  const title = document.getElementById('login-title');
+  const sub = document.getElementById('login-subtitle');
+  if(show==='form'){ if(title) title.textContent='Bienvenido'; if(sub) sub.textContent='Ingresa tus credenciales para continuar'; }
+  if(show==='email'){ if(title) title.textContent='Recuperar contraseña'; if(sub) sub.textContent='Ingresa el correo registrado en tu cuenta'; }
+  if(show==='reset'){ if(title) title.textContent='Nueva contraseña'; if(sub) sub.textContent='Define tu nueva contraseña de acceso'; }
+  const le = document.getElementById('login-error'); if(le) le.style.display='none';
+  const re = document.getElementById('recovery-error'); if(re) re.style.display='none';
+  const rre = document.getElementById('recovery-reset-error'); if(rre) rre.style.display='none';
+}
+
+function showRecovery() {
+  _recoveryUserId = null;
+  const em = document.getElementById('recovery-email'); if(em) em.value='';
+  _loginPanels('email');
+  setTimeout(()=>{ const e=document.getElementById('recovery-email'); if(e) e.focus(); },100);
+}
+
+function backToLogin() {
+  _recoveryUserId = null;
+  const p1=document.getElementById('recovery-pwd1'), p2=document.getElementById('recovery-pwd2');
+  if(p1) p1.value=''; if(p2) p2.value='';
+  _loginPanels('form');
+  setTimeout(()=>{ const u=document.getElementById('login-username'); if(u) u.focus(); },100);
+}
+
+function verifyRecoveryEmail() {
+  const email = (document.getElementById('recovery-email').value||'').trim().toLowerCase();
+  const errEl = document.getElementById('recovery-error');
+  const showErr = msg => { if(errEl){ errEl.textContent=msg; errEl.style.display='block'; } };
+  if(!email) { showErr('Ingresa tu correo electrónico.'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('El formato del correo no es válido.'); return; }
+  const users = state.config.users || [];
+  const user = users.find(u => (u.email||'').trim().toLowerCase() === email);
+  if(!user) {
+    showErr('No hay ninguna cuenta registrada con ese correo. Si tu cuenta no tiene correo asociado, pide a un administrador que restablezca tu contraseña desde Configuración → Usuarios.');
+    return;
+  }
+  _recoveryUserId = user.id;
+  const badge = document.getElementById('recovery-user-badge');
+  if(badge) badge.innerHTML = '✅ Correo verificado. Cuenta: <strong>'+user.name+'</strong> (usuario: <strong>'+user.username+'</strong>)';
+  _loginPanels('reset');
+  setTimeout(()=>{ const p=document.getElementById('recovery-pwd1'); if(p) p.focus(); },100);
+}
+
+async function doPasswordReset() {
+  const p1 = document.getElementById('recovery-pwd1').value;
+  const p2 = document.getElementById('recovery-pwd2').value;
+  const errEl = document.getElementById('recovery-reset-error');
+  const showErr = msg => { if(errEl){ errEl.textContent=msg; errEl.style.display='block'; } };
+  const user = (state.config.users||[]).find(u => u.id === _recoveryUserId);
+  if(!user) { backToLogin(); return; }
+  if(!p1 || p1.length < 6) { showErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+  if(p1 !== p2) { showErr('Las contraseñas no coinciden.'); return; }
+  const h = await hashPwd(p1);
+  user.password = h;
+  user.password_hashed = (h !== p1);
+  saveState();
+  _recoveryUserId = null;
+  document.getElementById('recovery-pwd1').value='';
+  document.getElementById('recovery-pwd2').value='';
+  _loginPanels('form');
+  const u = document.getElementById('login-username');
+  if(u) { u.value = user.username; }
+  setTimeout(()=>{ const p=document.getElementById('login-password'); if(p) p.focus(); },100);
+  toast('🔑 Contraseña actualizada','Ya puedes iniciar sesión con tu nueva contraseña.','success');
+}
+
+function toggleRecoveryPwd() {
+  const inp = document.getElementById('recovery-pwd1');
+  const btn = document.getElementById('recovery-eye-btn');
+  if(!inp) return;
+  if(inp.type === 'password') { inp.type='text'; if(btn) btn.textContent='🙈'; }
+  else { inp.type='password'; if(btn) btn.textContent='👁'; }
 }
 
 // Shake keyframes (injected once)
@@ -2891,8 +3047,8 @@ async function doAuth() {
     } else {
       if(pass === candidate.password) {
         ok = true;
-        candidate.password = await hashPwd(pass);
-        candidate.password_hashed = true;
+        const h = await hashPwd(pass);
+        if(h !== pass) { candidate.password = h; candidate.password_hashed = true; }
       }
     }
   }
@@ -2911,6 +3067,9 @@ async function doAuth() {
     toast('✅ Acceso concedido','Bienvenido, '+state.currentUser,'success');
     navigate(state.currentView);
   } else {
+    errEl.textContent = !candidate
+      ? 'El usuario "'+username+'" no existe. Verifica que esté bien escrito.'
+      : 'La contraseña es incorrecta.';
     errEl.classList.remove('hidden');
     document.getElementById('auth-password').focus();
     document.getElementById('auth-password').select();
@@ -6852,7 +7011,7 @@ function renderConfig() {
                 ${u.area?`<div style="font-size:10px;color:var(--text-muted)">🏷️ ${u.area}</div>`:''}
                 ${u.id===state.currentUserId?'<div style="font-size:10px;color:var(--primary);font-weight:600">← Tú</div>':''}
               </div>
-              <div style="font-size:12px;color:var(--text-muted);font-family:monospace">${u.username}</div>
+              <div style="font-size:12px;color:var(--text-muted);font-family:monospace">${u.username}${u.email?`<div style="font-size:10px;font-family:inherit" title="${u.email}">📧 ✓</div>`:`<div style="font-size:10px;color:#D97706;font-family:inherit" title="Sin correo: no podrá recuperar su contraseña">📧 ✗</div>`}</div>
               <div><span class="role-badge role-${u.role}">${{admin:'Admin',team:'Equipo',viewer:'Viewer'}[u.role]||u.role}</span></div>
               <div style="display:flex;gap:4px">
                 <button onclick="openUserModal('${u.id}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text-secondary)">✏️</button>
@@ -6978,6 +7137,7 @@ function openUserModal(id) {
   document.getElementById('user-modal-id').value = user ? user.id : '';
   document.getElementById('user-modal-name').value = user ? user.name : '';
   document.getElementById('user-modal-username').value = user ? user.username : '';
+  document.getElementById('user-modal-email').value = user && user.email ? user.email : '';
   document.getElementById('user-modal-password').value = '';
   document.getElementById('user-modal-role').value = user ? user.role : 'team';
   const areaSel = document.getElementById('user-modal-area');
@@ -6994,7 +7154,9 @@ async function submitUser() {
   const id       = document.getElementById('user-modal-id').value;
   const name     = document.getElementById('user-modal-name').value.trim();
   const username = document.getElementById('user-modal-username').value.trim().toLowerCase();
+  const email    = document.getElementById('user-modal-email').value.trim().toLowerCase();
   const password = document.getElementById('user-modal-password').value;
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('⚠️ Correo inválido','Revisa el formato del correo electrónico.','warning'); return; }
   const role     = document.getElementById('user-modal-role').value;
   const area     = document.getElementById('user-modal-area') ? document.getElementById('user-modal-area').value : '';
   if(!name || !username) { toast('⚠️ Campos requeridos','Nombre y usuario son obligatorios.','warning'); return; }
@@ -7008,7 +7170,7 @@ async function submitUser() {
     if(idx>=0) {
       const updatedUser = {
         ...state.config.users[idx],
-        name, username, role, area
+        name, username, role, area, email
       };
       if(password) {
         updatedUser.password = await hashPwd(password);
@@ -7022,7 +7184,7 @@ async function submitUser() {
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
     const hashedPwd = await hashPwd(password);
-    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:true, role, area});
+    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:(hashedPwd!==password), role, area, email});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -8656,4 +8818,10 @@ document.addEventListener('DOMContentLoaded', init);
     <span class="ai-chip" onclick="aiQuick('ayuda')">❓ Cómo usar</span>
   </div>
   <div id="ai-input-row">
-    <in
+    <input id="ai-input" type="text" placeholder="Pregunta algo…" onkeydown="if(event.key==='Enter')aiSend()">
+    <button id="ai-send" onclick="aiSend()">↑</button>
+  </div>
+</div>
+
+</body>
+</html>
