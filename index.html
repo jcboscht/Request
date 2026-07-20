@@ -4699,7 +4699,7 @@ function renderPlaneacion() {
           }[item.status]||'#9CA3AF';
           const pc = {'Alta':'#EF4444','Media':'#EAB308','Baja':'#22C55E'}[item.priority]||'#9CA3AF';
           const tagsHtml = (item.tags||[]).map(t=>`<span style="background:#F3F4F6;color:#374151;font-size:10px;padding:2px 7px;border-radius:20px">${t}</span>`).join('');
-          const ms = item.milestones||[];
+          const ms = sortPlanMilestones(item.milestones);
           const totalMs = ms.length;
           const doneMs = ms.filter(m=>m.status==='Completado'||m.status==='Validada').length;
           const pctMs = totalMs>0?Math.round(doneMs/totalMs*100):0;
@@ -4812,7 +4812,7 @@ function renderPlaneacion() {
     requestAnimationFrame(()=>{
       const c = document.getElementById('plan-gantt-scroll');
       if(!c) return;
-      if(_prevGanttScroll !== null) { c.scrollLeft = _prevGanttScroll; planGanttStickLabels(); planGanttSyncSlider(); }
+      if(_prevGanttScroll !== null) { c.scrollLeft = _prevGanttScroll; planGanttSyncSlider(); }
       else planGanttGoToday();
     });
   }
@@ -4853,23 +4853,12 @@ function planGanttSyncSlider() {
   const max = c.scrollWidth - c.clientWidth;
   s.value = max > 0 ? Math.round(c.scrollLeft / max * 100) : 0;
 }
-// Congela las columnas Iniciativa + Owner: la capa izquierda sigue al scroll horizontal
-function planGanttStickLabels() {
-  const c = document.getElementById('plan-gantt-scroll');
-  const g = document.getElementById('plan-gantt-left');
-  if(c && g) g.setAttribute('transform', 'translate(' + c.scrollLeft + ',0)');
-}
-function planGanttOnScroll() {
-  planGanttStickLabels();
-  planGanttSyncSlider();
-}
 function planGanttGoToday() {
   const c = document.getElementById('plan-gantt-scroll');
   if(!c) return;
   const tx = parseFloat(c.dataset.todayX || '0');
   const lw = parseFloat(c.dataset.labelW || '0');
   c.scrollLeft = Math.max(0, tx - lw - (c.clientWidth - lw) * 0.4);
-  planGanttStickLabels();
   planGanttSyncSlider();
 }
 
@@ -4978,7 +4967,7 @@ function renderPlaneacionGantt(allItems) {
       qItems.forEach(item=>{
         rowDefs.push({type:'row', area, item});
         if(state.planGanttExpanded[item.id] && (item.milestones||[]).length){
-          (item.milestones||[]).forEach(ms=>rowDefs.push({type:'msrow', area, item, ms}));
+          sortPlanMilestones(item.milestones).forEach(ms=>rowDefs.push({type:'msrow', area, item, ms}));
         }
       });
     });
@@ -5126,32 +5115,36 @@ function renderPlaneacionGantt(allItems) {
       <span style="font-size:13px;color:var(--text-muted)">▶</span>
       <button class="btn btn-secondary btn-sm" onclick="planGanttGoToday()">📍 Hoy</button>
     </div>
-    <div id="plan-gantt-scroll" data-today-x="${todayX}" data-label-w="${LABEL_W}" onscroll="planGanttOnScroll()" style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow)">
+    <div style="position:relative;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow);overflow:hidden">
+    <div id="plan-gantt-scroll" data-today-x="${todayX}" data-label-w="${LABEL_W}" onscroll="planGanttSyncSlider()" style="overflow-x:auto">
       <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="display:block">
         <defs>
-          <clipPath id="plan-label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
           <linearGradient id="plan-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5A5"/><stop offset="100%" stop-color="#22C55E"/></linearGradient>
           <linearGradient id="plan-track" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#E6F7F1"/><stop offset="100%" stop-color="#EAFBEF"/></linearGradient>
-          <linearGradient id="plan-owner" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/></linearGradient>
-          <linearGradient id="plan-left-shadow" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity="0.10"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>
         </defs>
         <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#fff"/>
         ${monthLines}
         <line x1="0" y1="${HEADER_H}" x2="${svgW}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
         ${rowSvg}
         ${todayLine}
-        <!-- Capa congelada: Iniciativa + Owner (se re-posiciona con el scroll) -->
-        <g id="plan-gantt-left" transform="translate(0,0)">
-          <rect x="0" y="0" width="${LABEL_W}" height="${svgH}" fill="#fff"/>
-          ${leftSvg}
-          <rect x="${LABEL_W}" y="0" width="7" height="${svgH}" fill="url(#plan-left-shadow)"/>
-          <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
-          <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
-          <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
-          <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
-          <line x1="0" y1="${HEADER_H}" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
-        </g>
       </svg>
+    </div>
+    <!-- Columnas congeladas (Iniciativa + Owner): overlay fijo, no depende del scroll -->
+    <svg id="plan-gantt-left" width="${LABEL_W+8}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;display:block">
+      <defs>
+        <clipPath id="plan-label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
+        <linearGradient id="plan-owner" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/></linearGradient>
+        <linearGradient id="plan-left-shadow" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity="0.10"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="${LABEL_W}" height="${svgH}" fill="#fff"/>
+      ${leftSvg}
+      <rect x="${LABEL_W}" y="0" width="7" height="${svgH}" fill="url(#plan-left-shadow)"/>
+      <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
+      <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
+      <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
+      <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
+      <line x1="0" y1="${HEADER_H}" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
+    </svg>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras con gradiente = duración / avance · ◆ = hito (milestone) coloreado por estado · línea roja = hoy</div>`;
 }
@@ -5185,13 +5178,37 @@ function openPlaneacionModal(id) {
     msList.innerHTML = '';
     const emptyHint = document.getElementById('plan-ms-empty');
     if(emptyHint) emptyHint.style.display = milestones.length ? 'none' : 'block';
-    milestones.forEach(ms => addPlanMilestoneRow(ms.name||'', ms.date||'', ms.status||'No iniciado', ms.owner||'', ms.id||'', ms.kpis||null));
+    sortPlanMilestones(milestones).forEach(ms => addPlanMilestoneRow(ms.name||'', ms.date||'', ms.status||'No iniciado', ms.owner||'', ms.id||'', ms.kpis||null));
     openModal('modal-planeacion');
     setTimeout(()=>{ const t=document.getElementById('plan-modal-titulo'); if(t)t.focus(); },200);
   } catch(err) {
     console.error('openPlaneacionModal error:', err);
     toast('❌ Error al abrir modal', err.message, 'warning');
   }
+}
+
+// ── Orden cronológico de milestones (sin fecha → al final) ──
+function _planMsTime(s){
+  if(!s) return Infinity;
+  const str = String(s).trim();
+  const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  const d = m ? new Date(+m[3], +m[2]-1, +m[1]) : new Date(str);
+  const t = d.getTime();
+  return isNaN(t) ? Infinity : t;
+}
+function sortPlanMilestones(list){
+  return [...(list||[])].sort((a,b)=>_planMsTime(a.date)-_planMsTime(b.date));
+}
+// Reordena las filas del modal en vivo cuando cambia una fecha
+function resortPlanMsRows(){
+  const list = document.getElementById('plan-milestones-list');
+  if(!list) return;
+  const rows = Array.from(list.querySelectorAll('.plan-ms-row'));
+  rows.sort((a,b)=>{
+    const da = a.querySelector('input[type=date]'), db = b.querySelector('input[type=date]');
+    return _planMsTime(da?da.value:'') - _planMsTime(db?db.value:'');
+  });
+  rows.forEach(r=>list.appendChild(r));
 }
 
 function addPlanMilestoneRow(name='', date='', status='No iniciado', owner='', msid='', kpis=null) {
@@ -5211,7 +5228,7 @@ function addPlanMilestoneRow(name='', date='', status='No iniciado', owner='', m
       <option value="">👤 Sin owner</option>
       ${userNames.map(u=>`<option value="${u}" ${u===owner?'selected':''}>${u}</option>`).join('')}
     </select>
-    <input type="date" class="form-input" value="${date}" style="font-size:12px;padding:6px 10px">
+    <input type="date" class="form-input" value="${date}" style="font-size:12px;padding:6px 10px" onchange="resortPlanMsRows()">
     <select class="form-select" style="font-size:12px;padding:6px 10px">
       ${['No iniciado','En proceso','Completado','Retrasado','Bloqueado'].map(s=>`<option value="${s}" ${s===status?'selected':''}>${s}</option>`).join('')}
     </select>
@@ -5248,6 +5265,8 @@ function submitPlaneacionItem() {
     if(row.dataset.kpis){ try{ ms.kpis = JSON.parse(row.dataset.kpis); }catch(e){} }
     return ms;
   }).filter(ms=>ms.name && ms.date);
+  const sortedMilestones = sortPlanMilestones(milestones);
+  milestones.length = 0; milestones.push(...sortedMilestones);
   if(id) {
     const idx = state.areaRoadmaps.findIndex(i=>i.id===id);
     if(idx>=0){
@@ -5352,7 +5371,7 @@ function renderPlanMsKpis(items, canEdit){
 
   const blocks = list.map(ini=>{
     const c = CROSS_AREA_COLORS[ini.area] || {border:'#ccc',text:'#333',bg:'#f9f9f9',dot:'#ccc'};
-    const msBlocks = (ini.milestones||[]).map(ms=>{
+    const msBlocks = sortPlanMilestones(ini.milestones).map(ms=>{
       let kpis = ms.kpis || [];
       if(kAf) kpis = kpis.filter(k=>(k.area||'Otros')===kAf);
       if(kAf && !kpis.length) return '';
@@ -9223,7 +9242,7 @@ function processOKRUpload(input) {
         const idx=state.areaRoadmaps.findIndex(r=>r.id===item.id);
         const existing = idx>=0 ? state.areaRoadmaps[idx] : null;
         // Milestones: usa la hoja si trae filas para esta iniciativa; si no, conserva los existentes
-        let milestones = msMap[item.id] !== undefined ? msMap[item.id] : (existing ? (existing.milestones||[]) : []);
+        let milestones = sortPlanMilestones(msMap[item.id] !== undefined ? msMap[item.id] : (existing ? (existing.milestones||[]) : []));
         // KPIs: re-asocia por Milestone ID (o conserva los que ya tenía el milestone)
         milestones = milestones.map(ms=>{
           const prevMs = existing ? (existing.milestones||[]).find(m=>m.id===ms.id) : null;
