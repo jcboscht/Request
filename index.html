@@ -1842,6 +1842,7 @@ const CROSS_AREA_COLORS = {
 };
 const QUARTERS = ['Q1 2026','Q2 2026','Q3 2026','Q4 2026'];
 const PLAN_STATUSES = ['Planeado','En proceso','Completado','En riesgo','Pausado','Cancelado'];
+const PLAN_KPI_AREAS = ['MKT','Cx','Hub Ops','VCN','Otros'];
 const PLAN_PRIORITIES = ['Alta','Media','Baja'];
 const COMPLEXITY = {Baja:1,Media:3,Alta:5};
 const MS_STATUSES = ['No iniciado','En proceso','En revisión','Completado','Reprogramado','Bloqueado'];
@@ -4645,7 +4646,9 @@ function renderPlaneacion() {
   const pv = state.planeacionView || 'cards';
   const canEdit = state.isAdmin || state.isTeam;
 
-  let items = state.areaRoadmaps || [];
+  const showArchive = !!state.planShowArchive;
+  const archivedCount = (state.areaRoadmaps||[]).filter(i=>i.archived).length;
+  let items = (state.areaRoadmaps || []).filter(i=>showArchive ? !!i.archived : !i.archived);
   if(af) items = items.filter(i=>i.area===af);
   if(qf) items = items.filter(i=>i.quarter===qf);
 
@@ -4673,8 +4676,10 @@ function renderPlaneacion() {
   const _prevGanttScroll = (()=>{ const c=document.getElementById('plan-gantt-scroll'); return c ? c.scrollLeft : null; })();
 
   let viewContent = '';
-  if(pv === 'gantt') {
+  if(pv === 'gantt' && !showArchive) {
     viewContent = renderPlaneacionGantt(items);
+  } else if(pv === 'kpis' && !showArchive) {
+    viewContent = renderPlanMsKpis(items, canEdit);
   } else {
     // Cards view — group by area
     const areasToShow = af ? [af] : crossAreas.filter(a=>items.some(i=>i.area===a));
@@ -4703,7 +4708,7 @@ function renderPlaneacion() {
           const msRows = ms.map((m,i)=>`
             <div class="ini-ms-row">
               <div style="width:8px;height:8px;border-radius:50%;background:${msc[m.status]||'#9CA3AF'};flex-shrink:0"></div>
-              <div style="flex:1;color:var(--text-secondary);min-width:60px">${m.name||'—'}</div>
+              <div style="flex:1;color:var(--text-secondary);min-width:60px">${m.name||'—'}${(m.kpis&&m.kpis.length)?` <span style="font-size:9.5px;color:var(--primary);font-weight:700">🎯${m.kpis.length}</span>`:''}</div>
               <div style="color:var(--text-muted);font-size:10px">${m.owner||'—'}</div>
               <div style="color:${isOverdue(m.date)&&m.status!=='Completado'?'var(--error)':'var(--text-muted)'};font-size:10px">${m.date?fmtDateShort(m.date):'—'}</div>
             </div>`).join('');
@@ -4722,6 +4727,9 @@ function renderPlaneacion() {
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
               <div style="font-size:14px;font-weight:700;color:var(--text-primary);line-height:1.4;flex:1">${item.title}</div>
               ${canEdit?`<div style="display:flex;gap:4px;flex-shrink:0">
+                ${item.archived
+                  ? `<button onclick="restorePlaneacionItem('${item.id}')" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:#1D4ED8" title="Reactivar iniciativa">↩️</button>`
+                  : `<button onclick="concludePlaneacionItem('${item.id}')" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:#15803D" title="Marcar como concluida y enviar al repositorio">✔</button>`}
                 <button onclick="openPlaneacionModal('${item.id}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:var(--text-secondary)" title="Editar">✏️</button>
                 <button onclick="deletePlaneacionItem('${item.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:#B91C1C" title="Eliminar">🗑</button>
               </div>`:''}
@@ -4765,14 +4773,15 @@ function renderPlaneacion() {
     <div style="max-width:1100px;margin:0 auto">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);margin-bottom:4px">OKRs Transversales</h2>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);margin-bottom:4px">${showArchive?'📦 Repositorio de Iniciativas Concluidas':'OKRs Transversales'}</h2>
           <div style="font-size:13px;color:var(--text-muted)">${total} iniciativa${total!==1?'s':''} ${statusSummary?'— '+statusSummary:''}</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          ${canEdit?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
-          <button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${canEdit&&!showArchive?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
+          <button class="btn ${showArchive?'btn-primary':'btn-secondary'} btn-sm" onclick="state.planShowArchive=!state.planShowArchive;if(state.planShowArchive)state.planeacionView='cards';renderPlaneacion()" title="Iniciativas concluidas y archivadas">${showArchive?'← Volver a abiertas':'📦 Repositorio ('+archivedCount+')'}</button>
+          ${!showArchive?`<button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
           <input type="file" id="okr-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processOKRUpload(this)">
-          <button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>`:''}
         </div>
       </div>
 
@@ -4788,10 +4797,11 @@ function renderPlaneacion() {
           <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Quarter</div>
           <div style="display:flex;gap:6px">${qChips}</div>
         </div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px">
+        ${!showArchive?`<div style="margin-left:auto;display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px">
           <button onclick="state.planeacionView='cards';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='cards'?'var(--primary)':'transparent'};color:${pv==='cards'?'#fff':'var(--text-secondary)'}">🗂 Tarjetas</button>
           <button onclick="state.planeacionView='gantt';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='gantt'?'var(--primary)':'transparent'};color:${pv==='gantt'?'#fff':'var(--text-secondary)'}">📊 Gantt</button>
-        </div>
+          <button onclick="state.planeacionView='kpis';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='kpis'?'var(--primary)':'transparent'};color:${pv==='kpis'?'#fff':'var(--text-secondary)'}">🎯 KPIs por Milestone</button>
+        </div>`:''}
       </div>
 
       ${viewContent}
@@ -4802,7 +4812,7 @@ function renderPlaneacion() {
     requestAnimationFrame(()=>{
       const c = document.getElementById('plan-gantt-scroll');
       if(!c) return;
-      if(_prevGanttScroll !== null) { c.scrollLeft = _prevGanttScroll; planGanttSyncSlider(); }
+      if(_prevGanttScroll !== null) { c.scrollLeft = _prevGanttScroll; planGanttStickLabels(); planGanttSyncSlider(); }
       else planGanttGoToday();
     });
   }
@@ -4843,12 +4853,23 @@ function planGanttSyncSlider() {
   const max = c.scrollWidth - c.clientWidth;
   s.value = max > 0 ? Math.round(c.scrollLeft / max * 100) : 0;
 }
+// Congela las columnas Iniciativa + Owner: la capa izquierda sigue al scroll horizontal
+function planGanttStickLabels() {
+  const c = document.getElementById('plan-gantt-scroll');
+  const g = document.getElementById('plan-gantt-left');
+  if(c && g) g.setAttribute('transform', 'translate(' + c.scrollLeft + ',0)');
+}
+function planGanttOnScroll() {
+  planGanttStickLabels();
+  planGanttSyncSlider();
+}
 function planGanttGoToday() {
   const c = document.getElementById('plan-gantt-scroll');
   if(!c) return;
   const tx = parseFloat(c.dataset.todayX || '0');
   const lw = parseFloat(c.dataset.labelW || '0');
   c.scrollLeft = Math.max(0, tx - lw - (c.clientWidth - lw) * 0.4);
+  planGanttStickLabels();
   planGanttSyncSlider();
 }
 
@@ -4975,48 +4996,66 @@ function renderPlaneacionGantt(allItems) {
     <text x="${todayX}" y="${HEADER_H-10.5}" text-anchor="middle" dominant-baseline="central" font-size="9" fill="#fff" font-family="Poppins,sans-serif" font-weight="700">HOY</text>
     <circle cx="${todayX}" cy="${HEADER_H}" r="3" fill="#EF4444"/>` : '';
 
+  // Dos capas: chartRows se desplaza con las fechas; leftRows queda congelada (Iniciativa + Owner)
   let yOffset = HEADER_H;
-  let rowSvg = rowDefs.map((rd,ri)=>{
+  const chartRows = [];
+  const leftRows = [];
+  rowDefs.forEach((rd,ri)=>{
     if(rd.type==='section'){
       const c = CROSS_AREA_COLORS[rd.area] || {border:'#ccc',text:'#333',bg:'#f9f9f9',dot:'#ccc'};
       const y=yOffset; yOffset+=SEC_H; const midY=y+SEC_H/2;
-      return `<g style="cursor:pointer" onclick="togglePlanGanttArea('${esc(rd.area).replace(/'/g,"\\'")}')">
+      chartRows.push(`<g>
         <rect x="0" y="${y}" width="${svgW}" height="${SEC_H}" fill="${c.bg}"/>
+        <line x1="0" y1="${y+SEC_H}" x2="${svgW}" y2="${y+SEC_H}" stroke="${c.border}" stroke-width="1" opacity="0.35"/>
+      </g>`);
+      leftRows.push(`<g style="cursor:pointer" onclick="togglePlanGanttArea('${esc(rd.area).replace(/'/g,"\\'")}')">
+        <rect x="0" y="${y}" width="${LABEL_W}" height="${SEC_H}" fill="${c.bg}"/>
         <text x="8" y="${midY+0.5}" dominant-baseline="central" font-size="11" fill="${c.text}" font-weight="700">${rd.open?'▾':'▸'}</text>
         <circle cx="26" cy="${midY}" r="5" fill="${c.dot}"/>
         <text x="38" y="${midY+0.5}" dominant-baseline="central" font-size="12" font-weight="700" fill="${c.text}" font-family="Poppins,sans-serif">${esc(rd.area)}</text>
         <text x="${38+String(rd.area).length*7.2+14}" y="${midY+0.5}" dominant-baseline="central" font-size="10.5" fill="${c.text}" opacity="0.65" font-family="Poppins,sans-serif">${rd.count} iniciativa${rd.count!==1?'s':''}${rd.open?'':' · plegado'}</text>
-        <line x1="0" y1="${y+SEC_H}" x2="${svgW}" y2="${y+SEC_H}" stroke="${c.border}" stroke-width="1" opacity="0.35"/>
-      </g>`;
+        <line x1="0" y1="${y+SEC_H}" x2="${LABEL_W}" y2="${y+SEC_H}" stroke="${c.border}" stroke-width="1" opacity="0.35"/>
+      </g>`);
+      return;
     }
     if(rd.type==='qsection'){
-      const c = CROSS_AREA_COLORS[rd.area] || {border:'#ccc',text:'#333',bg:'#f9f9f9',dot:'#ccc'};
       const y=yOffset; yOffset+=QSEC_H; const midY=y+QSEC_H/2;
-      return `<g style="cursor:pointer" onclick="togglePlanGanttQ('${esc(rd.key).replace(/'/g,"\\'")}')">
+      chartRows.push(`<g>
         <rect x="0" y="${y}" width="${svgW}" height="${QSEC_H}" fill="#F8FAFC"/>
+        <line x1="0" y1="${y+QSEC_H}" x2="${svgW}" y2="${y+QSEC_H}" stroke="#E2E8F0" stroke-width="1"/>
+      </g>`);
+      leftRows.push(`<g style="cursor:pointer" onclick="togglePlanGanttQ('${esc(rd.key).replace(/'/g,"\\'")}')">
+        <rect x="0" y="${y}" width="${LABEL_W}" height="${QSEC_H}" fill="#F8FAFC"/>
         <text x="24" y="${midY+0.5}" dominant-baseline="central" font-size="10" fill="#64748B" font-weight="700">${rd.open?'▾':'▸'}</text>
         <text x="40" y="${midY+0.5}" dominant-baseline="central" font-size="11" font-weight="700" fill="#475569" font-family="Poppins,sans-serif">📅 ${esc(rd.quarter)}</text>
         <text x="${40+String(rd.quarter).length*7+18}" y="${midY+0.5}" dominant-baseline="central" font-size="10" fill="#94A3B8" font-family="Poppins,sans-serif">${rd.count} iniciativa${rd.count!==1?'s':''}</text>
-        <line x1="0" y1="${y+QSEC_H}" x2="${svgW}" y2="${y+QSEC_H}" stroke="#E2E8F0" stroke-width="1"/>
-      </g>`;
+        <line x1="0" y1="${y+QSEC_H}" x2="${LABEL_W}" y2="${y+QSEC_H}" stroke="#E2E8F0" stroke-width="1"/>
+      </g>`);
+      return;
     }
     if(rd.type==='msrow'){
       const ms=rd.ms, item=rd.item;
       const y=yOffset; yOffset+=ROW_H; const midY=y+ROW_H/2;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
+      const rowBg = ri%2===0?'#F4FBF8':'#FAFEFC';
       const labelText = (ms.name||'').length>26 ? ms.name.slice(0,26)+'…' : (ms.name||'');
       const dateTxt = ms.date?fmtDate(ms.date):'—';
       const mx = xForDate(parseD(ms.date) || item._ganttEnd || todayISO);
       const diamond = `<polygon points="${mx},${midY-7} ${mx+7},${midY} ${mx},${midY+7} ${mx-7},${midY}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${esc(ms.name)} — ${esc(ms.status)} (${esc(ms.date||'—')})</title>`;
-      return `<g>
-        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${ri%2===0?'#F4FBF8':'#FAFEFC'}"/>
+      chartRows.push(`<g>
+        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${rowBg}"/>
+        ${diamond}
+        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
+      </g>`);
+      leftRows.push(`<g>
+        <rect x="0" y="${y}" width="${LABEL_W}" height="${ROW_H}" fill="${rowBg}"/>
         <rect x="22" y="${y+6}" width="3" height="${ROW_H-12}" rx="1.5" fill="${mc}"/>
         <text x="34" y="${midY-6}" dominant-baseline="central" font-size="12" fill="#1f2937" font-family="Poppins,sans-serif" clip-path="url(#plan-label-clip)">${esc(labelText)}</text>
         <text x="34" y="${midY+11}" dominant-baseline="central" font-size="10" fill="#6B7280" font-family="Poppins,sans-serif">${dateTxt} · ${esc(ms.status||'')}</text>
         ${ownerCell(ms.owner, midY, true)}
-        ${diamond}
-        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
-      </g>`;
+        <line x1="0" y1="${y+ROW_H}" x2="${LABEL_W}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
+      </g>`);
+      return;
     }
     const item=rd.item;
     const y=yOffset; yOffset+=ROW_H; const midY=y+ROW_H/2;
@@ -5040,19 +5079,25 @@ function renderPlaneacionGantt(allItems) {
       const mc=msStatusCol[ms.status]||'#9CA3AF';
       return `<g><polygon points="${mx},${midY-6} ${mx+6},${midY} ${mx},${midY+6} ${mx-6},${midY}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${esc(ms.name)} — ${esc(ms.status)} (${esc(ms.date)})</title></g>`;
     }).join('');
-    return `<g>
+    chartRows.push(`<g>
       <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${bgColor}"/>
-      ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="togglePlanGanttExpand('${item.id}')">${expandIcon}</text>`:''}
-      <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#plan-label-clip)" onclick="togglePlanGanttExpand('${item.id}')">${esc(labelText)}</text>
-      <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(item.status)} · ${esc(item.quarter||'')}</text>
-      ${ownerCell(item.owner, midY, false)}
       <rect x="${barX}" y="${barY}" width="${barW}" height="${BH}" rx="9" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-opacity="0.55" stroke-width="1.25"/>
       <rect x="${barX}" y="${barY}" width="${Math.max(barW*progress, progress>0?6:0)}" height="${BH}" rx="9" fill="url(#plan-grad)"/>
       ${progress>0&&progress<1?`<text x="${barX+barW*progress+6}" y="${midY+0.5}" dominant-baseline="central" font-size="10" font-weight="700" fill="#0d9488" font-family="Poppins,sans-serif">${Math.round(progress*100)}%</text>`:''}
       ${diamonds}
       <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
-    </g>`;
-  }).join('');
+    </g>`);
+    leftRows.push(`<g>
+      <rect x="0" y="${y}" width="${LABEL_W}" height="${ROW_H}" fill="${bgColor}"/>
+      ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="togglePlanGanttExpand('${item.id}')">${expandIcon}</text>`:''}
+      <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#plan-label-clip)" onclick="togglePlanGanttExpand('${item.id}')">${esc(labelText)}</text>
+      <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(item.status)} · ${esc(item.quarter||'')}</text>
+      ${ownerCell(item.owner, midY, false)}
+      <line x1="0" y1="${y+ROW_H}" x2="${LABEL_W}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
+    </g>`);
+  });
+  const rowSvg = chartRows.join('');
+  const leftSvg = leftRows.join('');
 
   const legendItems = Object.entries(statusCol).map(([s,c])=>`
     <div style="display:flex;align-items:center;gap:4px">
@@ -5081,23 +5126,31 @@ function renderPlaneacionGantt(allItems) {
       <span style="font-size:13px;color:var(--text-muted)">▶</span>
       <button class="btn btn-secondary btn-sm" onclick="planGanttGoToday()">📍 Hoy</button>
     </div>
-    <div id="plan-gantt-scroll" data-today-x="${todayX}" data-label-w="${LABEL_W}" onscroll="planGanttSyncSlider()" style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow)">
+    <div id="plan-gantt-scroll" data-today-x="${todayX}" data-label-w="${LABEL_W}" onscroll="planGanttOnScroll()" style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow)">
       <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="display:block">
         <defs>
           <clipPath id="plan-label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
           <linearGradient id="plan-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0EA5A5"/><stop offset="100%" stop-color="#22C55E"/></linearGradient>
           <linearGradient id="plan-track" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#E6F7F1"/><stop offset="100%" stop-color="#EAFBEF"/></linearGradient>
           <linearGradient id="plan-owner" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/></linearGradient>
+          <linearGradient id="plan-left-shadow" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity="0.10"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>
         </defs>
         <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#fff"/>
-        <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
-        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
-        <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
-        <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
         ${monthLines}
         <line x1="0" y1="${HEADER_H}" x2="${svgW}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
         ${rowSvg}
         ${todayLine}
+        <!-- Capa congelada: Iniciativa + Owner (se re-posiciona con el scroll) -->
+        <g id="plan-gantt-left" transform="translate(0,0)">
+          <rect x="0" y="0" width="${LABEL_W}" height="${svgH}" fill="#fff"/>
+          ${leftSvg}
+          <rect x="${LABEL_W}" y="0" width="7" height="${svgH}" fill="url(#plan-left-shadow)"/>
+          <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
+          <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
+          <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
+          <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
+          <line x1="0" y1="${HEADER_H}" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
+        </g>
       </svg>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras con gradiente = duración / avance · ◆ = hito (milestone) coloreado por estado · línea roja = hoy</div>`;
@@ -5132,7 +5185,7 @@ function openPlaneacionModal(id) {
     msList.innerHTML = '';
     const emptyHint = document.getElementById('plan-ms-empty');
     if(emptyHint) emptyHint.style.display = milestones.length ? 'none' : 'block';
-    milestones.forEach(ms => addPlanMilestoneRow(ms.name||'', ms.date||'', ms.status||'No iniciado'));
+    milestones.forEach(ms => addPlanMilestoneRow(ms.name||'', ms.date||'', ms.status||'No iniciado', ms.owner||'', ms.id||'', ms.kpis||null));
     openModal('modal-planeacion');
     setTimeout(()=>{ const t=document.getElementById('plan-modal-titulo'); if(t)t.focus(); },200);
   } catch(err) {
@@ -5141,14 +5194,23 @@ function openPlaneacionModal(id) {
   }
 }
 
-function addPlanMilestoneRow(name='', date='', status='No iniciado') {
+function addPlanMilestoneRow(name='', date='', status='No iniciado', owner='', msid='', kpis=null) {
   const list = document.getElementById('plan-milestones-list');
   const idx = list.children.length;
   const row = document.createElement('div');
   row.className = 'plan-ms-row';
-  row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 130px 32px;gap:6px;margin-bottom:6px;align-items:center';
+  row.dataset.msid = msid || '';
+  row.dataset.kpis = kpis ? JSON.stringify(kpis) : '';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 120px 120px 32px;gap:6px;margin-bottom:6px;align-items:center';
+  // Owner: usuarios registrados + equipo (taggeable)
+  const userNames = [...new Set([...(state.config.users||[]).map(u=>u.name), ...(state.config.team||[])])].filter(Boolean);
+  if(owner && !userNames.includes(owner)) userNames.unshift(owner);
   row.innerHTML = `
     <input type="text" class="form-input" placeholder="Nombre del milestone" value="${name}" style="font-size:12px;padding:6px 10px">
+    <select class="form-select" title="Owner del milestone" style="font-size:12px;padding:6px 10px">
+      <option value="">👤 Sin owner</option>
+      ${userNames.map(u=>`<option value="${u}" ${u===owner?'selected':''}>${u}</option>`).join('')}
+    </select>
     <input type="date" class="form-input" value="${date}" style="font-size:12px;padding:6px 10px">
     <select class="form-select" style="font-size:12px;padding:6px 10px">
       ${['No iniciado','En proceso','Completado','Retrasado','Bloqueado'].map(s=>`<option value="${s}" ${s===status?'selected':''}>${s}</option>`).join('')}
@@ -5176,7 +5238,15 @@ function submitPlaneacionItem() {
   const msRows = document.querySelectorAll('.plan-ms-row');
   const milestones = Array.from(msRows).map((row,ri)=>{
     const inputs = row.querySelectorAll('input,select');
-    return {id:'ms-'+Date.now()+'-'+ri, name:inputs[0].value.trim(), date:inputs[1].value, status:inputs[2].value};
+    const ms = {
+      id: row.dataset.msid || ('ms-'+Date.now()+'-'+ri),
+      name: inputs[0].value.trim(),
+      owner: inputs[1].value,
+      date: inputs[2].value,
+      status: inputs[3].value
+    };
+    if(row.dataset.kpis){ try{ ms.kpis = JSON.parse(row.dataset.kpis); }catch(e){} }
+    return ms;
   }).filter(ms=>ms.name && ms.date);
   if(id) {
     const idx = state.areaRoadmaps.findIndex(i=>i.id===id);
@@ -5210,6 +5280,149 @@ function deletePlaneacionItem(id) {
   saveState();
   renderPlaneacion();
   toast('🗑 Eliminada','Iniciativa eliminada del roadmap.','info');
+}
+
+// ── Repositorio: concluir / reactivar iniciativas ──
+function concludePlaneacionItem(id) {
+  const item = (state.areaRoadmaps||[]).find(i=>i.id===id);
+  if(!item) return;
+  if(!confirm('¿Marcar "'+item.title+'" como concluida?\nSe enviará al Repositorio y dejará de aparecer en las tareas abiertas.')) return;
+  item.status = 'Completado';
+  item.archived = true;
+  item.archived_at = new Date().toISOString().slice(0,10);
+  item.updated_at = item.archived_at;
+  saveState();
+  renderPlaneacion();
+  toast('📦 Iniciativa concluida','"'+item.title+'" se movió al Repositorio.','success');
+}
+function restorePlaneacionItem(id) {
+  const item = (state.areaRoadmaps||[]).find(i=>i.id===id);
+  if(!item) return;
+  item.archived = false;
+  delete item.archived_at;
+  item.updated_at = new Date().toISOString().slice(0,10);
+  saveState();
+  renderPlaneacion();
+  toast('↩️ Iniciativa reactivada','"'+item.title+'" volvió a las tareas abiertas.','success');
+}
+
+// ── KPIs por Milestone (área MKT/Cx/Hub Ops/VCN/Otros) ──
+function _findPlanMs(iniId, msId){
+  const ini = (state.areaRoadmaps||[]).find(i=>i.id===iniId);
+  const ms = ini ? (ini.milestones||[]).find(m=>m.id===msId) : null;
+  return {ini, ms};
+}
+function addPlanMsKpi(iniId, msId){
+  if(!(state.isAdmin||state.isTeam)){ toast('🔒 Sin permiso','Solo el equipo puede definir KPIs.','warning'); return; }
+  const {ms} = _findPlanMs(iniId, msId);
+  if(!ms) return;
+  ms.kpis = ms.kpis || [];
+  ms.kpis.push({id:'kpi-'+Date.now(), area: state.planKpiArea||'MKT', name:'', target:'', real:''});
+  saveState();
+  renderPlaneacion();
+}
+function updatePlanMsKpi(iniId, msId, kpiId, field, value){
+  const {ms} = _findPlanMs(iniId, msId);
+  const kpi = ms ? (ms.kpis||[]).find(k=>k.id===kpiId) : null;
+  if(!kpi) return;
+  kpi[field] = value;
+  saveState();
+}
+function deletePlanMsKpi(iniId, msId, kpiId){
+  const {ms} = _findPlanMs(iniId, msId);
+  if(!ms) return;
+  ms.kpis = (ms.kpis||[]).filter(k=>k.id!==kpiId);
+  saveState();
+  renderPlaneacion();
+}
+function renderPlanMsKpis(items, canEdit){
+  const kAf = state.planKpiArea || '';
+  const kIni = state.planKpiIni || '';
+  let list = items.filter(i=>(i.milestones||[]).length);
+  if(kIni) list = list.filter(i=>i.id===kIni);
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const msc = {'No iniciado':'#9CA3AF','En proceso':'#3B82F6','Completado':'#22C55E','Retrasado':'#F97316','Bloqueado':'#EF4444'};
+  const areaCol = {'MKT':'#8B5CF6','Cx':'#0EA5E9','Hub Ops':'#F59E0B','VCN':'#0d9488','Otros':'#6B7280'};
+
+  const kpiAreaChips = `
+    <button class="plan-qchip ${!kAf?'active':''}" onclick="state.planKpiArea='';renderPlaneacion()">Todas</button>
+    ${PLAN_KPI_AREAS.map(a=>`<button class="plan-qchip ${kAf===a?'active':''}" onclick="state.planKpiArea='${a}';renderPlaneacion()" style="${kAf===a?`background:${areaCol[a]};border-color:${areaCol[a]};color:#fff`:''}">${a}</button>`).join('')}`;
+  const iniOptions = `<option value="">Todas las iniciativas</option>` +
+    items.filter(i=>(i.milestones||[]).length).map(i=>`<option value="${i.id}" ${kIni===i.id?'selected':''}>${esc(i.title)}</option>`).join('');
+
+  const blocks = list.map(ini=>{
+    const c = CROSS_AREA_COLORS[ini.area] || {border:'#ccc',text:'#333',bg:'#f9f9f9',dot:'#ccc'};
+    const msBlocks = (ini.milestones||[]).map(ms=>{
+      let kpis = ms.kpis || [];
+      if(kAf) kpis = kpis.filter(k=>(k.area||'Otros')===kAf);
+      if(kAf && !kpis.length) return '';
+      const rows = kpis.map(k=>{
+        const ac = areaCol[k.area]||'#6B7280';
+        return `<div style="display:grid;grid-template-columns:110px 1fr 120px 120px 30px;gap:6px;align-items:center;margin-bottom:6px">
+          ${canEdit?`<select class="form-select" style="font-size:11px;padding:5px 8px;color:${ac};font-weight:700" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','area',this.value);renderPlaneacion()">
+            ${PLAN_KPI_AREAS.map(a=>`<option value="${a}" ${a===(k.area||'Otros')?'selected':''}>${a}</option>`).join('')}
+          </select>`:`<span style="font-size:11px;font-weight:700;color:${ac}">${esc(k.area||'Otros')}</span>`}
+          ${canEdit?`<input type="text" class="form-input" value="${esc(k.name)}" placeholder="Nombre del KPI (ej. CTR campaña)" style="font-size:12px;padding:5px 8px" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','name',this.value)">`:`<span style="font-size:12px">${esc(k.name)||'—'}</span>`}
+          ${canEdit?`<input type="text" class="form-input" value="${esc(k.target)}" placeholder="Meta" style="font-size:12px;padding:5px 8px" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','target',this.value)">`:`<span style="font-size:12px;color:var(--text-muted)">Meta: ${esc(k.target)||'—'}</span>`}
+          ${canEdit?`<input type="text" class="form-input" value="${esc(k.real)}" placeholder="Resultado" style="font-size:12px;padding:5px 8px" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','real',this.value)">`:`<span style="font-size:12px;color:var(--text-muted)">Real: ${esc(k.real)||'—'}</span>`}
+          ${canEdit?`<button onclick="deletePlanMsKpi('${ini.id}','${ms.id}','${k.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;width:26px;height:26px;cursor:pointer;color:#B91C1C;font-size:12px" title="Eliminar KPI">✕</button>`:'<span></span>'}
+        </div>`;
+      }).join('');
+      return `<div style="border:1px solid var(--border-light);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--surface2)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${kpis.length||canEdit?'8px':'0'}">
+          <span style="width:9px;height:9px;transform:rotate(45deg);background:${msc[ms.status]||'#9CA3AF'};flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">${esc(ms.name)}</span>
+          <span style="font-size:11px;color:var(--text-muted)">${ms.owner?'👤 '+esc(ms.owner)+' · ':''}${ms.date?fmtDateShort(ms.date):'—'} · ${esc(ms.status||'')}</span>
+          <span style="margin-left:auto;font-size:10.5px;color:var(--text-muted)">${(ms.kpis||[]).length} KPI${(ms.kpis||[]).length!==1?'s':''}</span>
+          ${canEdit?`<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 10px" onclick="addPlanMsKpi('${ini.id}','${ms.id}')">＋ KPI</button>`:''}
+        </div>
+        ${rows || (kpis.length===0&&!kAf?`<div style="font-size:11px;color:var(--text-muted)">Sin KPIs definidos para este milestone</div>`:'')}
+      </div>`;
+    }).filter(Boolean).join('');
+    if(!msBlocks) return '';
+    return `<div class="card" style="margin-bottom:16px;border-left:4px solid ${c.border}">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.dot}"></span>
+          <span style="font-size:15px;font-weight:800;color:var(--text-primary)">${esc(ini.title)}</span>
+          <span style="font-size:11px;color:${c.text};background:${c.bg};border:1px solid ${c.border}40;padding:2px 9px;border-radius:20px">${esc(ini.area)}</span>
+          <span style="font-size:11px;color:var(--text-muted)">👤 ${esc(ini.owner)} · ${esc(ini.quarter||'')}</span>
+          ${canEdit?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px" onclick="openPlaneacionModal('${ini.id}')">✏️ Editar iniciativa</button>`:''}
+        </div>
+        ${msBlocks}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  return `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius)">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Área del KPI</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${kpiAreaChips}</div>
+      </div>
+      <div style="min-width:240px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Iniciativa</div>
+        <select class="form-select" style="font-size:12px;padding:6px 10px" onchange="state.planKpiIni=this.value;renderPlaneacion()">${iniOptions}</select>
+      </div>
+    </div>
+    ${blocks || `<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:48px;margin-bottom:16px">🎯</div><div style="font-size:15px;font-weight:600">Sin KPIs para este filtro</div><div style="font-size:12px;margin-top:6px">Agrega milestones a una iniciativa y define sus KPIs con el botón ＋ KPI.</div></div>`}`;
+}
+
+// Solo administradores: modificar la fecha requerida de una solicitud
+function adminSetNeededBy(id, value) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede modificar la fecha requerida.','warning'); if(typeof openTask==='function') openTask(id); return; }
+  const req = state.requests.find(r=>r.id===id);
+  if(!req || !value) return;
+  const prev = req.needed_by;
+  req.needed_by = value;
+  req.updated_at = new Date().toISOString();
+  req.updated_by = state.currentUser||'Admin';
+  req.comments = req.comments || [];
+  req.comments.push({type:'admin', author: state.currentUser||'Admin', content:'📅 Fecha requerida modificada: '+(prev?fmtDate(prev):'—')+' → '+fmtDate(value), created_at:new Date().toISOString()});
+  saveState();
+  toast('📅 Fecha actualizada','Fecha requerida: '+fmtDate(value),'success');
+  if(typeof openTask==='function') openTask(id);
+  if(state.currentView==='backlog') renderBacklog();
 }
 
 function saveTaskField(id, field, value) {
@@ -7574,7 +7787,9 @@ function renderTaskDetail(req) {
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">SOLICITANTE</div><div style="font-size:13px;font-weight:600">${req.requester_name}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ÁREA / BL</div><div style="font-size:13px;font-weight:600">${req.requester_area||'—'} / ${req.requester_business_line||'—'}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">TIPO DE SOLICITUD</div><div style="font-size:12px">${req.request_type}</div></div>
-          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA</div><div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)}${isOverdue(req.needed_by)?' ⚠️':''}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">FECHA REQUERIDA${state.isAdmin?' <span style="font-weight:400">(editable)</span>':''}</div>${state.isAdmin
+            ? `<input type="date" class="form-input" value="${req.needed_by||''}" style="font-size:12px;padding:4px 8px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}" onchange="adminSetNeededBy('${req.id}',this.value)" title="Solo administradores pueden modificar la fecha requerida">`
+            : `<div style="font-size:13px;font-weight:600;color:${isOverdue(req.needed_by)?'var(--error)':'var(--text-primary)'}">${fmtDate(req.needed_by)}${isOverdue(req.needed_by)?' ⚠️':''}</div>`}</div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">ID</div><div style="font-size:12px;font-family:monospace;color:var(--text-muted)">${req.id}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:3px">CREADO</div><div style="font-size:12px;color:var(--text-muted)">${fmtDateTime(req.created_at)}</div></div>
         </div>
@@ -8880,9 +9095,31 @@ function downloadOKRExcel() {
   const ws = window.XLSX.utils.aoa_to_sheet([headers,...rows]);
   ws['!cols'] = [{wch:18},{wch:40},{wch:20},{wch:10},{wch:16},{wch:14},{wch:10},{wch:12},{wch:12},{wch:40},{wch:24}];
   window.XLSX.utils.book_append_sheet(wb, ws, 'OKRs');
+  // Hoja 2: Milestones de cada iniciativa (editable y re-importable)
+  const msData = [['Iniciativa ID','Iniciativa','Milestone ID','Milestone','Owner','Fecha','Estatus']];
+  filtered.forEach(i=>{
+    (i.milestones||[]).forEach(ms=>{
+      msData.push([i.id||'', i.title||'', ms.id||'', ms.name||'', ms.owner||'', ms.date||'', ms.status||'No iniciado']);
+    });
+  });
+  const wsMs = window.XLSX.utils.aoa_to_sheet(msData);
+  wsMs['!cols'] = [{wch:18},{wch:36},{wch:18},{wch:36},{wch:16},{wch:12},{wch:14}];
+  window.XLSX.utils.book_append_sheet(wb, wsMs, 'Milestones');
+  // Hoja 3: KPIs por milestone
+  const kpiData = [['Iniciativa ID','Iniciativa','Milestone ID','Milestone','Área','KPI','Meta','Real']];
+  filtered.forEach(i=>{
+    (i.milestones||[]).forEach(ms=>{
+      (ms.kpis||[]).forEach(k=>{
+        kpiData.push([i.id||'', i.title||'', ms.id||'', ms.name||'', k.area||'', k.name||'', k.target||'', k.real||'']);
+      });
+    });
+  });
+  const wsKpi = window.XLSX.utils.aoa_to_sheet(kpiData);
+  wsKpi['!cols'] = [{wch:18},{wch:32},{wch:18},{wch:32},{wch:10},{wch:32},{wch:14},{wch:14}];
+  window.XLSX.utils.book_append_sheet(wb, wsKpi, 'KPIs');
   const fileName = `okrs_transversales_${af||'todas'}_${qf||'todos'}_${new Date().toISOString().slice(0,10)}.xls`;
   window.XLSX.writeFile(wb, fileName, {bookType:'biff8'});
-  toast('✅ Descargando', `OKRs exportados como ${fileName}`,'success');
+  toast('✅ Descargando', `OKRs + milestones + KPIs exportados como ${fileName}`,'success');
 }
 
 function uploadOKRFileClick() {
@@ -8915,12 +9152,55 @@ function processOKRUpload(input) {
       // .xls / .xlsx / .csv vía SheetJS
       if(!window.XLSX) { toast('⚠️ Excel no disponible','Recarga la página e intenta de nuevo.','warning'); return; }
       const wb = window.XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      const ws = wb.Sheets['OKRs'] || wb.Sheets[wb.SheetNames[0]];
       const aoa = window.XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
       if(aoa.length<2){toast('⚠️ Sin datos','El archivo no contiene filas.','warning');return;}
-      const hdrs=aoa[0].map(h=>String(h).toLowerCase().trim().replace(/\s+/g,'_').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'));
+      const normH = h => String(h).toLowerCase().trim().replace(/\s+/g,'_').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+      const hdrs=aoa[0].map(normH);
       const getH=(row,...names)=>{for(const n of names){const idx=hdrs.indexOf(n);if(idx>=0 && row[idx]!=null && String(row[idx]).trim()!=='')return String(row[idx]).trim();}return '';};
       if(!state.areaRoadmaps) state.areaRoadmaps=[];
+
+      // ── Hoja "Milestones" (opcional): agrupa por Iniciativa ID ──
+      const msMap = {};       // iniId -> [milestones]
+      const wsMs = wb.Sheets['Milestones'];
+      if(wsMs){
+        const msRows = window.XLSX.utils.sheet_to_json(wsMs, {defval:'', raw:false});
+        msRows.forEach((r,ri)=>{
+          const norm = {}; Object.keys(r).forEach(k=>norm[normH(k)]=r[k]);
+          const iniId = String(norm['iniciativa_id']||norm['initiative_id']||'').trim();
+          const name = String(norm['milestone']||norm['nombre']||'').trim();
+          if(!iniId || !name) return;
+          if(!msMap[iniId]) msMap[iniId]=[];
+          msMap[iniId].push({
+            id: String(norm['milestone_id']||'').trim() || ('ms-'+Date.now()+'-'+ri),
+            name,
+            owner: String(norm['owner']||'').trim(),
+            date: String(norm['fecha']||norm['date']||'').trim(),
+            status: String(norm['estatus']||norm['status']||'No iniciado').trim()||'No iniciado'
+          });
+        });
+      }
+      // ── Hoja "KPIs" (opcional): agrupa por Milestone ID ──
+      const kpiMap = {};      // msId -> [kpis]
+      const wsKpi = wb.Sheets['KPIs'];
+      if(wsKpi){
+        const kpiRows = window.XLSX.utils.sheet_to_json(wsKpi, {defval:'', raw:false});
+        kpiRows.forEach((r,ri)=>{
+          const norm = {}; Object.keys(r).forEach(k=>norm[normH(k)]=r[k]);
+          const msId = String(norm['milestone_id']||'').trim();
+          const name = String(norm['kpi']||norm['nombre']||'').trim();
+          if(!msId || !name) return;
+          if(!kpiMap[msId]) kpiMap[msId]=[];
+          kpiMap[msId].push({
+            id:'kpi-'+Date.now()+'-'+ri,
+            area:String(norm['area']||'').trim()||'Otros',
+            name,
+            target:String(norm['meta']||norm['target']||'').trim(),
+            real:String(norm['real']||norm['resultado']||'').trim()
+          });
+        });
+      }
+
       let added=0,updated=0;
       for(let i=1;i<aoa.length;i++){
         const row=aoa[i];
@@ -8938,15 +9218,24 @@ function processOKRUpload(input) {
           start_date:getH(row,'fecha_inicio','start_date','inicio')||'',
           end_date:getH(row,'fecha_fin','end_date','fin')||'',
           description:getH(row,'descripcion','description','descripcion')||'',
-          tags:getH(row,'tags','etiquetas').split(',').map(t=>t.trim()).filter(Boolean),
-          milestones:[]
+          tags:getH(row,'tags','etiquetas').split(',').map(t=>t.trim()).filter(Boolean)
         };
         const idx=state.areaRoadmaps.findIndex(r=>r.id===item.id);
-        if(idx>=0){state.areaRoadmaps[idx]={...state.areaRoadmaps[idx],...item};updated++;}
+        const existing = idx>=0 ? state.areaRoadmaps[idx] : null;
+        // Milestones: usa la hoja si trae filas para esta iniciativa; si no, conserva los existentes
+        let milestones = msMap[item.id] !== undefined ? msMap[item.id] : (existing ? (existing.milestones||[]) : []);
+        // KPIs: re-asocia por Milestone ID (o conserva los que ya tenía el milestone)
+        milestones = milestones.map(ms=>{
+          const prevMs = existing ? (existing.milestones||[]).find(m=>m.id===ms.id) : null;
+          const kpis = kpiMap[ms.id] !== undefined ? kpiMap[ms.id] : (prevMs && prevMs.kpis ? prevMs.kpis : (ms.kpis||undefined));
+          return kpis ? {...ms, kpis} : ms;
+        });
+        item.milestones = milestones;
+        if(existing){state.areaRoadmaps[idx]={...existing,...item};updated++;}
         else{state.areaRoadmaps.push(item);added++;}
       }
       saveState();renderPlaneacion();
-      toast('✅ OKRs cargados',`${added} nuevos, ${updated} actualizados.`,'success');
+      toast('✅ OKRs cargados',`${added} nuevos, ${updated} actualizados${wsMs?' (con milestones)':''}.`,'success');
     }catch(err){toast('❌ Error al cargar',err.message,'error');}
     input.value='';
   };
