@@ -6307,8 +6307,10 @@ function renderRoadmap() {
       <text x="26" y="27" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#0f172a" font-family="Space Grotesk,sans-serif">${pct}%</text>
     </svg>`;
 
-    // Detalle expandible (milestones en texto pequeño)
-    const msHtml2=ini.milestones.map((ms,i)=>`
+    // Detalle expandible (milestones en texto pequeño, en orden cronológico)
+    const msHtml2=ini.milestones.map((ms,i)=>({ms,i}))
+      .sort((a,b)=>_planMsTime(a.ms.start_date||a.ms.target_date||a.ms.end_date)-_planMsTime(b.ms.start_date||b.ms.target_date||b.ms.end_date))
+      .map(({ms,i})=>`
       <div class="ini-ms-row">
         <div style="width:8px;height:8px;border-radius:50%;background:${msc[ms.status]||'#9CA3AF'};flex-shrink:0"></div>
         <div style="flex:1;color:var(--text-secondary);min-width:60px">${ms.name}${ms.depends_on?'<span style="font-size:9px;color:#94a3b8;margin-left:4px">🔗</span>':''}</div>
@@ -6408,7 +6410,11 @@ function renderRoadmap() {
 function toggleGanttExpand(iniId) {
   state.ganttExpanded = state.ganttExpanded || {};
   state.ganttExpanded[iniId] = !state.ganttExpanded[iniId];
+  // Conserva la posición de scroll horizontal al expandir/plegar
+  const sc = document.getElementById('roadmap-gantt-scroll');
+  const prev = sc ? sc.scrollLeft : null;
   renderRoadmapGantt();
+  if(prev !== null){ const sc2 = document.getElementById('roadmap-gantt-scroll'); if(sc2) sc2.scrollLeft = prev; }
 }
 
 function toggleRoadmapCard(iniId) {
@@ -6724,15 +6730,15 @@ function renderRoadmapGantt() {
         <span style="font-size:11px;color:var(--text-secondary)">Hito</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
-        <svg width="20" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/></svg>
+        <svg width="22" height="10"><circle cx="3" cy="5" r="2" fill="#0EA5A5" opacity="0.55"/><line x1="5" y1="5" x2="16" y2="5" stroke="#0EA5A5" stroke-width="1.5" opacity="0.55"/><polygon points="16,2 21,5 16,8" fill="#0EA5A5" opacity="0.55"/></svg>
         <span style="font-size:11px;color:var(--text-secondary)">Dependencia</span>
       </div>
       <div style="font-size:11px;color:var(--text-muted);margin-left:auto">▸ clic en iniciativa para expandir milestones</div>
     </div>
-    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow)">
-      <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
+    <div style="position:relative;border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow);overflow:hidden">
+    <div id="roadmap-gantt-scroll" style="overflow-x:auto">
+      <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="display:block">
         <defs>
-          <clipPath id="label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
           <linearGradient id="gantt-grad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stop-color="#0EA5A5"/><stop offset="100%" stop-color="#22C55E"/>
           </linearGradient>
@@ -6742,18 +6748,11 @@ function renderRoadmapGantt() {
           <linearGradient id="gantt-track" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stop-color="#E6F7F1"/><stop offset="100%" stop-color="#EAFBEF"/>
           </linearGradient>
-          <linearGradient id="gantt-owner" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/>
-          </linearGradient>
-          <marker id="dep-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/>
+          <marker id="dep-arrow" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+            <path d="M0,0.5 L6,3.5 L0,6.5 Z" fill="#0EA5A5"/>
           </marker>
         </defs>
         <rect x="0" y="0" width="${svgW}" height="${HEADER_H}" fill="#fff"/>
-        <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
-        <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
-        <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
-        <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
         ${monthLines}
         <line x1="0" y1="${HEADER_H}" x2="${svgW}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
         ${todayLine}
@@ -6761,7 +6760,26 @@ function renderRoadmapGantt() {
         ${depArrows}
       </svg>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras con gradiente = duración / avance · 🔁 = milestone recurrente · ◆ = hito puntual · líneas punteadas = dependencias</div>
+    <!-- Columnas congeladas (Iniciativa + Owner) -->
+    <svg width="${LABEL_W+8}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;display:block">
+      <defs>
+        <clipPath id="label-clip"><rect x="0" y="0" width="${NAME_W-12}" height="${svgH}"/></clipPath>
+        <linearGradient id="gantt-owner" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#34d399"/>
+        </linearGradient>
+        <linearGradient id="gantt-left-shadow" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity="0.10"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="${LABEL_W}" height="${svgH}" fill="#fff"/>
+      ${leftSvg}
+      <rect x="${LABEL_W}" y="0" width="7" height="${svgH}" fill="url(#gantt-left-shadow)"/>
+      <line x1="${NAME_W}" y1="0" x2="${NAME_W}" y2="${svgH}" stroke="#EEF2F6" stroke-width="1"/>
+      <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${svgH}" stroke="#D1D5DB" stroke-width="1.5"/>
+      <text x="14" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">INICIATIVA</text>
+      <text x="${NAME_W+12}" y="31" font-size="12" font-weight="700" fill="#4B5563" font-family="Poppins,sans-serif" letter-spacing="0.4">OWNER</text>
+      <line x1="0" y1="${HEADER_H}" x2="${LABEL_W}" y2="${HEADER_H}" stroke="#D1D5DB" stroke-width="1.5"/>
+    </svg>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:right">Barras con gradiente = duración / avance · 🔁 = milestone recurrente · ◆ = hito puntual · línea verde con flecha = dependencia</div>
   `;
 }
 
@@ -8270,6 +8288,8 @@ function submitMilestoneModal() {
       ini.milestones.push({ id:`ms-${Date.now()}`, name, owner, target_date:date, start_date:startDate, end_date:endDate, recurrence, recurring:!!recurrence, status, description:desc, depends_on:dep||null });
       toast('📌 Milestone agregado', name, 'success');
     }
+    // Mantener orden cronológico en el arreglo guardado
+    ini.milestones.sort((a,b)=>_planMsTime(a.start_date||a.target_date||a.end_date)-_planMsTime(b.start_date||b.target_date||b.end_date));
     saveState();
     closeModal('modal-milestone');
     renderRoadmap();
