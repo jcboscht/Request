@@ -6542,6 +6542,7 @@ function renderRoadmapGantt() {
   `;
 
   let rowSvg = '';
+  let leftSvg = '';
   rowIdx = 0;
   svgRows.forEach(row=>{
     const ri = rowIdx;
@@ -6555,7 +6556,7 @@ function renderRoadmapGantt() {
       const hasMilestones = (ini.milestones||[]).length > 0;
       const expanded = row.expanded;
       const expandIcon = hasMilestones ? (expanded ? '▾' : '▸') : '';
-      const labelText = ini.name.length>24 ? ini.name.slice(0,24)+'…' : ini.name;
+      const labelText = ini.name.length>42 ? ini.name.slice(0,42)+'…' : ini.name;
       const totalMs = (ini.milestones||[]).length;
       const doneMs = (ini.milestones||[]).filter(m=>m.status==='Completado'||m.status==='Validada').length;
       const progress = totalMs>0?doneMs/totalMs:0;
@@ -6578,15 +6579,19 @@ function renderRoadmapGantt() {
 
       rowSvg += `<g>
         <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${bgColor}"/>
-        ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="toggleGanttExpand('${ini.id}')">${expandIcon}</text>`:''}
-        <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#label-clip)" onclick="toggleGanttExpand('${ini.id}')">${esc(labelText)}</text>
-        <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(ini.status)}</text>
-        ${ownerCell(ini.primary_owner, midY, false)}
         <rect x="${barX}" y="${barY}" width="${barW}" height="${BH}" rx="9" fill="url(#gantt-track)" stroke="#CFEFE6" stroke-width="1"/>
         <rect x="${barX}" y="${barY}" width="${Math.max(barW*progress, progress>0?6:0)}" height="${BH}" rx="9" fill="url(#gantt-grad)"/>
         ${progress>0&&progress<1?`<text x="${barX+barW*progress+6}" y="${midY+0.5}" dominant-baseline="central" font-size="10" font-weight="700" fill="#0d9488" font-family="Poppins,sans-serif">${Math.round(progress*100)}%</text>`:''}
         ${diamonds}
         <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
+      </g>`;
+      leftSvg += `<g>
+        <rect x="0" y="${y}" width="${LABEL_W}" height="${ROW_H}" fill="${bgColor}"/>
+        ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="toggleGanttExpand('${ini.id}')">${expandIcon}</text>`:''}
+        <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#label-clip)" onclick="toggleGanttExpand('${ini.id}')">${esc(labelText)}</text>
+        <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(ini.status)}</text>
+        ${ownerCell(ini.primary_owner, midY, false)}
+        <line x1="0" y1="${y+ROW_H}" x2="${LABEL_W}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
       </g>`;
     } else {
       // Milestone sub-row
@@ -6594,9 +6599,10 @@ function renderRoadmapGantt() {
       const ini = row.ini;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
       const {s,e,hasRange,recurring} = msRange(ms);
-      const labelText = ms.name.length>26 ? ms.name.slice(0,26)+'…' : ms.name;
+      const labelText = ms.name.length>46 ? ms.name.slice(0,46)+'…' : ms.name;
       const depIcon = ms.depends_on ? '🔗 ' : '';
       const recIcon = recurring ? '🔁 ' : '';
+      const rowBg = ri%2===0?'#F4FBF8':'#FAFEFC';
 
       // Texto de fecha / rango
       let dateTxt;
@@ -6632,26 +6638,46 @@ function renderRoadmapGantt() {
       }
 
       rowSvg += `<g>
-        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${ri%2===0?'#F4FBF8':'#FAFEFC'}"/>
+        <rect x="0" y="${y}" width="${svgW}" height="${ROW_H}" fill="${rowBg}"/>
+        ${bars}
+        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
+      </g>`;
+      leftSvg += `<g>
+        <rect x="0" y="${y}" width="${LABEL_W}" height="${ROW_H}" fill="${rowBg}"/>
         <rect x="18" y="${y+6}" width="3" height="${ROW_H-12}" rx="1.5" fill="${mc}"/>
         <text x="30" y="${midY-6}" dominant-baseline="central" font-size="12" fill="#1f2937" font-family="Poppins,sans-serif" clip-path="url(#label-clip)">${recIcon}${depIcon}${esc(labelText)}</text>
         <text x="30" y="${midY+11}" dominant-baseline="central" font-size="10" fill="#6B7280" font-family="Poppins,sans-serif">${dateTxt}</text>
         ${ownerCell(ms.owner, midY, true)}
-        ${bars}
-        <line x1="0" y1="${y+ROW_H}" x2="${svgW}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
+        <line x1="0" y1="${y+ROW_H}" x2="${LABEL_W}" y2="${y+ROW_H}" stroke="#EAF6F1" stroke-width="1"/>
       </g>`;
     }
     rowIdx++;
   });
 
-  // ── Dependency arrows (only visible when expanded)
+  // ── Flechas de dependencia (estilo codo con esquina redondeada, limpias)
   let depArrows = '';
   svgRows.forEach(row=>{
     if(row.type==='milestone' && row.ms.depends_on && msPositions[row.ms.depends_on] && msPositions[row.ms.id]) {
       const from = msPositions[row.ms.depends_on];
       const to = msPositions[row.ms.id];
-      const cx = (from.x + to.x) / 2;
-      depArrows += `<path d="M${from.x},${from.y} C${cx},${from.y} ${cx},${to.y} ${to.x},${to.y}" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#dep-arrow)"/>`;
+      const DEP_C = '#0EA5A5', R = 7;
+      const sx = from.x, sy = from.y + 10;           // sale por debajo del hito origen
+      const ey = to.y;
+      let d;
+      if(to.x >= sx + 26) {
+        // destino a la derecha: baja y dobla a la derecha
+        d = `M${sx},${sy} L${sx},${ey-R} Q${sx},${ey} ${sx+R},${ey} L${to.x-12},${ey}`;
+      } else if(to.x <= sx - 26) {
+        // destino a la izquierda: baja y dobla a la izquierda
+        d = `M${sx},${sy} L${sx},${ey-R} Q${sx},${ey} ${sx-R},${ey} L${to.x+12},${ey}`;
+      } else {
+        // casi vertical: línea recta al borde superior del hito destino
+        d = `M${sx},${sy} L${to.x},${ey-12}`;
+      }
+      depArrows += `<g opacity="0.55">
+        <circle cx="${sx}" cy="${sy}" r="2.5" fill="${DEP_C}"/>
+        <path d="${d}" stroke="${DEP_C}" stroke-width="1.5" fill="none" stroke-linecap="round" marker-end="url(#dep-arrow)"/>
+      </g>`;
     }
   });
 
