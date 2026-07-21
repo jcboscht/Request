@@ -4920,7 +4920,7 @@ function renderPlaneacionGantt(allItems) {
   minDate.setDate(minDate.getDate()-14);
   maxDate.setMonth(maxDate.getMonth()+1); maxDate.setDate(1);
 
-  const ROW_H=56, SEC_H=30, NAME_W=232, OWNER_W=116, LABEL_W=NAME_W+OWNER_W, HEADER_H=50;
+  const ROW_H=56, SEC_H=30, NAME_W=348, OWNER_W=116, LABEL_W=NAME_W+OWNER_W, HEADER_H=50;
   const totalDays=(maxDate-minDate)/86400000;
   const CHART_W=Math.max(640, totalDays*3.0);
   const svgW=LABEL_W+CHART_W;
@@ -5027,7 +5027,7 @@ function renderPlaneacionGantt(allItems) {
       const y=yOffset; yOffset+=ROW_H; const midY=y+ROW_H/2;
       const mc = msStatusCol[ms.status]||'#9CA3AF';
       const rowBg = ri%2===0?'#F4FBF8':'#FAFEFC';
-      const labelText = (ms.name||'').length>26 ? ms.name.slice(0,26)+'…' : (ms.name||'');
+      const labelText = (ms.name||'').length>46 ? ms.name.slice(0,46)+'…' : (ms.name||'');
       const dateTxt = ms.date?fmtDate(ms.date):'—';
       const mx = xForDate(parseD(ms.date) || item._ganttEnd || todayISO);
       const diamond = `<polygon points="${mx},${midY-7} ${mx+7},${midY} ${mx},${midY+7} ${mx-7},${midY}" fill="${mc}" stroke="#fff" stroke-width="1.5"/><title>${esc(ms.name)} — ${esc(ms.status)} (${esc(ms.date||'—')})</title>`;
@@ -5054,7 +5054,7 @@ function renderPlaneacionGantt(allItems) {
     const hasMs = milestones.length>0;
     const expanded = !!state.planGanttExpanded[item.id];
     const expandIcon = hasMs ? (expanded?'▾':'▸') : '';
-    const labelText = (item.title||'').length>24 ? item.title.slice(0,24)+'…' : (item.title||'');
+    const labelText = (item.title||'').length>42 ? item.title.slice(0,42)+'…' : (item.title||'');
     const doneMs = milestones.filter(m=>m.status==='Completado').length;
     const progress = hasMs ? doneMs/milestones.length : 0;
     const barX = xForDate(item._ganttStart);
@@ -6459,7 +6459,7 @@ function renderRoadmapGantt() {
   const totalDays = (maxDate-minDate)/(1000*86400);
 
   const ROW_H   = 56;
-  const NAME_W  = 232;
+  const NAME_W  = 348;
   const OWNER_W = 116;
   const LABEL_W = NAME_W + OWNER_W;   // zona fija izquierda (nombre + owner)
   const CHART_W = Math.max(640, totalDays * 3.4);
@@ -6505,7 +6505,10 @@ function renderRoadmapGantt() {
     const expanded = !!state.ganttExpanded[ini.id];
     svgRows.push({type:'initiative', ini, expanded});
     if(expanded) {
-      (ini.milestones||[]).forEach((ms,i)=>{ svgRows.push({type:'milestone', ini, ms, msIdx:i}); });
+      // Orden cronológico de milestones (por inicio o fecha objetivo; sin fecha al final)
+      const msSorted = (ini.milestones||[]).map((ms,i)=>({ms,msIdx:i}))
+        .sort((a,b)=>_planMsTime(a.ms.start_date||a.ms.target_date||a.ms.end_date)-_planMsTime(b.ms.start_date||b.ms.target_date||b.ms.end_date));
+      msSorted.forEach(({ms,msIdx})=>{ svgRows.push({type:'milestone', ini, ms, msIdx}); });
     }
   });
 
