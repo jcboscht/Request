@@ -695,6 +695,18 @@ td.td-action{white-space:nowrap;}
 .page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .block-title{font-size:15px;font-weight:800;color:var(--text-primary);line-height:1.3;}
 .block-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+/* Placeholder mientras se construye una vista (ver afterPaint en navigate) */
+.view-loading{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:64px 20px;color:var(--text-muted);font-size:13px;font-weight:600;
+}
+.view-spinner{
+  width:15px;height:15px;border-radius:50%;
+  border:2px solid var(--border);border-top-color:var(--primary);
+  animation:view-spin .7s linear infinite;display:inline-block;
+}
+@keyframes view-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.view-spinner{animation:none}}
 /* Contenedor ancho: las vistas usan todo el espacio disponible */
 .view-wide{width:100%;margin:0 auto;}
 @media(max-width:560px){.page-title{font-size:18px;}}
@@ -1175,6 +1187,9 @@ td.td-action{white-space:nowrap;}
         <div class="nav-item" data-view="reports" onclick="navigate('reports')">
           <span class="nav-icon">📑</span><span>Reportes</span>
         </div>
+        <div class="nav-item" data-view="vcndash" onclick="navigate('vcndash')">
+          <span class="nav-icon">📈</span><span>VCN Dashboards</span>
+        </div>
         <div class="nav-item" data-view="config" onclick="navigate('config')">
           <span class="nav-icon">⚙️</span><span>Configuración</span>
         </div>
@@ -1227,6 +1242,7 @@ td.td-action{white-space:nowrap;}
       <div id="view-config" class="hidden"></div>
       <div id="view-planeacion" class="hidden"></div>
       <div id="view-historico" class="hidden"></div>
+      <div id="view-vcndash" class="hidden"></div>
     </div>
   </div>
 
@@ -1932,6 +1948,7 @@ let state = {
   docsTab: 0,
   ganttGroupBy: '',
   areaRoadmaps: [],
+  vcnDashboards: [],
   areaFilter: '',
   quarterFilter: '',
   planeacionView: 'cards'
@@ -1950,6 +1967,7 @@ function saveState() {
     localStorage.setItem('sorh_documents', JSON.stringify(state.documents));
     localStorage.setItem('sorh_notifications', JSON.stringify(state.notifications.slice(-50)));
     localStorage.setItem('sorh_area_roadmaps', JSON.stringify(state.areaRoadmaps));
+    localStorage.setItem('sorh_vcn_dashboards', JSON.stringify(state.vcnDashboards||[]));
     localStorage.setItem('sorh_trash', JSON.stringify((state.trash||[]).slice(0,200)));
   } catch(e) {}
   // Auto-sync to file (async, non-blocking)
@@ -1982,6 +2000,8 @@ function loadState() {
     if(nn) state.notifications = JSON.parse(nn);
     const ar = localStorage.getItem('sorh_area_roadmaps');
     if(ar) state.areaRoadmaps = JSON.parse(ar);
+    const vd = localStorage.getItem('sorh_vcn_dashboards');
+    if(vd) state.vcnDashboards = JSON.parse(vd);
     const tr = localStorage.getItem('sorh_trash');
     if(tr) state.trash = JSON.parse(tr);
   } catch(e) {}
@@ -2038,6 +2058,30 @@ function isOverdue(dateStr) {
 function daysUntil(dateStr) {
   const d = parseLocalDate(dateStr); if(d===null) return null;
   return Math.round((d - _startOfToday())/(1000*60*60*24));
+}
+// Normaliza una celda de fecha proveniente de un Excel/CSV importado a formato ISO
+// (YYYY-MM-DD), que es lo que parseLocalDate()/renderCalendar() esperan. Sin esto,
+// una fecha en formato DD/MM/YYYY (comun en Mexico) o con el formato propio de la
+// celda de Excel se guarda tal cual, no matchea las llaves ISO del grid del
+// Calendario y la tarea importada nunca aparece ahi (aunque si en Backlog).
+function excelCellToISODate(val) {
+  if(val===null||val===undefined) return '';
+  const s = String(val).trim();
+  if(!s) return '';
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[1]}-${String(+m[2]).padStart(2,'0')}-${String(+m[3]).padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m) {
+    let dd=+m[1], mm=+m[2], yyyy=+m[3];
+    if(mm>12 && dd<=12){ const t=dd; dd=mm; mm=t; }
+    if(mm>=1&&mm<=12&&dd>=1&&dd<=31) return `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  }
+  if(/^\d+(\.\d+)?$/.test(s) && typeof window!=='undefined' && window.XLSX && window.XLSX.SSF && window.XLSX.SSF.parse_date_code) {
+    try { const dc = window.XLSX.SSF.parse_date_code(+s); if(dc) return `${dc.y}-${String(dc.m).padStart(2,'0')}-${String(dc.d).padStart(2,'0')}`; } catch(e) {}
+  }
+  const d = new Date(s);
+  if(!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return '';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2633,6 +2677,7 @@ async function loadFromFile(notify=true) {
     if (data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
     if (data.documents)     state.documents     = mergeById(state.documents, data.documents);
     if (data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+    if (data.vcnDashboards) state.vcnDashboards = mergeById(state.vcnDashboards, data.vcnDashboards);
     if (data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
     if (data.trash)  state.trash  = mergeById(state.trash, data.trash);
     if (data.config) state.config = { ...state.config, ...data.config };
@@ -2658,7 +2703,7 @@ async function saveToFile() {
         v:2, saved_at:new Date().toISOString(), saved_by:state.currentUser||'system',
         requests:state.requests, initiatives:state.initiatives,
         config:state.config, documents:state.documents,
-        areaRoadmaps:state.areaRoadmaps
+        areaRoadmaps:state.areaRoadmaps, vcnDashboards:state.vcnDashboards
       });
       localStorage.setItem('sorh_backup_3', localStorage.getItem('sorh_backup_2')||'');
       localStorage.setItem('sorh_backup_2', localStorage.getItem('sorh_backup_1')||'');
@@ -2693,6 +2738,7 @@ async function saveToFile() {
         if (remoteData.initiatives)  state.initiatives  = mergeById(state.initiatives, remoteData.initiatives);
         if (remoteData.documents)    state.documents    = mergeById(state.documents, remoteData.documents);
         if (remoteData.areaRoadmaps) state.areaRoadmaps = mergeById(state.areaRoadmaps, remoteData.areaRoadmaps);
+        if (remoteData.vcnDashboards) state.vcnDashboards = mergeById(state.vcnDashboards, remoteData.vcnDashboards);
       } catch(e) {}
     }
     const nowTs = new Date().toISOString();
@@ -2702,6 +2748,7 @@ async function saveToFile() {
       config: (()=>{ const c={...state.config}; if(c.users) c.users=c.users.map(u=>{const {password,password_hashed,...rest}=u;return rest;}); return c; })(), documents: state.documents,
       notifications: (state.notifications||[]).slice(-100),
       areaRoadmaps: state.areaRoadmaps,
+      vcnDashboards: state.vcnDashboards,
       trash: (state.trash||[]).slice(0,200)
     };
     const writable = await _fileHandle.createWritable();
@@ -2827,6 +2874,7 @@ function restoreFromBackup(n) {
     if(data.initiatives)  state.initiatives  = mergeById(state.initiatives,  data.initiatives);
     if(data.documents)    state.documents    = mergeById(state.documents,    data.documents);
     if(data.areaRoadmaps) state.areaRoadmaps = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+    if(data.vcnDashboards) state.vcnDashboards = mergeById(state.vcnDashboards, data.vcnDashboards);
     saveState();
     toast('✅ Backup restaurado','Datos del '+ts,'success');
     navigate(state.currentView);
@@ -2838,7 +2886,7 @@ function exportDataJSON() {
     v:2, saved_at:new Date().toISOString(), saved_by:state.currentUser||'system',
     requests:state.requests, initiatives:state.initiatives, config:safeConfig,
     documents:state.documents, notifications:(state.notifications||[]).slice(-100),
-    areaRoadmaps:state.areaRoadmaps
+    areaRoadmaps:state.areaRoadmaps, vcnDashboards:state.vcnDashboards
   };
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -2856,6 +2904,7 @@ function importDataJSON(input) {
       if(data.initiatives)   state.initiatives   = mergeById(state.initiatives, data.initiatives);
       if(data.documents)     state.documents     = mergeById(state.documents, data.documents);
       if(data.areaRoadmaps)  state.areaRoadmaps  = mergeById(state.areaRoadmaps, data.areaRoadmaps);
+      if(data.vcnDashboards) state.vcnDashboards = mergeById(state.vcnDashboards, data.vcnDashboards);
       if(data.notifications) state.notifications = mergeById(state.notifications, data.notifications);
       if(data.config) state.config = {...state.config, ...data.config};
       saveState(); updateNavBadges(); updateUserUI();
@@ -3177,11 +3226,66 @@ const VIEW_TITLES = {
   roadmap:'Roadmap',kpis:'📊 KPIs por Iniciativa',reports:'Reporte Semanal',config:'Configuración',
   docs:'Documentos para Consulta',
   planeacion:'🎯 OKRs Transversales',
-  historico:'🗄️ Backlog Histórico'
+  historico:'🗄️ Backlog Histórico',
+  vcndash:'📈 VCN Dashboards'
 };
+// Corre fn justo DESPUÉS del siguiente repintado. Se usa para sacar los renders
+// pesados del hilo del click: el navegador pinta el cambio de vista de inmediato
+// (INP bajo) y el HTML de la sección se construye en el tick siguiente.
+function afterPaint(fn){
+  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(()=>setTimeout(fn,0));
+  else setTimeout(fn,0);
+}
+let _navToken = 0;
+
+// ── Renders diferidos (INP) ────────────────────────────────────────────────
+// Los handlers de UI (chips, filtros, toggles, búsqueda) llaman defer(renderX)
+// en vez de renderX(): el clic se pinta de inmediato y el HTML se reconstruye
+// justo después. Llamadas repetidas al mismo render se colapsan en una sola.
+const _deferTimers = new Map();
+function _captureFocus(){
+  const el = document.activeElement;
+  if(!el || !el.tagName) return null;
+  const tag = el.tagName.toLowerCase();
+  if(tag!=='input' && tag!=='textarea' && tag!=='select') return null;
+  let sel = null;
+  if(el.id) sel = '#'+CSS.escape(el.id);
+  else if(el.className && typeof el.className==='string'){
+    const cls = el.className.trim().split(/\s+/).map(c=>'.'+CSS.escape(c)).join('');
+    const view = el.closest('[id^="view-"]');
+    if(cls) sel = (view? '#'+CSS.escape(view.id)+' ' : '') + cls;
+  }
+  if(!sel) return null;
+  let start=null, end=null;
+  try { start = el.selectionStart; end = el.selectionEnd; } catch(e) {}
+  return { sel, start, end };
+}
+function _restoreFocus(f){
+  if(!f || !f.sel) return;
+  let el; try { el = document.querySelector(f.sel); } catch(e) { return; }
+  if(!el || el===document.activeElement) return;
+  try { el.focus({preventScroll:true}); } catch(e) { el.focus(); }
+  if(f.start!=null){ try { el.setSelectionRange(f.start, f.end); } catch(e) {} }
+}
+function defer(fn, delay){
+  if(typeof fn !== 'function') return;
+  const prev = _deferTimers.get(fn);
+  if(prev) clearTimeout(prev);
+  _deferTimers.set(fn, setTimeout(()=>{
+    _deferTimers.delete(fn);
+    afterPaint(()=>{
+      const f = _captureFocus();
+      try { fn(); } catch(err) { console.error('Error en render diferido:', err); }
+      _restoreFocus(f);
+    });
+  }, delay||0));
+}
+// Búsquedas: además de diferir, se espera a que el usuario deje de teclear.
+function deferSearch(fn){ defer(fn, 180); }
+
 function navigate(view) {
   if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
-  const adminViews = ['dashboard','heatmap','library','reports','config','historico'];
+  const adminViews = ['dashboard','heatmap','library','reports','config','historico','vcndash'];
   const requesterViews = ['intake']; // requester can ONLY access these
   const teamViews = ['backlog','kanban','calendar','roadmap','kpis','docs','planeacion','home','intake'];
   if(state.isRequester && !requesterViews.includes(view)) {
@@ -3217,11 +3321,23 @@ function navigate(view) {
     docs:renderDocs,
     planeacion:renderPlaneacion,
     historico:renderHistorico,
-    kpis:renderKpis
+    kpis:renderKpis,
+    vcndash:renderVCNDashboards
   };
-  if(renders[view]) renders[view]();
-  updateNavBadges();
   closeSidebar();
+  if(!renders[view]) { updateNavBadges(); return; }
+  // Primera vez que se abre la vista: placeholder para no mostrar un hueco vacío
+  if(!viewEl.firstElementChild) viewEl.innerHTML = '<div class="view-loading"><span class="view-spinner"></span>Cargando…</div>';
+  const token = ++_navToken;
+  afterPaint(()=>{
+    if(token !== _navToken) return;   // el usuario ya navegó a otra sección
+    try { renders[view](); }
+    catch(err){
+      console.error('Error al renderizar la vista '+view+':', err);
+      viewEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">No se pudo cargar la sección</div><div class="empty-sub">'+(err&&err.message?String(err.message):'')+'</div></div>';
+    }
+    updateNavBadges();
+  });
 }
 
 function updateNavBadges() {
@@ -3572,14 +3688,14 @@ function renderDocs(){
   const kStale=visible.filter(d=>docIsStale(d)).length;
   const kpi=(label,val,icon,col,sub,onclick)=>`<div class="dh-kpi"${onclick?` onclick="${onclick}" style="cursor:pointer"`:''}><div class="dh-kpi-tile" style="background:${col}1A;color:${col}">${icon}</div><div class="dh-kpi-txt"><div class="dh-kpi-val">${val}</div><div class="dh-kpi-lbl">${label}</div><div class="dh-kpi-sub">${sub}</div></div></div>`;
   // Filter card (biblioteca/pendientes/desactualizados)
-  const catChips=`<button class="dh-chip ${!state.docCatFilter?'active':''}" onclick="state.docCatFilter='';renderDocs()">Todos</button>`+
-    DOC_HUB_CATS.map(c=>`<button class="dh-chip ${state.docCatFilter===c.key?'active':''}" onclick="state.docCatFilter='${c.key}';renderDocs()">${c.key}</button>`).join('');
+  const catChips=`<button class="dh-chip ${!state.docCatFilter?'active':''}" onclick="state.docCatFilter='';defer(renderDocs)">Todos</button>`+
+    DOC_HUB_CATS.map(c=>`<button class="dh-chip ${state.docCatFilter===c.key?'active':''}" onclick="state.docCatFilter='${c.key}';defer(renderDocs)">${c.key}</button>`).join('');
   const dotc={'Publicado':'#16A34A','Por revisar':'#D97706','Desactualizado':'#DC2626'};
-  const statChips=['Publicado','Por revisar','Desactualizado'].map(st=>`<button class="dh-chip dh-dot ${state.docStatusFilter===st?'active':''}" onclick="state.docStatusFilter=(state.docStatusFilter==='${st}'?'':'${st}');renderDocs()"><span class="dh-dotc" style="background:${dotc[st]}"></span>${st}</button>`).join('');
+  const statChips=['Publicado','Por revisar','Desactualizado'].map(st=>`<button class="dh-chip dh-dot ${state.docStatusFilter===st?'active':''}" onclick="state.docStatusFilter=(state.docStatusFilter==='${st}'?'':'${st}');defer(renderDocs)"><span class="dh-dotc" style="background:${dotc[st]}"></span>${st}</button>`).join('');
   const filterCard = (sec!=='solicitudes') ? `<div class="dh-filtcard">
       <div class="dh-filt-l"><span class="dh-filt-lbl">Categorías</span><div class="dh-chips">${catChips}</div></div>
       <div class="dh-filt-r"><span class="dh-filt-lbl">Estado</span><div class="dh-chips">${statChips}</div>
-      <button class="dh-clear" onclick="state.docCatFilter='';state.docStatusFilter='';state.docSearch='';renderDocs()">✕ Limpiar filtros</button></div>
+      <button class="dh-clear" onclick="state.docCatFilter='';state.docStatusFilter='';state.docSearch='';defer(renderDocs)">✕ Limpiar filtros</button></div>
     </div>` : '';
   // Category cards (biblioteca only)
   const catCards = (sec==='biblioteca') ? dhCatCards(visible) : '';
@@ -3592,9 +3708,9 @@ function renderDocs(){
 
   // ── Library (existing) ─────────────────────────────────────
   const libTabs=[['biblioteca','Todos'],['pendientes','Por revisar'],['desactualizados','Desactualizados'],['solicitudes','Solicitudes']];
-  const libTabNav=libTabs.map(([k,l])=>`<button class="dh-tab ${sec===k?'active':''}" onclick="state.docsSecondary='${k}';state.docReqForm=null;renderDocs()">${l}</button>`).join('');
+  const libTabNav=libTabs.map(([k,l])=>`<button class="dh-tab ${sec===k?'active':''}" onclick="state.docsSecondary='${k}';state.docReqForm=null;defer(renderDocs)">${l}</button>`).join('');
   const viewToggle=(sec==='biblioteca')?`<div class="dh-seg">`+
-    [['cats','▦ Categorías'],['list','☰ Lista'],['table','▤ Tabla']].map(([k,l])=>`<button class="dh-seg-btn ${state.docsView===k?'active':''}" onclick="state.docsView='${k}';renderDocs()">${l}</button>`).join('')+`</div>`:'';
+    [['cats','▦ Categorías'],['list','☰ Lista'],['table','▤ Tabla']].map(([k,l])=>`<button class="dh-seg-btn ${state.docsView===k?'active':''}" onclick="state.docsView='${k}';defer(renderDocs)">${l}</button>`).join('')+`</div>`:'';
   const bottom = `<div class="dh-card dh-bottom">
       <div class="dh-bottom-head"><div class="dh-tabs">${libTabNav}</div>${viewToggle}</div>
       <div id="dochub-results"></div>
@@ -3607,15 +3723,15 @@ function renderDocs(){
        ${isAdmin?`<button class="btn btn-primary dh-add" onclick="openAddDocModal()">＋ Agregar</button>`:''}
      </div>
      <div class="dh-searchrow">
-       <div class="dh-search"><span>🔎</span><input id="dh-search-input" type="text" placeholder="Buscar por título, categoría, etiqueta…" value="${(state.docSearch||'').replace(/"/g,'&quot;')}" oninput="state.docSearch=this.value;renderDocResults()"><span class="dh-kbd">⌘K</span></div>
-       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='revision';renderDocs()">🔄 Revisión</button>
-       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='update';renderDocs()">✏️ Actualización</button>
+       <div class="dh-search"><span>🔎</span><input id="dh-search-input" type="text" placeholder="Buscar por título, categoría, etiqueta…" value="${(state.docSearch||'').replace(/"/g,'&quot;')}" oninput="state.docSearch=this.value;deferSearch(renderDocResults)"><span class="dh-kbd">⌘K</span></div>
+       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='revision';defer(renderDocs)">🔄 Revisión</button>
+       <button class="btn btn-secondary dh-reqbtn" onclick="state.docsSecondary='solicitudes';state.docReqForm='update';defer(renderDocs)">✏️ Actualización</button>
      </div>
      <div class="dh-kpis">
        ${kpi('Documentos',kTotal,'📁','#0D9488','Total')}
        ${kpi('Publicados',kPub,'✅','#16A34A','Vigentes')}
-       ${kpi('Por revisar',kRev,'🕗','#D97706','Pendientes',"state.docsSecondary='pendientes';state.docReqForm=null;renderDocs()")}
-       ${kpi('Desactualizados',kStale,'⚠️','#DC2626','Revisar',"state.docsSecondary='desactualizados';state.docReqForm=null;renderDocs()")}
+       ${kpi('Por revisar',kRev,'🕗','#D97706','Pendientes',"state.docsSecondary='pendientes';state.docReqForm=null;defer(renderDocs)")}
+       ${kpi('Desactualizados',kStale,'⚠️','#DC2626','Revisar',"state.docsSecondary='desactualizados';state.docReqForm=null;defer(renderDocs)")}
      </div>
      ${filterCard}
      ${catCards}
@@ -3736,14 +3852,14 @@ function dhListRow(doc){
 function dhCatCards(visible){
   const counts={}; DOC_HUB_CATS.forEach(c=>counts[c.key]=0);
   visible.forEach(d=>{ const k=docCatOf(d); counts[k]=(counts[k]||0)+1; });
-  const cards=DOC_HUB_CATS.filter(c=>counts[c.key]>0).map(c=>`<div class="dh-catcard" onclick="state.docCatFilter='${c.key}';state.docsView='list';renderDocs()">
+  const cards=DOC_HUB_CATS.filter(c=>counts[c.key]>0).map(c=>`<div class="dh-catcard" onclick="state.docCatFilter='${c.key}';state.docsView='list';defer(renderDocs)">
     <div class="dh-catcard-ic" style="background:${c.color}1A;color:${c.color}">${c.icon}</div>
     <div class="dh-catcard-title">${c.key}</div>
     <div class="dh-catcard-desc">${c.desc}</div>
     <div class="dh-catcard-foot"><span class="dh-catcard-count">${counts[c.key]} documento${counts[c.key]!==1?'s':''}</span><span class="dh-catcard-chev">›</span></div>
   </div>`).join('');
   const bmCount=(state.benchmarkLog||[]).length;
-  const bmCard=`<div class="dh-catcard" onclick="state.docsSecondary='benchmark-log';renderDocs()" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC">
+  const bmCard=`<div class="dh-catcard" onclick="state.docsSecondary='benchmark-log';defer(renderDocs)" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC">
     <div class="dh-catcard-ic" style="background:#16A34A1A;color:#16A34A">📡</div>
     <div class="dh-catcard-title">Benchmark</div>
     <div class="dh-catcard-desc">Log de comunicaciones de competidores: promos, eventos, aperturas y más.</div>
@@ -3783,7 +3899,7 @@ function docHubRequestsHtml(){
       <div class="dh-row-ic-sm">${(r.title||'').startsWith('Revisión')?'🔍':'✏️'}</div>
       <div class="dh-l-title"><div class="dh-l-name">${r.title||''}</div><div class="dh-l-desc">${r.id} · ${r.requester_name||'—'}</div></div>
       <div>${statusBadge(r.status)}</div><div class="dh-l-date">${fmtDate(r.created_at)}</div></div></div>`).join(''):dhEmpty('No hay solicitudes de documentos todavía.');
-  return `<div class="dh-reqbar"><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='revision';renderDocs()">🔄 Solicitar revisión</button><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='update';renderDocs()">✏️ Solicitar actualización</button></div>${form}<div style="margin-top:12px">${list}</div>`;
+  return `<div class="dh-reqbar"><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='revision';defer(renderDocs)">🔄 Solicitar revisión</button><button class="btn btn-secondary btn-sm" onclick="state.docReqForm='update';defer(renderDocs)">✏️ Solicitar actualización</button></div>${form}<div style="margin-top:12px">${list}</div>`;
 }
 function docReqFormHtml(type){
   if(type==='revision'){
@@ -3792,7 +3908,7 @@ function docReqFormHtml(type){
       <div class="form-group"><label class="form-label form-required">Documento a revisar</label><input class="form-input" id="dr-doc" placeholder="Nombre del documento o link"></div>
       <div class="form-group"><label class="form-label form-required">Motivo de la revisión</label><textarea class="form-textarea" id="dr-reason" rows="3" placeholder="¿Qué se debe verificar?"></textarea></div>
       <div class="grid-2"><div class="form-group"><label class="form-label">Fecha requerida</label><input type="date" class="form-input" id="dr-date"></div><div class="form-group"><label class="form-label">Prioridad</label><select class="form-select" id="dr-prio">${PRIORITIES.map(p=>'<option>'+p+'</option>').join('')}</select></div></div>
-      <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;renderDocs()">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('revision')">📤 Enviar</button></div>
+      <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;defer(renderDocs)">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('revision')">📤 Enviar</button></div>
     </div>`;
   }
   const docs=state.documents||[]; const pre=state.docReqPrefill||'';
@@ -3806,12 +3922,12 @@ function docReqFormHtml(type){
       <input class="form-input" id="du-doc-otro" placeholder="Nombre del documento…" style="margin-top:8px;display:none"></div>
     <div class="form-group"><label class="form-label form-required">Cambios solicitados</label><textarea class="form-textarea" id="du-changes" rows="4" placeholder="¿Qué debe agregarse, modificarse o eliminarse?"></textarea></div>
     <div class="form-group"><label class="form-label">Link o referencia de apoyo</label><input class="form-input" id="du-link" placeholder="Link de referencia (opcional)"></div>
-    <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;renderDocs()">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('update')">📤 Enviar</button></div>
+    <div class="dh-form-actions"><button class="btn btn-ghost btn-sm" onclick="state.docReqForm=null;defer(renderDocs)">Cancelar</button><button class="btn btn-primary" onclick="submitDocRequest('update')">📤 Enviar</button></div>
   </div>`;
 }
-function toggleDocGroup(cat){ state.docOpen=state.docOpen||{}; state.docOpen[cat]=!state.docOpen[cat]; renderDocResults(); }
-function docToggleShowAll(cat){ state.docShowAll=state.docShowAll||{}; state.docShowAll[cat]=!state.docShowAll[cat]; renderDocResults(); }
-function docToggleFav(i){ const d=state.documents[i]; if(!d) return; d._fav=!d._fav; saveState(); renderDocResults(); }
+function toggleDocGroup(cat){ state.docOpen=state.docOpen||{}; state.docOpen[cat]=!state.docOpen[cat]; defer(renderDocResults); }
+function docToggleShowAll(cat){ state.docShowAll=state.docShowAll||{}; state.docShowAll[cat]=!state.docShowAll[cat]; defer(renderDocResults); }
+function docToggleFav(i){ const d=state.documents[i]; if(!d) return; d._fav=!d._fav; saveState(); defer(renderDocResults); }
 function copyDocLink(i){ const doc=state.documents[i]; if(!doc) return; const u=docUrlOf(doc); if(!u){ toast('⚠️ Sin link','Este documento aún no tiene link.','warning'); return; }
   const done=()=>toast('📋 Link copiado',doc.name,'success');
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(u).then(done).catch(()=>{ try{const t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}catch(e){ toast('Link',u,'info'); } }); }
@@ -3933,7 +4049,7 @@ function renderBenchmarkLogHtml(isAdmin){
   }).join(''):`<tr><td colspan="9"><div class="bml-empty"><div class="bml-empty-ic">🔍</div>Sin registros para estos filtros.</div></td></tr>`;
 
   return `
-  <button class="bm-back" onclick="state.docsSecondary='biblioteca';renderDocs()">← Volver a Biblioteca</button>
+  <button class="bm-back" onclick="state.docsSecondary='biblioteca';defer(renderDocs)">← Volver a Biblioteca</button>
   <div class="bml-hero">
     <div class="bml-hero-content">
       <div class="bml-hero-eyebrow">Inteligencia Competitiva</div>
@@ -3949,16 +4065,16 @@ function renderBenchmarkLogHtml(isAdmin){
   </div>
   <div class="bml-toolbar">
     <div class="bml-filters">
-      <select class="bml-select" onchange="state.bmlMonth=this.value;renderDocs()">
+      <select class="bml-select" onchange="state.bmlMonth=this.value;defer(renderDocs)">
         <option value="">📅 Todos los meses</option>${monthOpts}
       </select>
-      <select class="bml-select" onchange="state.bmlTipo=this.value;renderDocs()">
+      <select class="bml-select" onchange="state.bmlTipo=this.value;defer(renderDocs)">
         <option value="">📋 Todos los tipos</option>${tipoOpts}
       </select>
-      <select class="bml-select" onchange="state.bmlLugar=this.value;renderDocs()">
+      <select class="bml-select" onchange="state.bmlLugar=this.value;defer(renderDocs)">
         <option value="">📍 Todos los lugares</option>${lugarOpts}
       </select>
-      ${(fMonth||fTipo||fLugar)?`<button class="dh-clear" onclick="state.bmlMonth='';state.bmlTipo='';state.bmlLugar='';renderDocs()">✕ Limpiar</button>`:''}
+      ${(fMonth||fTipo||fLugar)?`<button class="dh-clear" onclick="state.bmlMonth='';state.bmlTipo='';state.bmlLugar='';defer(renderDocs)">✕ Limpiar</button>`:''}
     </div>
     ${isAdmin?`<button class="btn btn-primary" style="font-size:13px;padding:9px 18px" onclick="openAddBmLogModal()">＋ Agregar</button>`:''}
   </div>
@@ -4134,7 +4250,7 @@ function _ensureDocHubCss(){
 
 function switchDocsTab(t) {
   state.docsTab = t;
-  renderDocs();
+  defer(renderDocs);
 }
 function toggleDocPublished(di) {
   const doc = state.documents[di];
@@ -4246,6 +4362,125 @@ function deleteDoc(di) {
   saveState();
   renderDocs();
   toast('🗑️ Documento eliminado','','info');
+}
+
+// ══════════════════════════════════════════════════════════════
+// VCN DASHBOARDS (pestaña exclusiva de Administrador)
+// ══════════════════════════════════════════════════════════════
+const VCN_DASH_CATS=[
+  {key:'Comercial',             icon:'🤝', desc:'Ventas, pipeline y desempeño comercial.',            color:'#F59E0B'},
+  {key:'Operaciones',           icon:'🚚', desc:'Operación diaria, flotas y servicio.',               color:'#10B981'},
+  {key:'Infra',                 icon:'🏗️', desc:'Infraestructura, estaciones y mantenimiento.',      color:'#6366F1'},
+  {key:'Watts',                 icon:'⚡', desc:'Consumo, energía y desempeño de carga.',              color:'#0EA5A5'},
+  {key:'Performance (Negocio)', icon:'📈', desc:'KPIs de negocio y desempeño financiero.',            color:'#EF4444'},
+  {key:'Others',                icon:'🗂️', desc:'Otros dashboards y reportes generales.',           color:'#6B7280'}
+];
+function _ensureVcnDashCss(){
+  if(document.getElementById('vcnd-css')) return;
+  const st=document.createElement('style'); st.id='vcnd-css';
+  st.textContent=' .vcnd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:4px} .vcnd-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,80,80,0.05);transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:10px} .vcnd-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,80,80,0.12)} .vcnd-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px} .vcnd-card-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0} .vcnd-card-cat{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap} .vcnd-card-title{font-size:15px;font-weight:800;color:var(--text-primary);font-family:"Space Grotesk",sans-serif;line-height:1.3} .vcnd-card-desc{font-size:12.5px;color:var(--text-muted);line-height:1.45;flex:1;min-height:34px} .vcnd-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px} .vcnd-card-act{display:flex;gap:4px}';
+  document.head.appendChild(st);
+}
+function vcnDashCounts(){
+  const counts={}; VCN_DASH_CATS.forEach(c=>counts[c.key]=0);
+  (state.vcnDashboards||[]).forEach(d=>{ counts[d.category]=(counts[d.category]||0)+1; });
+  return counts;
+}
+function renderVCNDashboards(){
+  const container=document.getElementById('view-vcndash'); if(!container) return;
+  _ensureDocHubCss(); _ensureVcnDashCss();
+  if(!state.vcnDashboards) state.vcnDashboards=[];
+  if(state.vcndCatFilter===undefined) state.vcndCatFilter='';
+  const all=state.vcnDashboards;
+  const cf=state.vcndCatFilter;
+  const counts=vcnDashCounts();
+  const catCards=VCN_DASH_CATS.map(c=>`<div class="dh-catcard" onclick="state.vcndCatFilter='${c.key}';defer(renderVCNDashboards)">
+    <div class="dh-catcard-ic" style="background:${c.color}1A;color:${c.color}">${c.icon}</div>
+    <div class="dh-catcard-title">${c.key}</div>
+    <div class="dh-catcard-desc">${c.desc}</div>
+    <div class="dh-catcard-foot"><span class="dh-catcard-count">${counts[c.key]||0} dashboard${(counts[c.key]||0)!==1?'s':''}</span><span class="dh-catcard-chev">›</span></div>
+  </div>`).join('');
+  const chips=`<button class="dh-chip ${!cf?'active':''}" onclick="state.vcndCatFilter='';defer(renderVCNDashboards)">Todos</button>`+
+    VCN_DASH_CATS.map(c=>`<button class="dh-chip ${cf===c.key?'active':''}" onclick="state.vcndCatFilter='${c.key}';defer(renderVCNDashboards)">${c.icon} ${c.key}</button>`).join('');
+  const set = cf ? all.filter(d=>d.category===cf) : all;
+  const cardsHtml = set.length ? set.map(d=>{
+    const i=all.indexOf(d);
+    const cd=VCN_DASH_CATS.find(c=>c.key===d.category)||VCN_DASH_CATS[VCN_DASH_CATS.length-1];
+    return `<div class="vcnd-card">
+      <div class="vcnd-card-top">
+        <div class="vcnd-card-ic" style="background:${cd.color}1A;color:${cd.color}">${d.icon||cd.icon}</div>
+        <span class="vcnd-card-cat" style="background:${cd.color}1A;color:${cd.color}">${d.category}</span>
+      </div>
+      <div class="vcnd-card-title">${d.title}</div>
+      <div class="vcnd-card-desc">${d.description||''}</div>
+      <div class="vcnd-card-foot">
+        <a href="${d.url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">🔗 Abrir dashboard</a>
+        <div class="vcnd-card-act"><button class="dh-iconbtn" title="Editar" onclick="openAddVcnDashModal(${i})">✎</button><button class="dh-iconbtn" title="Eliminar" onclick="deleteVCNDash(${i})">🗑</button></div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="dh-empty"><div class="dh-empty-ic">📈</div><div class="dh-empty-t">Aún no hay dashboards${cf?' en esta categoría':''}</div><div class="dh-empty-s">Agrega un Hero Card con el botón ＋ Agregar.</div></div>`;
+
+  container.innerHTML=`<div class="dh-wrap">
+    <div class="dh-header">
+      <div><div class="dh-title">📈 VCN Dashboards</div><div class="dh-sub">Accesos directos a los dashboards de la operación, clasificados por área.</div></div>
+      <button class="btn btn-primary dh-add" onclick="openAddVcnDashModal()">＋ Agregar</button>
+    </div>
+    <div class="dh-catgrid">${catCards}</div>
+    <div class="dh-filtcard"><div class="dh-filt-l"><span class="dh-filt-lbl">Categorías</span><div class="dh-chips">${chips}</div></div>${cf?`<button class="dh-clear" onclick="state.vcndCatFilter='';defer(renderVCNDashboards)">✕ Limpiar filtro</button>`:''}</div>
+    <div class="vcnd-grid">${cardsHtml}</div>
+  </div>`;
+}
+function openAddVcnDashModal(editIdx){
+  const editing = (editIdx!==undefined && editIdx!==null && state.vcnDashboards && state.vcnDashboards[editIdx]);
+  const d = editing ? state.vcnDashboards[editIdx] : null;
+  let m=document.getElementById('modal-vcndash');
+  const catOpts=VCN_DASH_CATS.map(c=>`<option value="${c.key}" ${d&&d.category===c.key?'selected':''}>${c.icon} ${c.key}</option>`).join('');
+  const idxArg = editing ? editIdx : 'null';
+  const html=`<div class="modal" style="max-width:520px;width:96vw" onclick="event.stopPropagation()">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0F766E,#008080)"><h3 class="modal-title">${editing?'✎ Editar':'＋ Agregar'} Hero Card</h3><button class="modal-close" onclick="closeModal('modal-vcndash')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label form-required">Título</label><input class="form-input" id="vd-title" placeholder="Ej: Dashboard de Ventas Comercial" value="${d?(d.title||'').replace(/"/g,'&quot;'):''}"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label form-required">Categoría</label><select class="form-select" id="vd-cat">${catOpts}</select></div>
+        <div class="form-group"><label class="form-label">Ícono (emoji)</label><input class="form-input" id="vd-icon" placeholder="📊" value="${d&&d.icon?d.icon:''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="vd-desc" placeholder="Una línea que describa el dashboard" value="${d?(d.description||'').replace(/"/g,'&quot;'):''}"></div>
+      <div class="form-group"><label class="form-label form-required">Link del dashboard</label><input class="form-input" id="vd-url" placeholder="https://…" value="${d?(d.url||'').replace(/"/g,'&quot;'):''}"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-vcndash')">Cancelar</button><button class="btn btn-primary" onclick="saveVCNDash(${idxArg})">✅ ${editing?'Guardar cambios':'Agregar Hero Card'}</button></div>
+  </div>`;
+  if(!m){ m=document.createElement('div'); m.id='modal-vcndash'; m.className='modal-overlay'; m.addEventListener('click',e=>{ if(e.target===m) closeModal('modal-vcndash'); }); document.body.appendChild(m); }
+  m.innerHTML=html; openModal('modal-vcndash');
+}
+function saveVCNDash(editIdx){
+  const g=id=>document.getElementById(id);
+  const title=g('vd-title')?g('vd-title').value.trim():'';
+  const url=g('vd-url')?g('vd-url').value.trim():'';
+  if(!title){ toast('⚠️ Requerido','Ingresa el título del dashboard.','warning'); return; }
+  if(!url){ toast('⚠️ Requerido','Ingresa el link del dashboard.','warning'); return; }
+  const cat=g('vd-cat')?g('vd-cat').value:'Others';
+  const catDef=VCN_DASH_CATS.find(c=>c.key===cat)||VCN_DASH_CATS[VCN_DASH_CATS.length-1];
+  const icon=(g('vd-icon')&&g('vd-icon').value.trim())||catDef.icon;
+  const desc=g('vd-desc')?g('vd-desc').value.trim():'';
+  if(!state.vcnDashboards) state.vcnDashboards=[];
+  if(editIdx!==null && editIdx!==undefined && state.vcnDashboards[editIdx]){
+    const item=state.vcnDashboards[editIdx];
+    item.title=title; item.url=url; item.category=cat; item.icon=icon; item.description=desc; item.updated_at=new Date().toISOString();
+  } else {
+    state.vcnDashboards.push({ id:'vcnd-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), title, description:desc, url, category:cat, icon, created_by:state.currentUser||'Admin', created_at:new Date().toISOString() });
+  }
+  saveState();
+  closeModal('modal-vcndash');
+  defer(renderVCNDashboards);
+  toast('✅ Guardado', title, 'success');
+}
+function deleteVCNDash(i){
+  if(!state.vcnDashboards || !state.vcnDashboards[i]) return;
+  if(!confirm('¿Eliminar este Hero Card?')) return;
+  state.vcnDashboards.splice(i,1);
+  saveState();
+  defer(renderVCNDashboards);
+  toast('🗑️ Eliminado','','info');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4695,17 +4930,17 @@ function renderPlaneacion() {
   // Area chips
   const crossAreas = state.config.crossAreas || CROSS_AREAS;
   const areaChips = `
-    <button class="plan-chip ${!af?'active':''}" onclick="state.areaFilter='';renderPlaneacion()">Todas las áreas</button>
+    <button class="plan-chip ${!af?'active':''}" onclick="state.areaFilter='';defer(renderPlaneacion)">Todas las áreas</button>
     ${crossAreas.map(a=>{
       const c = CROSS_AREA_COLORS[a]||{border:'#ccc',text:'#333',bg:'#f9f9f9'};
       const active = af===a;
-      return `<button class="plan-chip ${active?'active':''}" onclick="state.areaFilter='${a}';renderPlaneacion()" style="${active?`background:${c.border};color:#fff;border-color:${c.border}`:`color:${c.text};border-color:${c.border};background:${c.bg}`}">${a}</button>`;
+      return `<button class="plan-chip ${active?'active':''}" onclick="state.areaFilter='${a}';defer(renderPlaneacion)" style="${active?`background:${c.border};color:#fff;border-color:${c.border}`:`color:${c.text};border-color:${c.border};background:${c.bg}`}">${a}</button>`;
     }).join('')}`;
 
   // Quarter chips
   const qChips = `
-    <button class="plan-qchip ${!qf?'active':''}" onclick="state.quarterFilter='';renderPlaneacion()">Todos</button>
-    ${QUARTERS.map(q=>`<button class="plan-qchip ${qf===q?'active':''}" onclick="state.quarterFilter='${q}';renderPlaneacion()">${q}</button>`).join('')}`;
+    <button class="plan-qchip ${!qf?'active':''}" onclick="state.quarterFilter='';defer(renderPlaneacion)">Todos</button>
+    ${QUARTERS.map(q=>`<button class="plan-qchip ${qf===q?'active':''}" onclick="state.quarterFilter='${q}';defer(renderPlaneacion)">${q}</button>`).join('')}`;
 
   // Stats bar
   const total = items.length;
@@ -4818,7 +5053,7 @@ function renderPlaneacion() {
         </div>
         <div class="page-actions">
           ${canEdit&&!showArchive?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
-          <button class="btn ${showArchive?'btn-primary':'btn-secondary'} btn-sm" onclick="state.planShowArchive=!state.planShowArchive;if(state.planShowArchive)state.planeacionView='cards';renderPlaneacion()" title="Iniciativas concluidas y archivadas">${showArchive?'← Volver a abiertas':'📦 Repositorio ('+archivedCount+')'}</button>
+          <button class="btn ${showArchive?'btn-primary':'btn-secondary'} btn-sm" onclick="state.planShowArchive=!state.planShowArchive;if(state.planShowArchive)state.planeacionView='cards';defer(renderPlaneacion)" title="Iniciativas concluidas y archivadas">${showArchive?'← Volver a abiertas':'📦 Repositorio ('+archivedCount+')'}</button>
           ${!showArchive?`<button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
           <input type="file" id="okr-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processOKRUpload(this)">
           <button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>`:''}
@@ -4838,9 +5073,9 @@ function renderPlaneacion() {
           <div style="display:flex;gap:6px">${qChips}</div>
         </div>
         ${!showArchive?`<div style="margin-left:auto;display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px">
-          <button onclick="state.planeacionView='cards';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='cards'?'var(--primary)':'transparent'};color:${pv==='cards'?'#fff':'var(--text-secondary)'}">🗂 Tarjetas</button>
-          <button onclick="state.planeacionView='gantt';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='gantt'?'var(--primary)':'transparent'};color:${pv==='gantt'?'#fff':'var(--text-secondary)'}">📊 Gantt</button>
-          <button onclick="state.planeacionView='kpis';renderPlaneacion()" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='kpis'?'var(--primary)':'transparent'};color:${pv==='kpis'?'#fff':'var(--text-secondary)'}">🎯 KPIs por Milestone</button>
+          <button onclick="state.planeacionView='cards';defer(renderPlaneacion)" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='cards'?'var(--primary)':'transparent'};color:${pv==='cards'?'#fff':'var(--text-secondary)'}">🗂 Tarjetas</button>
+          <button onclick="state.planeacionView='gantt';defer(renderPlaneacion)" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='gantt'?'var(--primary)':'transparent'};color:${pv==='gantt'?'#fff':'var(--text-secondary)'}">📊 Gantt</button>
+          <button onclick="state.planeacionView='kpis';defer(renderPlaneacion)" style="padding:5px 12px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:6px;background:${pv==='kpis'?'var(--primary)':'transparent'};color:${pv==='kpis'?'#fff':'var(--text-secondary)'}">🎯 KPIs por Milestone</button>
         </div>`:''}
       </div>
 
@@ -4861,20 +5096,20 @@ function renderPlaneacion() {
 function togglePlanGanttExpand(id) {
   state.planGanttExpanded = state.planGanttExpanded || {};
   state.planGanttExpanded[id] = !state.planGanttExpanded[id];
-  renderPlaneacion();
+  defer(renderPlaneacion);
 }
 
 function togglePlanGanttArea(area) {
   state.planGanttAreaOpen = state.planGanttAreaOpen || {};
   const open = state.planGanttAreaOpen[area] !== false;
   state.planGanttAreaOpen[area] = !open;
-  renderPlaneacion();
+  defer(renderPlaneacion);
 }
 function togglePlanGanttQ(key) {
   state.planGanttQOpen = state.planGanttQOpen || {};
   const open = state.planGanttQOpen[key] !== false;
   state.planGanttQOpen[key] = !open;
-  renderPlaneacion();
+  defer(renderPlaneacion);
 }
 
 // ── Scroll horizontal del Gantt (slider ↔ contenedor) ──
@@ -4905,7 +5140,7 @@ function planGanttGoToday() {
 function togglePlanCard(id) {
   state.planOpen = state.planOpen || {};
   state.planOpen[id] = !state.planOpen[id];
-  renderPlaneacion();
+  defer(renderPlaneacion);
 }
 
 function renderPlaneacionGantt(allItems) {
@@ -5444,8 +5679,8 @@ function renderPlanMsKpis(items, canEdit){
   const areaCol = {'MKT':'#8B5CF6','Cx':'#0EA5E9','Hub Ops':'#F59E0B','VCN':'#0d9488','Otros':'#6B7280'};
 
   const kpiAreaChips = `
-    <button class="plan-qchip ${!kAf?'active':''}" onclick="state.planKpiArea='';renderPlaneacion()">Todas</button>
-    ${PLAN_KPI_AREAS.map(a=>`<button class="plan-qchip ${kAf===a?'active':''}" onclick="state.planKpiArea='${a}';renderPlaneacion()" style="${kAf===a?`background:${areaCol[a]};border-color:${areaCol[a]};color:#fff`:''}">${a}</button>`).join('')}`;
+    <button class="plan-qchip ${!kAf?'active':''}" onclick="state.planKpiArea='';defer(renderPlaneacion)">Todas</button>
+    ${PLAN_KPI_AREAS.map(a=>`<button class="plan-qchip ${kAf===a?'active':''}" onclick="state.planKpiArea='${a}';defer(renderPlaneacion)" style="${kAf===a?`background:${areaCol[a]};border-color:${areaCol[a]};color:#fff`:''}">${a}</button>`).join('')}`;
   const iniOptions = `<option value="">Todas las iniciativas</option>` +
     items.filter(i=>(i.milestones||[]).length).map(i=>`<option value="${i.id}" ${kIni===i.id?'selected':''}>${esc(i.title)}</option>`).join('');
 
@@ -5458,7 +5693,7 @@ function renderPlanMsKpis(items, canEdit){
       const rows = kpis.map(k=>{
         const ac = areaCol[k.area]||'#6B7280';
         return `<div style="display:grid;grid-template-columns:110px 1fr 120px 120px 30px;gap:6px;align-items:center;margin-bottom:6px">
-          ${canEdit?`<select class="form-select" style="font-size:11px;padding:5px 8px;color:${ac};font-weight:700" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','area',this.value);renderPlaneacion()">
+          ${canEdit?`<select class="form-select" style="font-size:11px;padding:5px 8px;color:${ac};font-weight:700" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','area',this.value);defer(renderPlaneacion)">
             ${PLAN_KPI_AREAS.map(a=>`<option value="${a}" ${a===(k.area||'Otros')?'selected':''}>${a}</option>`).join('')}
           </select>`:`<span style="font-size:11px;font-weight:700;color:${ac}">${esc(k.area||'Otros')}</span>`}
           ${canEdit?`<input type="text" class="form-input" value="${esc(k.name)}" placeholder="Nombre del KPI (ej. CTR campaña)" style="font-size:12px;padding:5px 8px" onchange="updatePlanMsKpi('${ini.id}','${ms.id}','${k.id}','name',this.value)">`:`<span style="font-size:12px">${esc(k.name)||'—'}</span>`}
@@ -5501,7 +5736,7 @@ function renderPlanMsKpis(items, canEdit){
       </div>
       <div style="min-width:240px">
         <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Iniciativa</div>
-        <select class="form-select" style="font-size:12px;padding:6px 10px" onchange="state.planKpiIni=this.value;renderPlaneacion()">${iniOptions}</select>
+        <select class="form-select" style="font-size:12px;padding:6px 10px" onchange="state.planKpiIni=this.value;defer(renderPlaneacion)">${iniOptions}</select>
       </div>
     </div>
     ${blocks || `<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:48px;margin-bottom:16px">🎯</div><div style="font-size:15px;font-weight:600">Sin KPIs para este filtro</div><div style="font-size:12px;margin-top:6px">Agrega milestones a una iniciativa y define sus KPIs con el botón ＋ KPI.</div></div>`}`;
@@ -5634,23 +5869,23 @@ function renderBacklog() {
     </tr>
   `).join('');
 
-  const _myTasksBtn = (state.isTeam||state.isAdmin) ? '<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;renderBacklog()" style="'+(myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)')+';border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">\u{1F464} Mis Tareas</button>' : '';
+  const _myTasksBtn = (state.isTeam||state.isAdmin) ? '<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;defer(renderBacklog)" style="'+(myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)')+';border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">\u{1F464} Mis Tareas</button>' : '';
   document.getElementById('view-backlog').innerHTML = `
     <div class="filters-bar">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;renderBacklog()">
-      <select class="filter-select" onchange="state.backlogFilter.status=this.value;renderBacklog()">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;deferSearch(renderBacklog)">
+      <select class="filter-select" onchange="state.backlogFilter.status=this.value;defer(renderBacklog)">
         <option value="">Todos los estados</option>${statusOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.category=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.category=this.value;defer(renderBacklog)">
         <option value="">Todas las categorías</option>${catOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.owner=this.value;defer(renderBacklog)">
         <option value="">Todos los owners</option>${ownerOpts}
       </select>
-      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;renderBacklog()">
+      <select class="filter-select" onchange="state.backlogFilter.priority=this.value;defer(renderBacklog)">
         <option value="">Todas las prioridades</option>${prioOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};renderBacklog()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};defer(renderBacklog)">✕ Limpiar</button>
       ${_myTasksBtn}
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
     </div>
@@ -5718,14 +5953,14 @@ function renderHistorico() {
       <div class="page-sub">Tareas concluidas y canceladas, archivadas para consulta · ✅ ${concluidas} concluida${concluidas!==1?'s':''} · ❌ ${canceladas} cancelada${canceladas!==1?'s':''}</div>
     </div>
     <div class="filters-bar">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.histFilter.search=this.value;renderHistorico()">
-      <select class="filter-select" onchange="state.histFilter.status=this.value;renderHistorico()">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.histFilter.search=this.value;deferSearch(renderHistorico)">
+      <select class="filter-select" onchange="state.histFilter.status=this.value;defer(renderHistorico)">
         <option value="">Todos (concluidas y canceladas)</option>${statusOpts}
       </select>
-      <select class="filter-select" onchange="state.histFilter.owner=this.value;renderHistorico()">
+      <select class="filter-select" onchange="state.histFilter.owner=this.value;defer(renderHistorico)">
         <option value="">Todos los owners</option>${ownerOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.histFilter={status:'',owner:'',search:''};renderHistorico()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.histFilter={status:'',owner:'',search:''};defer(renderHistorico)">✕ Limpiar</button>
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
     </div>
     <div class="table-wrap">
@@ -5845,16 +6080,16 @@ function renderKanban() {
 
   document.getElementById('view-kanban').innerHTML = `
     <div class="filters-bar" style="margin-bottom:16px">
-      <select class="filter-select" onchange="state.kanbanFilter.owner=this.value;renderKanban()">
+      <select class="filter-select" onchange="state.kanbanFilter.owner=this.value;defer(renderKanban)">
         ${ownerOpts}
       </select>
-      <select class="filter-select" onchange="state.kanbanFilter.category=this.value;renderKanban()">
+      <select class="filter-select" onchange="state.kanbanFilter.category=this.value;defer(renderKanban)">
         ${catOpts}
       </select>
-      <select class="filter-select" onchange="state.kanbanFilter.priority=this.value;renderKanban()">
+      <select class="filter-select" onchange="state.kanbanFilter.priority=this.value;defer(renderKanban)">
         ${prioOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:''};renderKanban()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.kanbanFilter={owner:'',category:'',priority:''};defer(renderKanban)">✕ Limpiar</button>
       ${state.isTeam?`<button class="btn btn-primary btn-sm" onclick="openQuickModal()" style="margin-left:auto">⚡ Tarea Interna</button>`:''}
     </div>
     <div id="kanban-board">${cols}</div>
@@ -6230,14 +6465,14 @@ function renderLibrary() {
 
   document.getElementById('view-library').innerHTML = `
     <div class="filters-bar" style="margin-bottom:16px">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar archivos..." value="${lf.search}" oninput="state.libFilter.search=this.value;renderLibrary()">
-      <select class="filter-select" onchange="state.libFilter.category=this.value;renderLibrary()">
+      <input type="text" class="filter-search" placeholder="🔍 Buscar archivos..." value="${lf.search}" oninput="state.libFilter.search=this.value;deferSearch(renderLibrary)">
+      <select class="filter-select" onchange="state.libFilter.category=this.value;defer(renderLibrary)">
         <option value="">Todas las categorías</option>${catOpts}
       </select>
-      <select class="filter-select" onchange="state.libFilter.owner=this.value;renderLibrary()">
+      <select class="filter-select" onchange="state.libFilter.owner=this.value;defer(renderLibrary)">
         <option value="">Todos los owners</option>${ownerOpts}
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.libFilter={search:'',category:'',owner:''};renderLibrary()">✕ Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="state.libFilter={search:'',category:'',owner:''};defer(renderLibrary)">✕ Limpiar</button>
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${filtered.length} archivo${filtered.length!==1?'s':''}</span>
     </div>
     <div class="card">
@@ -6459,8 +6694,8 @@ function renderRoadmap() {
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='cards';renderRoadmap()">🗂 Tarjetas</button>
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='gantt';renderRoadmap()">📊 Gantt</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='cards';defer(renderRoadmap)">🗂 Tarjetas</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='gantt';defer(renderRoadmap)">📊 Gantt</button>
         </div>
         ${state.isAdmin?`<button class="btn btn-primary btn-sm" onclick="openNewInitiativeModal()">+ Nueva Iniciativa</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="downloadRoadmapXlsx()" title="Descargar Excel del Roadmap" style="font-size:11px">📊 Excel</button>
@@ -6470,37 +6705,45 @@ function renderRoadmap() {
     </div>
     <!-- Filter bar -->
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius)">
-      <select class="filter-select" onchange="state.roadmapFilter.category=this.value;renderRoadmap()" style="font-size:12px">
+      <select class="filter-select" onchange="state.roadmapFilter.category=this.value;defer(renderRoadmap)" style="font-size:12px">
         <option value="">Todas las categorías</option>${catOpts2}
       </select>
-      <select class="filter-select" onchange="state.roadmapFilter.owner=this.value;renderRoadmap()" style="font-size:12px">
+      <select class="filter-select" onchange="state.roadmapFilter.owner=this.value;defer(renderRoadmap)" style="font-size:12px">
         <option value="">Todos los owners</option>${ownerOpts2}
       </select>
-      <select class="filter-select" onchange="state.roadmapFilter.status=this.value;renderRoadmap()" style="font-size:12px">
+      <select class="filter-select" onchange="state.roadmapFilter.status=this.value;defer(renderRoadmap)" style="font-size:12px">
         <option value="">Todos los estados</option>${statusOpts2}
       </select>
-      <input type="date" class="filter-select" value="${rf.dateFrom}" onchange="state.roadmapFilter.dateFrom=this.value;renderRoadmap()" style="font-size:12px" title="Fecha desde">
-      <input type="date" class="filter-select" value="${rf.dateTo}" onchange="state.roadmapFilter.dateTo=this.value;renderRoadmap()" style="font-size:12px" title="Fecha hasta">
-      ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.roadmapFilter={category:'',owner:'',status:'',dateFrom:'',dateTo:''};renderRoadmap()" style="font-size:11px">✕ Limpiar</button>`:''}
+      <input type="date" class="filter-select" value="${rf.dateFrom}" onchange="state.roadmapFilter.dateFrom=this.value;defer(renderRoadmap)" style="font-size:12px" title="Fecha desde">
+      <input type="date" class="filter-select" value="${rf.dateTo}" onchange="state.roadmapFilter.dateTo=this.value;defer(renderRoadmap)" style="font-size:12px" title="Fecha hasta">
+      ${hasFilter?`<button class="btn btn-ghost btn-sm" onclick="state.roadmapFilter={category:'',owner:'',status:'',dateFrom:'',dateTo:''};defer(renderRoadmap)" style="font-size:11px">✕ Limpiar</button>`:''}
     </div>
     ${filteredInitCards?`<div class="roadmap-grid">${filteredInitCards}</div>`:`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-title">Sin iniciativas</div><div class="empty-sub">Ajusta los filtros o agrega una nueva iniciativa.</div></div>`}
   `;
 }
 
+let _ganttScrollKeep = null;
+// Se declara una sola vez para que defer() colapse clics repetidos
+function _renderGanttKeepScroll(){
+  renderRoadmapGantt();
+  if(_ganttScrollKeep !== null){
+    const sc2 = document.getElementById('roadmap-gantt-scroll');
+    if(sc2) sc2.scrollLeft = _ganttScrollKeep;
+  }
+}
 function toggleGanttExpand(iniId) {
   state.ganttExpanded = state.ganttExpanded || {};
   state.ganttExpanded[iniId] = !state.ganttExpanded[iniId];
   // Conserva la posición de scroll horizontal al expandir/plegar
   const sc = document.getElementById('roadmap-gantt-scroll');
-  const prev = sc ? sc.scrollLeft : null;
-  renderRoadmapGantt();
-  if(prev !== null){ const sc2 = document.getElementById('roadmap-gantt-scroll'); if(sc2) sc2.scrollLeft = prev; }
+  _ganttScrollKeep = sc ? sc.scrollLeft : null;
+  defer(_renderGanttKeepScroll);
 }
 
 function toggleRoadmapCard(iniId) {
   state.roadmapOpen = state.roadmapOpen || {};
   state.roadmapOpen[iniId] = !state.roadmapOpen[iniId];
-  renderRoadmap();
+  defer(renderRoadmap);
 }
 
 function renderRoadmapGantt() {
@@ -6510,8 +6753,8 @@ function renderRoadmapGantt() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div class="page-title">🗺️ Roadmap — Gantt</div>
         <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='cards';renderRoadmap()">🗂 Tarjetas</button>
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='gantt';renderRoadmap()">📊 Gantt</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='cards';defer(renderRoadmap)">🗂 Tarjetas</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='gantt';defer(renderRoadmap)">📊 Gantt</button>
         </div>
       </div>
       <div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Sin iniciativas</div></div>`;
@@ -6781,7 +7024,7 @@ function renderRoadmapGantt() {
         <div class="page-sub">${inits.length} iniciativas · ${minDate.toLocaleDateString('es-MX',{month:'short',year:'numeric'})} – ${maxDate.toLocaleDateString('es-MX',{month:'short',year:'numeric'})}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select class="filter-select" style="font-size:12px" onchange="state.ganttGroupBy=this.value;renderRoadmapGantt()">
+        <select class="filter-select" style="font-size:12px" onchange="state.ganttGroupBy=this.value;defer(renderRoadmapGantt)">
           <option value="" ${!state.ganttGroupBy?'selected':''}>Sin agrupar</option>
           <option value="category" ${state.ganttGroupBy==='category'?'selected':''}>Por categoría</option>
           <option value="status" ${state.ganttGroupBy==='status'?'selected':''}>Por estado</option>
@@ -6790,8 +7033,8 @@ function renderRoadmapGantt() {
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('roadmap-upload-input2').click()" style="font-size:11px">📥 Importar</button>
         <input type="file" id="roadmap-upload-input2" accept=".xls,.csv,.xlsx" style="display:none" onchange="uploadRoadmapXlsx(this)">
         <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='cards';renderRoadmap()">🗂 Tarjetas</button>
-          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='gantt';renderRoadmap()">📊 Gantt</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--surface);color:var(--text-secondary)" onclick="state.roadmapView='cards';defer(renderRoadmap)">🗂 Tarjetas</button>
+          <button style="padding:6px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff" onclick="state.roadmapView='gantt';defer(renderRoadmap)">📊 Gantt</button>
         </div>
       </div>
     </div>
@@ -9080,16 +9323,16 @@ function renderCalendar() {
         </div>
         <div class="page-actions">
           <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${calMonth===0?11:calMonth-1};${calMonth===0?'state.calYear='+(calYear-1)+';':''}renderCalendar()">← Anterior</button>
-          <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${today.getMonth()};state.calYear=${today.getFullYear()};renderCalendar()">Hoy</button>
+          <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${today.getMonth()};state.calYear=${today.getFullYear()};defer(renderCalendar)">Hoy</button>
           <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${calMonth===11?0:calMonth+1};${calMonth===11?'state.calYear='+(calYear+1)+';':''}renderCalendar()">Siguiente →</button>
         </div>
       </div>
 
       <div class="filters-bar" style="margin-bottom:16px">
-        <select class="filter-select" onchange="state.calFilter.owner=this.value;renderCalendar()">${calOwnerOpts}</select>
-        <select class="filter-select" onchange="state.calFilter.category=this.value;renderCalendar()">${calCatOpts}</select>
-        <select class="filter-select" onchange="state.calFilter.area=this.value;renderCalendar()">${calAreaOpts}</select>
-        ${calFilterActive?`<button class="btn btn-ghost btn-sm" onclick="state.calFilter={owner:'',category:'',area:''};renderCalendar()">✕ Limpiar filtros</button>`:''}
+        <select class="filter-select" onchange="state.calFilter.owner=this.value;defer(renderCalendar)">${calOwnerOpts}</select>
+        <select class="filter-select" onchange="state.calFilter.category=this.value;defer(renderCalendar)">${calCatOpts}</select>
+        <select class="filter-select" onchange="state.calFilter.area=this.value;defer(renderCalendar)">${calAreaOpts}</select>
+        ${calFilterActive?`<button class="btn btn-ghost btn-sm" onclick="state.calFilter={owner:'',category:'',area:''};defer(renderCalendar)">✕ Limpiar filtros</button>`:''}
       </div>
 
       <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;overflow-x:auto;margin-bottom:20px">
@@ -9201,10 +9444,10 @@ function processBacklogUpload(input) {
           assigned_owner: getH(row,'owner','asignado') || '',
           requester_name: getH(row,'solicitante','requester_name') || 'Importado',
           requester_area: getH(row,'área','area','requester_area') || '',
-          needed_by: getH(row,'fecha_requerida','needed_by','fecha_req') || '',
+          needed_by: excelCellToISODate(getH(row,'fecha_requerida','needed_by','fecha_req')),
           description: getH(row,'descripción','descripcion','description') || '',
           objective: getH(row,'objetivo','objective') || '',
-          created_at: getH(row,'fecha_creación','created_at') || new Date().toISOString(),
+          created_at: excelCellToISODate(getH(row,'fecha_creación','created_at')) || new Date().toISOString(),
           updated_at: new Date().toISOString(),
           activity_log:[], files:[], milestones:[], internal_only:false
         };
