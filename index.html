@@ -1181,9 +1181,6 @@ td.td-action{white-space:nowrap;}
         <div class="nav-item" data-view="heatmap" onclick="navigate('heatmap')">
           <span class="nav-icon">🔥</span><span>Bandwidth</span>
         </div>
-        <div class="nav-item" data-view="library" onclick="navigate('library')">
-          <span class="nav-icon">📁</span><span>Biblioteca</span>
-        </div>
         <div class="nav-item" data-view="reports" onclick="navigate('reports')">
           <span class="nav-icon">📑</span><span>Reportes</span>
         </div>
@@ -1234,7 +1231,6 @@ td.td-action{white-space:nowrap;}
       <div id="view-calendar" class="hidden"></div>
       <div id="view-dashboard" class="hidden"></div>
       <div id="view-heatmap" class="hidden"></div>
-      <div id="view-library" class="hidden"></div>
       <div id="view-roadmap" class="hidden"></div>
       <div id="view-kpis" class="hidden"></div>
       <div id="view-docs" class="hidden"></div>
@@ -1940,7 +1936,6 @@ let state = {
   filters: {backlog:{}, kanban:{owner:'',category:'',priority:''}},
   kanbanFilter: {owner:'', category:'', priority:''},
   backlogFilter: {status:'', category:'', owner:'', priority:'', search:''},
-  libFilter: {search:'', category:'', owner:''},
   charts: {},
   documents: [],
   trash: [],
@@ -2082,6 +2077,61 @@ function excelCellToISODate(val) {
   const d = new Date(s);
   if(!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECURRENCIA DE TAREAS (Backlog → Calendario)
+// ═══════════════════════════════════════════════════════════
+// Una tarea puede repetirse semanal / mensual / trimestralmente a partir de su
+// "Fecha requerida" (needed_by), que actúa como fecha ancla. Las ocurrencias no
+// se materializan como registros nuevos en state.requests: se calculan al vuelo
+// para pintar Calendario y para el filtro de mes en Backlog, así que cambiar la
+// fecha ancla o la periodicidad reubica automáticamente todas las ocurrencias.
+const RECURRENCE_LABELS = {none:'Una vez', weekly:'Semanal', monthly:'Mensual', quarterly:'Trimestral'};
+function _dateKeyLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// Suma meses a una fecha, recortando el día si el mes destino es más corto (p.ej. 31 ene + 1 mes → 28/29 feb).
+function _addMonthsClamped(date, monthsToAdd) {
+  const day = date.getDate();
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setMonth(d.getMonth() + monthsToAdd);
+  const daysInTarget = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  d.setDate(Math.min(day, daysInTarget));
+  return d;
+}
+// Devuelve las fechas (Date, 00:00 hora local) en que una tarea recurrente cae dentro
+// de [rangeStart, rangeEnd] (ambos inclusive), sin generar ocurrencias antes de su fecha ancla.
+function getRecurrenceOccurrences(req, rangeStart, rangeEnd) {
+  if(!req || !req.needed_by) return [];
+  const anchor = parseLocalDate(req.needed_by);
+  if(!anchor) return [];
+  const freq = req.recurrence || 'none';
+  if(freq==='none') {
+    return (anchor>=rangeStart && anchor<=rangeEnd) ? [anchor] : [];
+  }
+  const out = [];
+  if(anchor>rangeEnd) return out;
+  if(freq==='weekly') {
+    const oneWeek = 7*24*60*60*1000;
+    const lowerBound = Math.max(anchor.getTime(), rangeStart.getTime());
+    const weeksToAdd = Math.max(0, Math.ceil((lowerBound - anchor.getTime()) / oneWeek));
+    let t = anchor.getTime() + weeksToAdd*oneWeek;
+    while(t <= rangeEnd.getTime()) {
+      out.push(new Date(t));
+      t += oneWeek;
+    }
+  } else {
+    const step = freq==='quarterly' ? 3 : 1; // monthly u otro valor desconocido → mensual
+    const totalMonths = (rangeEnd.getFullYear()-anchor.getFullYear())*12 + (rangeEnd.getMonth()-anchor.getMonth());
+    const maxN = Math.max(0, Math.floor(totalMonths/step) + 1);
+    for(let n=0; n<=maxN; n++) {
+      const d = _addMonthsClamped(anchor, n*step);
+      if(d>rangeEnd) break;
+      if(d>=rangeStart && d>=anchor) out.push(d);
+    }
+  }
+  return out;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3222,7 +3272,7 @@ function updateUserUI() {
 // ═══════════════════════════════════════════════════════════
 const VIEW_TITLES = {
   home:'Inicio',intake:'Nueva Solicitud',backlog:'Backlog',kanban:'Kanban',calendar:'📆 Calendario de Tareas',
-  dashboard:'Dashboard Ejecutivo',heatmap:'Bandwidth del Equipo',library:'Biblioteca Documental',
+  dashboard:'Dashboard Ejecutivo',heatmap:'Bandwidth del Equipo',
   roadmap:'Roadmap',kpis:'📊 KPIs por Iniciativa',reports:'Reporte Semanal',config:'Configuración',
   docs:'Documentos para Consulta',
   planeacion:'🎯 OKRs Transversales',
@@ -3285,7 +3335,7 @@ function deferSearch(fn){ defer(fn, 180); }
 
 function navigate(view) {
   if(state.isAdmin || state.isTeam) { if(checkSessionTimeout()) return; }
-  const adminViews = ['dashboard','heatmap','library','reports','config','historico','vcndash'];
+  const adminViews = ['dashboard','heatmap','reports','config','historico','vcndash'];
   const requesterViews = ['intake']; // requester can ONLY access these
   const teamViews = ['backlog','kanban','calendar','roadmap','kpis','docs','planeacion','home','intake'];
   if(state.isRequester && !requesterViews.includes(view)) {
@@ -3317,7 +3367,7 @@ function navigate(view) {
   const renders = {
     home:renderHome, intake:renderIntake, myRequests:renderMyRequests, backlog:renderBacklog,
     kanban:renderKanban, calendar:renderCalendar, dashboard:renderDashboard, heatmap:renderHeatmap,
-    library:renderLibrary, roadmap:renderRoadmap, reports:renderReports, config:renderConfig,
+    roadmap:renderRoadmap, reports:renderReports, config:renderConfig,
     docs:renderDocs,
     planeacion:renderPlaneacion,
     historico:renderHistorico,
@@ -5845,9 +5895,38 @@ function renderBacklog() {
       const q=f.search.toLowerCase();
       if(!r.id.toLowerCase().includes(q)&&!r.title.toLowerCase().includes(q)&&!r.requester_name.toLowerCase().includes(q)) return false;
     }
+    if(f.month) {
+      const [fy, fm] = f.month.split('-').map(Number);
+      const rangeStart = new Date(fy, fm-1, 1);
+      const rangeEnd = new Date(fy, fm, 0);
+      if(getRecurrenceOccurrences(r, rangeStart, rangeEnd).length===0) return false;
+    }
     return true;
   });
   reqs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+  // Opciones del filtro de mes: todos los meses con al menos una fecha requerida
+  // (propia, o de una ocurrencia recurrente en los próximos 12 meses), más el mes actual.
+  const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const _monthKeySet = new Set();
+  const _todayForMonths = new Date();
+  _monthKeySet.add(`${_todayForMonths.getFullYear()}-${String(_todayForMonths.getMonth()+1).padStart(2,'0')}`);
+  state.requests.forEach(r=>{
+    if(!r.needed_by) return;
+    const anchor = parseLocalDate(r.needed_by);
+    if(!anchor) return;
+    _monthKeySet.add(`${anchor.getFullYear()}-${String(anchor.getMonth()+1).padStart(2,'0')}`);
+    if(r.recurrence && r.recurrence!=='none') {
+      for(let i=1;i<=11;i++) {
+        const d=_addMonthsClamped(_todayForMonths, i);
+        _monthKeySet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+      }
+    }
+  });
+  const monthOpts = [..._monthKeySet].sort().map(mk=>{
+    const [y,m] = mk.split('-');
+    return `<option value="${mk}" ${f.month===mk?'selected':''}>${MESES_ES[parseInt(m,10)-1]} ${y}</option>`;
+  }).join('');
 
   const statusOpts = STATUSES.filter(s=>!ARCHIVED_STATUSES.includes(s)).map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('');
   const catOpts = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c}</option>`).join('');
@@ -5857,7 +5936,7 @@ function renderBacklog() {
   const rows = reqs.map(r=>`
     <tr onclick="openTask('${r.id}')" style="cursor:pointer">
       <td class="td-id">${r.id}</td>
-      <td class="td-title"><span title="${r.title}">${r.title}</span></td>
+      <td class="td-title"><span title="${r.title}">${(r.recurrence&&r.recurrence!=='none')?'🔁 ':''}${r.title}</span></td>
       <td>${catBadge(r.category)}</td>
       <td>${statusBadge(r.status)}</td>
       <td>${priorityBadge(r.admin_priority||r.requester_priority)}</td>
@@ -5884,6 +5963,9 @@ function renderBacklog() {
       </select>
       <select class="filter-select" onchange="state.backlogFilter.priority=this.value;defer(renderBacklog)">
         <option value="">Todas las prioridades</option>${prioOpts}
+      </select>
+      <select class="filter-select" onchange="state.backlogFilter.month=this.value;defer(renderBacklog)">
+        <option value="">Todos los meses</option>${monthOpts}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};defer(renderBacklog)">✕ Limpiar</button>
       ${_myTasksBtn}
@@ -6333,7 +6415,12 @@ function renderHeatmap() {
     if(!r.assigned_owner || !heatData[r.assigned_owner]) return;
     if(['Concluida','Cancelada'].includes(r.status)) return;
     const pts = COMPLEXITY[r.complexity]||1;
-    const neededWeek = r.needed_by ? getWeekKey(new Date(r.needed_by)) : null;
+    // Bug corregido: "new Date('YYYY-MM-DD')" parsea como UTC medianoche; en un huso
+    // horario negativo (México, UTC-6) eso puede recorrer la fecha un día hacia atrás
+    // y mandar la tarea a la semana equivocada. parseLocalDate() la interpreta en hora
+    // local, igual que Calendario y Backlog.
+    const neededDate = r.needed_by ? parseLocalDate(r.needed_by) : null;
+    const neededWeek = neededDate ? getWeekKey(neededDate) : null;
     if(neededWeek && heatData[r.assigned_owner][neededWeek]!==undefined) {
       heatData[r.assigned_owner][neededWeek] += pts;
     }
@@ -6341,17 +6428,23 @@ function renderHeatmap() {
     (r.milestones||[]).forEach(ms=>{
       if(['Completado','Bloqueado'].includes(ms.status)) return;
       if(ms.owner && heatData[ms.owner] && ms.target_date) {
-        const mswk = getWeekKey(new Date(ms.target_date));
+        const msDate = parseLocalDate(ms.target_date);
+        if(!msDate) return;
+        const mswk = getWeekKey(msDate);
         if(heatData[ms.owner][mswk]!==undefined) heatData[ms.owner][mswk]++;
       }
     });
   });
 
+  // Umbrales configurables desde Configuración › Umbrales de Bandwidth. Antes esta
+  // función ignoraba state.config.thresholds y usaba números fijos (5/12/20), así que
+  // cambiar los umbrales ahí no tenía ningún efecto visible en esta vista.
+  const _thr = state.config.thresholds || {green:5, yellow:12, orange:20};
   const heatClass = (pts) => {
     if(pts===0) return 'hc-0';
-    if(pts<=5) return 'hc-1';
-    if(pts<=12) return 'hc-2';
-    if(pts<=20) return 'hc-3';
+    if(pts<=_thr.green) return 'hc-1';
+    if(pts<=_thr.yellow) return 'hc-2';
+    if(pts<=_thr.orange) return 'hc-3';
     return 'hc-4';
   };
 
@@ -6407,87 +6500,16 @@ function renderHeatmap() {
         <div style="width:20px;height:20px;background:#DCFCE7;border-radius:4px"></div> Sin carga (0 pts)
       </div>
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
-        <div style="width:20px;height:20px;background:#BEF264;border-radius:4px"></div> Baja carga (1-5 pts)
+        <div style="width:20px;height:20px;background:#BEF264;border-radius:4px"></div> Baja carga (1-${_thr.green} pts)
       </div>
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
-        <div style="width:20px;height:20px;background:#FEF08A;border-radius:4px"></div> Media carga (6-12 pts)
+        <div style="width:20px;height:20px;background:#FEF08A;border-radius:4px"></div> Media carga (${_thr.green+1}-${_thr.yellow} pts)
       </div>
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
-        <div style="width:20px;height:20px;background:#FDBA74;border-radius:4px"></div> Alta carga (13-20 pts)
+        <div style="width:20px;height:20px;background:#FDBA74;border-radius:4px"></div> Alta carga (${_thr.yellow+1}-${_thr.orange} pts)
       </div>
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
-        <div style="width:20px;height:20px;background:#FCA5A5;border-radius:4px"></div> Sobrecarga (+20 pts)
-      </div>
-    </div>
-  `;
-}
-
-// ═══════════════════════════════════════════════════════════
-// VIEW: LIBRARY
-// ═══════════════════════════════════════════════════════════
-function renderLibrary() {
-  const lf = state.libFilter;
-  let allFiles = [];
-  state.requests.forEach(r=>{
-    (r.files||[]).forEach(f=>{
-      allFiles.push({...f, req_id:r.id, req_title:r.title, category:r.category, owner:r.assigned_owner});
-    });
-  });
-  let filtered = allFiles.filter(f=>{
-    if(lf.search && !f.name.toLowerCase().includes(lf.search.toLowerCase()) && !f.req_title.toLowerCase().includes(lf.search.toLowerCase())) return false;
-    if(lf.category && f.category!==lf.category) return false;
-    if(lf.owner && f.owner!==lf.owner) return false;
-    return true;
-  });
-
-  const catOpts = Object.keys(CATEGORIES).map(c=>`<option value="${c}" ${lf.category===c?'selected':''}>${c}</option>`).join('');
-  const ownerOpts = state.config.team.map(o=>`<option value="${o}" ${lf.owner===o?'selected':''}>${o}</option>`).join('');
-
-  const fileCards = filtered.map(f=>`
-    <div class="file-card" style="margin-bottom:8px">
-      <div class="file-icon">📄</div>
-      <div class="file-info">
-        <div class="file-name">${f.name}</div>
-        <div class="file-meta">
-          ${f.req_id} · ${f.category} · Owner: ${f.owner||'—'} · ${fmtDate(f.uploaded_at)}
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <span class="file-ver">v${f.version}</span>
-        ${f.status==='Final'?'<span class="file-final">Final</span>':f.status==='Reemplazado'?'<span class="badge" style="background:#FEF3C7;color:#92400E;font-size:10px">Reemplazado</span>':''}
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" title="Copiar link" onclick="copyLink('${f.url||'#'}')">📋</button>
-          <button class="btn btn-ghost btn-sm" onclick="openTask('${f.req_id}')">↗️</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('view-library').innerHTML = `
-    <div class="filters-bar" style="margin-bottom:16px">
-      <input type="text" class="filter-search" placeholder="🔍 Buscar archivos..." value="${lf.search}" oninput="state.libFilter.search=this.value;deferSearch(renderLibrary)">
-      <select class="filter-select" onchange="state.libFilter.category=this.value;defer(renderLibrary)">
-        <option value="">Todas las categorías</option>${catOpts}
-      </select>
-      <select class="filter-select" onchange="state.libFilter.owner=this.value;defer(renderLibrary)">
-        <option value="">Todos los owners</option>${ownerOpts}
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="state.libFilter={search:'',category:'',owner:''};defer(renderLibrary)">✕ Limpiar</button>
-      <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${filtered.length} archivo${filtered.length!==1?'s':''}</span>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📁 Biblioteca Documental</div>
-        <div class="card-subtitle">${allFiles.length} archivos registrados</div>
-      </div>
-      <div class="card-body">
-        ${filtered.length>0?fileCards:`
-          <div class="empty-state">
-            <div class="empty-icon">📂</div>
-            <div class="empty-title">Sin archivos</div>
-            <div class="empty-sub">Los archivos adjuntos en las tareas aparecerán aquí.</div>
-          </div>
-        `}
+        <div style="width:20px;height:20px;background:#FCA5A5;border-radius:4px"></div> Sobrecarga (+${_thr.orange} pts)
       </div>
     </div>
   `;
@@ -7840,18 +7862,19 @@ function renderConfig() {
           <div class="card-title">⚖️ Umbrales de Bandwidth</div>
         </div>
         <div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Puntos de carga semanal (Baja=1pt, Media=3pt, Alta=5pt + milestones) donde empieza cada color en la pestaña <b>Bandwidth</b>. 🔴 Sobrecarga es todo lo que quede por encima de 🟠 Alta.</div>
           <div class="grid-3">
             <div class="form-group">
-              <label class="form-label">🟡 Amarillo (pts)</label>
+              <label class="form-label">🟢 Baja hasta (pts)</label>
+              <input type="number" class="form-input" value="${state.config.thresholds.green}" oninput="state.config.thresholds.green=+this.value">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🟡 Media hasta (pts)</label>
               <input type="number" class="form-input" value="${state.config.thresholds.yellow}" oninput="state.config.thresholds.yellow=+this.value">
             </div>
             <div class="form-group">
-              <label class="form-label">🟠 Naranja (pts)</label>
+              <label class="form-label">🟠 Alta hasta (pts)</label>
               <input type="number" class="form-input" value="${state.config.thresholds.orange}" oninput="state.config.thresholds.orange=+this.value">
-            </div>
-            <div class="form-group">
-              <label class="form-label">🔴 Rojo (pts)</label>
-              <input type="number" class="form-input" value="20" readonly style="background:var(--surface2)">
             </div>
           </div>
         </div>
@@ -8066,6 +8089,7 @@ function renderTaskDetail(req) {
     ${priorityBadge(req.admin_priority||req.requester_priority)}
     ${catBadge(req.category)}
     ${req.internal_only?'<span class="badge" style="background:#F0FDF4;color:#15803D">🔒 Interna</span>':''}
+    ${(req.recurrence&&req.recurrence!=='none')?`<span class="badge" style="background:#EEF2FF;color:#4338CA">🔁 ${RECURRENCE_LABELS[req.recurrence]}</span>`:''}
   `;
 
   // Activity log html
@@ -8298,6 +8322,13 @@ function renderTaskDetail(req) {
             <select class="form-select" style="font-size:13px" onchange="updateField('${req.id}','complexity',this.value)">
               ${Object.keys(COMPLEXITY).map(c=>`<option value="${c}" ${req.complexity===c?'selected':''}>${c} (${COMPLEXITY[c]}pt)</option>`).join('')}
             </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px">🔁 Recurrencia</label>
+            <select class="form-select" style="font-size:13px" onchange="updateField('${req.id}','recurrence',this.value)">
+              ${Object.entries(RECURRENCE_LABELS).map(([k,label])=>`<option value="${k}" ${(req.recurrence||'none')===k?'selected':''}>${label}</option>`).join('')}
+            </select>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Repite esta tarea en el Calendario a partir de la Fecha requerida ("Una vez" = comportamiento normal).</div>
           </div>
         </div>`:''}
 
@@ -8903,6 +8934,7 @@ function normalizeRequest(r) {
   if(!r.created_at) r.created_at = r.updated_at || new Date().toISOString();
   if(!r.updated_at) r.updated_at = r.created_at;
   if(!r.status) r.status = 'Backlog';
+  if(!r.recurrence) r.recurrence = 'none';
   return r;
 }
 function normalizeState() {
@@ -9167,7 +9199,7 @@ const JASON_HELP_TOPICS = [
   { keys:['área','area','usuario','usuarios','configuración','configuracion','config','rol','permiso'],
     a:'⚙️ **Usuarios y áreas (Configuración):**\nEn **Configuración › Usuarios** creas usuarios, defines su **rol** y su **área** (esta se precarga al levantar solicitudes). También editas áreas transversales, contraseñas y umbrales.' },
   { keys:['documento','biblioteca','doc','archivo de consulta'],
-    a:'📚 **Documentos / Biblioteca:**\nConsulta y publica documentos del área. Usa la vista **Documentos** (consulta) o **Biblioteca** (admin) para versiones y estados.' },
+    a:'📚 **Documentos:**\nConsulta y publica documentos del área en la vista **Documentos**. Ahí puedes ver versiones, estados y publicar actualizaciones (según tu rol).' },
   { keys:['excel','exportar','descargar','importar','cargar','xlsx','csv'],
     a:'📊 **Exportar / Importar:**\nEn Backlog, Roadmap y OKRs hay botones **⬇️ Excel** que descargan en formato **.xls**, y **⬆️ Cargar / 📥 Importar** para subir desde **.xls, .csv** o JSON.' },
   { keys:['sincron','onedrive','guardar','archivo compartido','equipo ve','mismos datos'],
@@ -9255,12 +9287,17 @@ function renderCalendar() {
     (!cf.category || r.category===cf.category) &&
     (!cf.area || r.requester_area===cf.area);
 
-  // Group tasks by needed_by date
+  // Group tasks by fecha: cada ocurrencia (incluida cada repetición semanal, mensual o
+  // trimestral) que caiga dentro del mes visible se agrega a su propio día.
+  const _calMonthStart = new Date(calYear, calMonth, 1);
+  const _calMonthEnd = new Date(calYear, calMonth+1, 0);
   const tasksByDate = {};
   state.requests.filter(r=>r.needed_by&&!['Concluida','Cancelada'].includes(r.status)&&calMatch(r)).forEach(r=>{
-    const d = r.needed_by.split('T')[0];
-    if(!tasksByDate[d]) tasksByDate[d]=[];
-    tasksByDate[d].push(r);
+    getRecurrenceOccurrences(r, _calMonthStart, _calMonthEnd).forEach(occDate=>{
+      const d = _dateKeyLocal(occDate);
+      if(!tasksByDate[d]) tasksByDate[d]=[];
+      tasksByDate[d].push(r);
+    });
   });
 
   // Build calendar grid
@@ -9288,7 +9325,7 @@ function renderCalendar() {
       const isToday = dateStr===todayStr;
       const isOverdueDay = new Date(dateStr)<today;
       const taskPills = tasks.slice(0,3).map(t=>`
-        <div onclick="openTask('${t.id}')" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${statusColors2[t.status]||'#6B7280'}18;color:${statusColors2[t.status]||'#6B7280'};border-left:2px solid ${statusColors2[t.status]||'#6B7280'}" title="${t.title}">${t.title}</div>
+        <div onclick="openTask('${t.id}')" style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${statusColors2[t.status]||'#6B7280'}18;color:${statusColors2[t.status]||'#6B7280'};border-left:2px solid ${statusColors2[t.status]||'#6B7280'}" title="${(t.recurrence&&t.recurrence!=='none')?RECURRENCE_LABELS[t.recurrence]+': ':''}${t.title}">${(t.recurrence&&t.recurrence!=='none')?'🔁 ':''}${t.title}</div>
       `).join('');
       const more = tasks.length>3 ? `<div style="font-size:10px;color:var(--text-muted);font-weight:600">+${tasks.length-3} más</div>` : '';
       return `<td style="background:${isToday?'var(--primary-light)':'var(--surface)'};border:1px solid ${isToday?'var(--primary)':'var(--border-light)'};padding:6px;vertical-align:top;height:90px;width:14.28%;overflow:hidden">
@@ -9301,11 +9338,13 @@ function renderCalendar() {
 
   const legend = Object.entries(statusColors2).map(([s,c])=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${c};font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>${s}</span>`).join('');
 
-  const monthTasks = state.requests.filter(r=>{
-    if(!r.needed_by) return false;
-    const d = parseLocalDate(r.needed_by); if(!d) return false;
-    return d.getMonth()===calMonth && d.getFullYear()===calYear && !['Concluida','Cancelada'].includes(r.status) && calMatch(r);
-  }).sort((a,b)=>parseLocalDate(a.needed_by)-parseLocalDate(b.needed_by));
+  const monthOccurrences = [];
+  state.requests.filter(r=>r.needed_by&&!['Concluida','Cancelada'].includes(r.status)&&calMatch(r)).forEach(r=>{
+    getRecurrenceOccurrences(r, _calMonthStart, _calMonthEnd).forEach(occDate=>{
+      monthOccurrences.push({req:r, date:occDate});
+    });
+  });
+  monthOccurrences.sort((a,b)=>a.date-b.date);
 
   // Opciones de filtros
   const calOwnerOpts = ['', ...state.config.team].map(o=>`<option value="${o}" ${cf.owner===o?'selected':''}>${o||'👤 Todos los usuarios'}</option>`).join('');
@@ -9319,7 +9358,7 @@ function renderCalendar() {
       <div class="page-head">
         <div class="page-head-main">
           <h2 class="page-title" style="text-transform:capitalize">🗓️ ${monthName}</h2>
-          <div class="page-sub">${monthTasks.length} tarea${monthTasks.length!==1?'s':''} con vencimiento este mes</div>
+          <div class="page-sub">${monthOccurrences.length} tarea${monthOccurrences.length!==1?'s':''} con vencimiento este mes</div>
         </div>
         <div class="page-actions">
           <button class="btn btn-secondary btn-sm" onclick="state.calMonth=${calMonth===0?11:calMonth-1};${calMonth===0?'state.calYear='+(calYear-1)+';':''}renderCalendar()">← Anterior</button>
@@ -9346,7 +9385,7 @@ function renderCalendar() {
 
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">${legend}</div>
 
-      ${monthTasks.length ? `
+      ${monthOccurrences.length ? `
       <div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden">
         <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:14px;font-weight:700;color:var(--text-primary)">📋 Tareas con vencimiento en ${monthName}</div>
         <table style="width:100%;border-collapse:collapse">
@@ -9357,9 +9396,9 @@ function renderCalendar() {
             <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--primary)">OWNER</th>
           </tr></thead>
           <tbody>
-            ${monthTasks.map(r=>`<tr onclick="openTask('${r.id}')" style="cursor:pointer;border-bottom:1px solid var(--border-light)">
-              <td style="padding:10px 14px;font-size:12px;font-weight:600;color:${isOverdue(r.needed_by)?'var(--error)':'var(--text-secondary)'}">${fmtDate(r.needed_by)}</td>
-              <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--text-primary);max-width:300px"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${r.title}</span></td>
+            ${monthOccurrences.map(({req:r,date:occDate})=>`<tr onclick="openTask('${r.id}')" style="cursor:pointer;border-bottom:1px solid var(--border-light)">
+              <td style="padding:10px 14px;font-size:12px;font-weight:600;color:${occDate<today?'var(--error)':'var(--text-secondary)'}">${fmtDate(_dateKeyLocal(occDate))}</td>
+              <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--text-primary);max-width:300px"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${(r.recurrence&&r.recurrence!=='none')?'🔁 ':''}${r.title}</span></td>
               <td style="padding:10px 14px">${statusBadge(r.status)}</td>
               <td style="padding:10px 14px">${r.assigned_owner?ownerBadge(r.assigned_owner):'<span style="font-size:11px;color:var(--text-muted)">—</span>'}</td>
             </tr>`).join('')}
