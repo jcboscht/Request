@@ -1503,8 +1503,12 @@ td.td-action{white-space:nowrap;}
           <select id="plan-modal-quarter" class="form-select"></select>
         </div>
         <div class="form-group">
-          <label class="form-label form-required">Owner</label>
+          <label class="form-label form-required">Owner principal</label>
           <input type="text" id="plan-modal-owner" class="form-input" placeholder="Nombre del responsable">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Owner secundario (opcional)</label>
+          <input type="text" id="plan-modal-owner2" class="form-input" placeholder="Ej: para iniciativas entre dos equipos">
         </div>
         <div class="form-group">
           <label class="form-label form-required">Estatus</label>
@@ -1701,7 +1705,7 @@ td.td-action{white-space:nowrap;}
         <label class="form-label form-required">Rol</label>
         <select class="form-select" id="user-modal-role">
           <option value="admin">🔑 Administrador — acceso completo</option>
-          <option value="team">👤 Equipo — crear y gestionar solicitudes</option>
+          <option value="team">👤 Usuario — su backlog, comentarios y carga de datos en KPIs</option>
           <option value="viewer">👁 Visualizador — solo lectura</option>
           <option value="requester">📬 Solicitante — solo puede levantar y ver sus propias solicitudes</option>
         </select>
@@ -1712,6 +1716,12 @@ td.td-action{white-space:nowrap;}
           <option value="">— Sin área —</option>
         </select>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Se precarga automáticamente al levantar una nueva solicitud.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Equipo</label>
+        <input type="text" class="form-input" id="user-modal-team" list="user-team-suggestions" placeholder="Ej: BD, Strategic Ops, MKT">
+        <datalist id="user-team-suggestions"></datalist>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Los usuarios del mismo equipo ven entre sí el Backlog asignado y las Iniciativas Transversales que gestionan.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1861,7 +1871,7 @@ const STATUS_BG = {
   'Validada':'#DCFCE7','Concluida':'#BBF7D0','Requiere Cambios':'#FFEDD5','Cancelada':'#FEE2E2'
 };
 const PRIORITIES = ['Baja','Media','Alta','Crítica'];
-const TEAM = ['JC','Clau','César','Ciceli','Jorge','Charlie','TBD'];
+const TEAM = ['JC','Clau','César','Ciceli','Jorge','Charlie','Sergio','TBD'];
 const AREAS = [
   'BD','BI','Biz Ops','Contabilidad','Cx','DAE','EVF','Finanzas',
   'Hub Operations','Legal','LTO','Marketing','Ops Excellence','People',
@@ -1924,13 +1934,13 @@ let state = {
     thresholds: {green:5, yellow:12, orange:20},
     crossAreas: [...CROSS_AREAS],
     users: [
-      {id:'u-001',name:'JC Bosch',username:'jc',password:'Admin2026',role:'admin',email:'juan.bosch@vemo.com.mx'},
-      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin',email:''},
-      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team',email:''},
-      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team',email:''},
-      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team',email:''},
-      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team',email:''},
-      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team',email:''}
+      {id:'u-001',name:'JC Bosch',username:'jc',password:'Admin2026',role:'admin',email:'juan.bosch@vemo.com.mx',team:'Strategic Ops'},
+      {id:'u-002',name:'Claudia',username:'clau',password:'admin2026',role:'admin',email:'',team:'Strategic Ops'},
+      {id:'u-003',name:'César',username:'cesar',password:'team2026',role:'team',email:'',team:'Strategic Ops'},
+      {id:'u-004',name:'Charlie',username:'charlie',password:'team2026',role:'team',email:'',team:'Strategic Ops'},
+      {id:'u-005',name:'Ciceli',username:'ciceli',password:'team2026',role:'team',email:'',team:'Strategic Ops'},
+      {id:'u-006',name:'Jorge',username:'jorge',password:'team2026',role:'team',email:'',team:'BD'},
+      {id:'u-007',name:'Sergio',username:'sergio',password:'team2026',role:'team',email:'',team:'Strategic Ops'}
     ]
   },
   filters: {backlog:{}, kanban:{owner:'',category:'',priority:''}},
@@ -3258,7 +3268,7 @@ function updateUserUI() {
   } else if(state.isTeam) {
     const init = (state.currentUser||'?').slice(0,2).toUpperCase();
     avatar.textContent = init; avatar.style.background='linear-gradient(135deg,#00CC99,#008080)';
-    name.textContent = state.currentUser||'Equipo'; role.textContent='Miembro del Equipo';
+    name.textContent = state.currentUser||'Usuario'; role.textContent='Usuario';
     action.textContent='🚪'; adminNav.style.display='none';
   } else {
     avatar.textContent='?'; avatar.style.background='linear-gradient(135deg,#9CA3AF,#6B7280)';
@@ -4969,11 +4979,15 @@ function renderPlaneacion() {
   const af = state.areaFilter || '';
   const qf = state.quarterFilter || '';
   const pv = state.planeacionView || 'cards';
-  const canEdit = state.isAdmin || state.isTeam;
+  const canEdit = state.isAdmin;
+  const canEditKpi = state.isAdmin || state.isTeam;
 
+  const teamOnly = state.isTeam && !state.isAdmin;
   const showArchive = !!state.planShowArchive;
   const archivedCount = (state.areaRoadmaps||[]).filter(i=>i.archived).length;
   let items = (state.areaRoadmaps || []).filter(i=>showArchive ? !!i.archived : !i.archived);
+  // "Usuario" (team sin admin): solo ve las iniciativas donde algún owner es su compañero de equipo.
+  if(teamOnly) items = items.filter(i=>(i.owners&&i.owners.length?i.owners:[i.owner]).some(o=>isTeammateOf(o, state.currentUser)));
   if(af) items = items.filter(i=>i.area===af);
   if(qf) items = items.filter(i=>i.quarter===qf);
 
@@ -5004,7 +5018,7 @@ function renderPlaneacion() {
   if(pv === 'gantt' && !showArchive) {
     viewContent = renderPlaneacionGantt(items);
   } else if(pv === 'kpis' && !showArchive) {
-    viewContent = renderPlanMsKpis(items, canEdit);
+    viewContent = renderPlanMsKpis(items, canEditKpi);
   } else {
     // Cards view — group by area
     const areasToShow = af ? [af] : crossAreas.filter(a=>items.some(i=>i.area===a));
@@ -5067,7 +5081,7 @@ function renderPlaneacion() {
               ${tagsHtml}
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text-muted)">
-              <span>👤 ${item.owner}</span>
+              <span>👤 ${(item.owners&&item.owners.length?item.owners:[item.owner]).filter(Boolean).join(' + ')}</span>
               <span>📆 ${fmtDate(item.start_date)} → ${fmtDate(item.end_date)}</span>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px">
@@ -5104,9 +5118,9 @@ function renderPlaneacion() {
         <div class="page-actions">
           ${canEdit&&!showArchive?`<button class="btn btn-primary" onclick="openPlaneacionModal(null)">＋ Nueva iniciativa</button>`:''}
           <button class="btn ${showArchive?'btn-primary':'btn-secondary'} btn-sm" onclick="state.planShowArchive=!state.planShowArchive;if(state.planShowArchive)state.planeacionView='cards';defer(renderPlaneacion)" title="Iniciativas concluidas y archivadas">${showArchive?'← Volver a abiertas':'📦 Repositorio ('+archivedCount+')'}</button>
-          ${!showArchive?`<button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
-          <input type="file" id="okr-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processOKRUpload(this)">
-          <button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>`:''}
+          ${(!showArchive&&canEdit)?`<button class="btn btn-secondary btn-sm" onclick="uploadOKRFileClick()" title="Cargar OKRs desde archivo">⬆️ Cargar</button>
+          <input type="file" id="okr-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processOKRUpload(this)">`:''}
+          ${!showArchive?`<button class="btn btn-secondary btn-sm" onclick="downloadOKRExcel()" title="Descargar OKRs como Excel">⬇️ Excel</button>`:''}
         </div>
       </div>
 
@@ -5413,7 +5427,7 @@ function renderPlaneacionGantt(allItems) {
       ${expandIcon?`<text x="10" y="${midY+0.5}" dominant-baseline="central" font-size="12" fill="#0d9488" style="cursor:pointer" onclick="togglePlanGanttExpand('${item.id}')">${expandIcon}</text>`:''}
       <text x="26" y="${midY-6}" dominant-baseline="central" font-size="13" font-weight="700" fill="#111827" font-family="Poppins,sans-serif" style="cursor:pointer" clip-path="url(#plan-label-clip)" onclick="togglePlanGanttExpand('${item.id}')">${esc(labelText)}</text>
       <text x="26" y="${midY+11}" dominant-baseline="central" font-size="11" fill="${color}" font-family="Poppins,sans-serif">● ${esc(item.status)} · ${esc(item.quarter||'')}</text>
-      ${ownerCell(item.owner, midY, false)}
+      ${ownerCell((item.owners&&item.owners.length?item.owners:[item.owner]).filter(Boolean).join(' + '), midY, false)}
       <line x1="0" y1="${y+ROW_H}" x2="${LABEL_W}" y2="${y+ROW_H}" stroke="#EEF2F6" stroke-width="1"/>
     </g>`);
   });
@@ -5498,7 +5512,8 @@ function openPlaneacionModal(id) {
     get('plan-modal-quarter').value        = item ? (item.quarter||'Q2 2026') : 'Q2 2026';
     get('plan-modal-titulo').value         = item ? (item.title||'') : '';
     get('plan-modal-desc').value           = item ? (item.description||'') : '';
-    get('plan-modal-owner').value          = item ? (item.owner||'') : (state.currentUser||'');
+    get('plan-modal-owner').value           = item ? ((item.owners&&item.owners[0])||item.owner||'') : (state.currentUser||'');
+    get('plan-modal-owner2').value          = item ? ((item.owners&&item.owners[1])||'') : '';
     get('plan-modal-status').value         = item ? (item.status||'Planeado') : 'Planeado';
     get('plan-modal-priority').value       = item ? (item.priority||'Media') : 'Media';
     get('plan-modal-start').value          = item ? (item.start_date||'') : '';
@@ -5606,10 +5621,13 @@ function planMsHeadSync(){
 function addPlanMilestone() { addPlanMilestoneRow(); }
 
 function submitPlaneacionItem() {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede editar iniciativas transversales.','warning'); return; }
   const id = document.getElementById('plan-modal-id').value;
   const title = document.getElementById('plan-modal-titulo').value.trim();
   const area  = document.getElementById('plan-modal-area').value;
-  const owner = document.getElementById('plan-modal-owner').value.trim();
+  const owner  = document.getElementById('plan-modal-owner').value.trim();
+  const owner2 = document.getElementById('plan-modal-owner2').value.trim();
+  const owners = [...new Set([owner, owner2].filter(Boolean))];
   const start = document.getElementById('plan-modal-start').value;
   const end   = document.getElementById('plan-modal-end').value;
   if(!title||!area||!owner||!start||!end){toast('⚠️ Campos requeridos','Completa todos los campos obligatorios.','warning');return;}
@@ -5638,7 +5656,7 @@ function submitPlaneacionItem() {
       state.areaRoadmaps[idx] = {...state.areaRoadmaps[idx],
         area, quarter:document.getElementById('plan-modal-quarter').value,
         title, description:document.getElementById('plan-modal-desc').value,
-        owner, status:document.getElementById('plan-modal-status').value,
+        owner, owners, status:document.getElementById('plan-modal-status').value,
         priority:document.getElementById('plan-modal-priority').value,
         start_date:start, end_date:end, tags, milestones, updated_at:now};
     }
@@ -5646,7 +5664,7 @@ function submitPlaneacionItem() {
   } else {
     const newId = 'ar-'+String(Date.now()).slice(-6);
     state.areaRoadmaps.push({id:newId,area,quarter:document.getElementById('plan-modal-quarter').value,
-      title,description:document.getElementById('plan-modal-desc').value,owner,
+      title,description:document.getElementById('plan-modal-desc').value,owner,owners,
       status:document.getElementById('plan-modal-status').value,
       priority:document.getElementById('plan-modal-priority').value,
       start_date:start,end_date:end,tags,milestones,created_at:now,updated_at:now});
@@ -5659,6 +5677,7 @@ function submitPlaneacionItem() {
 }
 
 function deletePlaneacionItem(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede eliminar iniciativas transversales.','warning'); return; }
   if(!confirm('¿Eliminar esta iniciativa del roadmap?')) return;
   state.areaRoadmaps = state.areaRoadmaps.filter(i=>i.id!==id);
   saveState();
@@ -5668,6 +5687,7 @@ function deletePlaneacionItem(id) {
 
 // ── Repositorio: concluir / reactivar iniciativas ──
 function concludePlaneacionItem(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede concluir iniciativas transversales.','warning'); return; }
   const item = (state.areaRoadmaps||[]).find(i=>i.id===id);
   if(!item) return;
   if(!confirm('¿Marcar "'+item.title+'" como concluida?\nSe enviará al Repositorio y dejará de aparecer en las tareas abiertas.')) return;
@@ -5680,6 +5700,7 @@ function concludePlaneacionItem(id) {
   toast('📦 Iniciativa concluida','"'+item.title+'" se movió al Repositorio.','success');
 }
 function restorePlaneacionItem(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede reactivar iniciativas transversales.','warning'); return; }
   const item = (state.areaRoadmaps||[]).find(i=>i.id===id);
   if(!item) return;
   item.archived = false;
@@ -5770,7 +5791,7 @@ function renderPlanMsKpis(items, canEdit){
           <span style="width:10px;height:10px;border-radius:50%;background:${c.dot}"></span>
           <span style="font-size:15px;font-weight:800;color:var(--text-primary)">${esc(ini.title)}</span>
           <span style="font-size:11px;color:${c.text};background:${c.bg};border:1px solid ${c.border}40;padding:2px 9px;border-radius:20px">${esc(ini.area)}</span>
-          <span style="font-size:11px;color:var(--text-muted)">👤 ${esc(ini.owner)} · ${esc(ini.quarter||'')}</span>
+          <span style="font-size:11px;color:var(--text-muted)">👤 ${esc((ini.owners&&ini.owners.length?ini.owners:[ini.owner]).filter(Boolean).join(' + '))} · ${esc(ini.quarter||'')}</span>
           ${canEdit?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:11px" onclick="openPlaneacionModal('${ini.id}')">✏️ Editar iniciativa</button>`:''}
         </div>
         ${msBlocks}
@@ -5810,6 +5831,7 @@ function adminSetNeededBy(id, value) {
 }
 
 function saveTaskField(id, field, value) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede editar este campo.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   req[field] = value;
@@ -5820,6 +5842,7 @@ function saveTaskField(id, field, value) {
 }
 
 function saveTaskLink(id, iniId, msId) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede vincular iniciativas.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   req.linked_initiative_id = iniId || null;
@@ -5879,9 +5902,20 @@ function renderBacklog() {
   const f = state.backlogFilter;
   // "Mis Tareas" quick filter for team members
   const myTasksActive = state.backlogFilter._myTasks;
+  // Rol "Usuario" (Equipo sin privilegios de Admin): ve el backlog de su propio
+  // equipo (tareas asignadas a cualquier miembro de su equipo, o que el/ella
+  // mismo solicitó) - alcance fijo, no es un toggle.
+  const teamOnly = state.isTeam && !state.isAdmin;
   let reqs = state.requests.filter(r=>{
     // Las tareas concluidas/canceladas salen del backlog de trabajo → Backlog Histórico
     if(ARCHIVED_STATUSES.includes(r.status)) return false;
+    if(teamOnly) {
+      const isMine = r.assigned_owner === state.currentUser ||
+        isTeammateOf(r.assigned_owner, state.currentUser) ||
+        r.requester_name === state.currentUser ||
+        r.requester_id === state.currentUserId;
+      if(!isMine) return false;
+    }
     if(myTasksActive) {
       const isOwner = r.assigned_owner === state.currentUser ||
         (r.milestones||[]).some(m=>m.owner===state.currentUser && m.status!=='Completado');
@@ -5948,7 +5982,7 @@ function renderBacklog() {
     </tr>
   `).join('');
 
-  const _myTasksBtn = (state.isTeam||state.isAdmin) ? '<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;defer(renderBacklog)" style="'+(myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)')+';border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">\u{1F464} Mis Tareas</button>' : '';
+  const _myTasksBtn = (state.isAdmin) ? '<button class="btn btn-sm" onclick="state.backlogFilter._myTasks=!state.backlogFilter._myTasks;defer(renderBacklog)" style="'+(myTasksActive?'background:var(--primary);color:#fff;border-color:var(--primary)':'background:var(--surface);color:var(--text);border:1px solid var(--border)')+';border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" title="Filtrar solicitudes donde tú eres el owner o tienes milestones pendientes">\u{1F464} Mis Tareas</button>' : '';
   document.getElementById('view-backlog').innerHTML = `
     <div class="filters-bar">
       <input type="text" class="filter-search" placeholder="🔍 Buscar por ID, título o solicitante..." value="${f.search}" oninput="state.backlogFilter.search=this.value;deferSearch(renderBacklog)">
@@ -5969,13 +6003,14 @@ function renderBacklog() {
       </select>
       <button class="btn btn-ghost btn-sm" onclick="state.backlogFilter={};defer(renderBacklog)">✕ Limpiar</button>
       ${_myTasksBtn}
+      ${teamOnly?'<span style="font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-lighter);border-radius:20px;padding:3px 10px">👤 Mostrando las tareas de tu equipo (asignadas a tu equipo, o solicitadas por ti)</span>':''}
       <span style="font-size:12px;color:var(--text-muted);margin-left:auto">${reqs.length} resultado${reqs.length!==1?'s':''}</span>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div style="font-size:15px;font-weight:700;color:var(--text-primary)">${reqs.length} solicitud${reqs.length!==1?'es':''}</div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary btn-sm" onclick="uploadBacklogFileClick()" title="Cargar backlog desde archivo Excel/CSV">⬆️ Cargar Backlog</button>
-        <input type="file" id="backlog-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processBacklogUpload(this)">
+        ${state.isAdmin?`<button class="btn btn-secondary btn-sm" onclick="uploadBacklogFileClick()" title="Cargar backlog desde archivo Excel/CSV">⬆️ Cargar Backlog</button>
+        <input type="file" id="backlog-upload-input" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="processBacklogUpload(this)">`:''}
         <button class="btn btn-secondary btn-sm" onclick="downloadBacklogExcel()" title="Descargar backlog como Excel">⬇️ Descargar Excel</button>
       </div>
     </div>
@@ -6118,7 +6153,7 @@ function renderKanban() {
       const overdue = isOverdue(r.needed_by) && !['Concluida','Cancelada'].includes(r.status);
       const catInfo = CATEGORIES[r.category]||{color:'#6B7280',bg:'#F9FAFB',icon:'📝'};
       return `
-        <div class="kanban-card" draggable="true" id="kc-${r.id}"
+        <div class="kanban-card" draggable="${state.isAdmin}" id="kc-${r.id}"
           style="${(()=>{const bl=(r.activity_log||[]).some(e=>e.type==='bloqueador'&&e.resolved!==true);return bl?'border-left:3px solid #EF4444':''})()}"
           ondragstart="dragStart(event,'${r.id}')"
           ondragend="dragEnd(event)"
@@ -6196,6 +6231,7 @@ function dragLeave(e) {
   e.currentTarget.classList.remove('drag-over');
 }
 function dropCard(e, newStatus) {
+  if(!state.isAdmin) return;
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   if(!draggedId) return;
@@ -7820,10 +7856,11 @@ function renderConfig() {
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${u.name}</div>
                 ${u.area?`<div style="font-size:10px;color:var(--text-muted)">🏷️ ${u.area}</div>`:''}
+                ${u.team?`<div style="font-size:10px;color:var(--text-muted)">👥 ${u.team}</div>`:''}
                 ${u.id===state.currentUserId?'<div style="font-size:10px;color:var(--primary);font-weight:600">← Tú</div>':''}
               </div>
               <div style="font-size:12px;color:var(--text-muted);font-family:monospace">${u.username}${u.email?`<div style="font-size:10px;font-family:inherit" title="${u.email}">📧 ✓</div>`:`<div style="font-size:10px;color:#D97706;font-family:inherit" title="Sin correo: no podrá recuperar su contraseña">📧 ✗</div>`}</div>
-              <div><span class="role-badge role-${u.role}">${{admin:'Admin',team:'Equipo',viewer:'Viewer'}[u.role]||u.role}</span></div>
+              <div><span class="role-badge role-${u.role}">${{admin:'Admin',team:'Usuario',viewer:'Viewer'}[u.role]||u.role}</span></div>
               <div style="display:flex;gap:4px">
                 <button onclick="openUserModal('${u.id}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text-secondary)">✏️</button>
                 <button onclick="deleteUser('${u.id}')" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:#B91C1C" ${u.id===state.currentUserId?'disabled title="No puedes eliminarte a ti mismo"':''}>🗑</button>
@@ -7952,6 +7989,13 @@ function openUserModal(id) {
   document.getElementById('user-modal-email').value = user && user.email ? user.email : '';
   document.getElementById('user-modal-password').value = '';
   document.getElementById('user-modal-role').value = user ? user.role : 'team';
+  const teamInput = document.getElementById('user-modal-team');
+  if(teamInput) teamInput.value = user && user.team ? user.team : '';
+  const teamSuggestions = document.getElementById('user-team-suggestions');
+  if(teamSuggestions) {
+    const knownTeams = [...new Set((state.config.users||[]).map(u=>u.team).filter(Boolean))];
+    teamSuggestions.innerHTML = knownTeams.map(t=>`<option value="${t}">`).join('');
+  }
   const areaSel = document.getElementById('user-modal-area');
   if(areaSel) {
     areaSel.innerHTML = '<option value="">— Sin área —</option>' +
@@ -7971,6 +8015,7 @@ async function submitUser() {
   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('⚠️ Correo inválido','Revisa el formato del correo electrónico.','warning'); return; }
   const role     = document.getElementById('user-modal-role').value;
   const area     = document.getElementById('user-modal-area') ? document.getElementById('user-modal-area').value : '';
+  const team     = document.getElementById('user-modal-team') ? document.getElementById('user-modal-team').value.trim() : '';
   if(!name || !username) { toast('⚠️ Campos requeridos','Nombre y usuario son obligatorios.','warning'); return; }
   if(!state.config.users) state.config.users = [];
   // Check duplicate username (excluding self)
@@ -7982,7 +8027,7 @@ async function submitUser() {
     if(idx>=0) {
       const updatedUser = {
         ...state.config.users[idx],
-        name, username, role, area, email
+        name, username, role, area, team, email
       };
       if(password) {
         updatedUser.password = await hashPwd(password);
@@ -7996,7 +8041,7 @@ async function submitUser() {
     if(!password || password.length < 6) { toast('⚠️ Contraseña inválida','La contraseña debe tener al menos 6 caracteres.','warning'); return; }
     const newId = 'u-'+String(Date.now()).slice(-6);
     const hashedPwd = await hashPwd(password);
-    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:(hashedPwd!==password), role, area, email});
+    state.config.users.push({id:newId, name, username, password:hashedPwd, password_hashed:(hashedPwd!==password), role, area, team, email});
     toast('✅ Usuario creado','El nuevo usuario puede iniciar sesión ahora.','success');
   }
   saveState();
@@ -8142,7 +8187,7 @@ function renderTaskDetail(req) {
         </div>
         <div class="ms-actions">
           <span class="badge" style="background:${msStatusBg[ms.status]||'#F9FAFB'};color:${msStatusColor[ms.status]||'#9CA3AF'};font-size:10px">${ms.status}</span>
-          ${(state.isTeam||state.isAdmin)?`
+          ${(state.isAdmin)?`
             <select style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--surface)" onchange="updateMilestone('${req.id}',${i},'status',this.value)">
               ${MS_STATUSES.map(s=>`<option value="${s}" ${ms.status===s?'selected':''}>${s}</option>`).join('')}
             </select>
@@ -8155,7 +8200,7 @@ function renderTaskDetail(req) {
   }).join('') || '<div style="font-size:12px;color:var(--text-muted)">Sin milestones definidos</div>';
 
   // Status transition buttons
-  const canChangeStatus = state.isTeam||state.isAdmin;
+  const canChangeStatus = state.isAdmin;
   const nextStatuses = {
     'Backlog':['En proceso','Cancelada'],
     'En proceso':['Ejecutada','Backlog','Cancelada'],
@@ -8219,7 +8264,7 @@ function renderTaskDetail(req) {
         <!-- Descripción -->
         <div style="margin-bottom:16px">
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px">📋 Descripción</div>
-          ${(state.isTeam||state.isAdmin)?`<textarea class="form-textarea" style="font-size:13px;line-height:1.6;min-height:80px" rows="3"
+          ${(state.isAdmin)?`<textarea class="form-textarea" style="font-size:13px;line-height:1.6;min-height:80px" rows="3"
             onblur="saveTaskField('${req.id}','description',this.value)">${req.description||''}</textarea>
             <div style="font-size:10px;color:var(--text-muted);margin-top:3px;text-align:right">Guardado automático al salir del campo</div>`:
             `<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;padding:12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border-light)">${req.description}</div>`}
@@ -8228,7 +8273,7 @@ function renderTaskDetail(req) {
         <!-- Objetivo -->
         <div style="margin-bottom:16px">
           <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:6px">🎯 Objetivo</div>
-          ${(state.isTeam||state.isAdmin)?`<textarea class="form-textarea" style="font-size:13px;line-height:1.6;min-height:80px" rows="3"
+          ${(state.isAdmin)?`<textarea class="form-textarea" style="font-size:13px;line-height:1.6;min-height:80px" rows="3"
             onblur="saveTaskField('${req.id}','objective',this.value)">${req.objective||''}</textarea>`:
             `<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;padding:12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border-light)">${req.objective}</div>`}
         </div>
@@ -8243,13 +8288,13 @@ function renderTaskDetail(req) {
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div style="font-size:13px;font-weight:700;color:var(--text-primary)">📌 Milestones</div>
-            ${(state.isTeam||state.isAdmin)?`<button class="btn btn-secondary btn-sm" onclick="addMilestone('${req.id}')">+ Milestone</button>`:''}
+            ${(state.isAdmin)?`<button class="btn btn-secondary btn-sm" onclick="addMilestone('${req.id}')">+ Milestone</button>`:''}
           </div>
           <div class="milestone-list">${msHtml}</div>
           ${tplHtml}
         </div>
         <!-- Vincular a Iniciativa -->
-        ${(state.isTeam||state.isAdmin)?`
+        ${(state.isAdmin)?`
         <div style="margin-bottom:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius)">
           <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">🔗 VINCULAR A INICIATIVA</div>
           ${req.linked_initiative_id?`
@@ -8282,7 +8327,7 @@ function renderTaskDetail(req) {
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div style="font-size:13px;font-weight:700;color:var(--text-primary)">📎 Archivos y Links</div>
-            ${(state.isTeam||state.isAdmin)?`<button class="btn btn-secondary btn-sm" onclick="addFile('${req.id}')">+ Cargar archivo</button>`:''}
+            ${(state.isAdmin)?`<button class="btn btn-secondary btn-sm" onclick="addFile('${req.id}')">+ Cargar archivo</button>`:''}
           </div>
           ${filesHtml}
         </div>
@@ -8341,16 +8386,16 @@ function renderTaskDetail(req) {
 
         <!-- Log de avances -->
         <div style="margin-bottom:16px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📝 Log de Avances</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px">${state.isAdmin?'📝 Log de Avances':'💬 Comentarios'}</div>
           ${(state.isTeam||state.isAdmin)?`
           <div style="margin-bottom:12px">
-            <textarea id="new-log-text" class="form-textarea" rows="2" placeholder="Escribe un avance o comentario..." style="font-size:13px"></textarea>
+            <textarea id="new-log-text" class="form-textarea" rows="2" placeholder="${state.isAdmin?'Escribe un avance o comentario...':'Escribe un comentario...'}" style="font-size:13px"></textarea>
             <div style="margin-top:6px">
               <select id="new-log-type" class="form-select" style="font-size:12px;padding:6px 10px;width:100%" onchange="toggleActionItemForm('${req.id}',this.value)">
-                <option value="log">📝 Avance</option>
+                ${state.isAdmin?'<option value="log">📝 Avance</option>':''}
                 <option value="comment">💬 Comentario</option>
                 ${state.isAdmin?'<option value="admin">⭐ Admin note</option>':''}
-                <option value="action_item">⚡ Action Item</option>
+                ${state.isAdmin?'<option value="action_item">⚡ Action Item</option>':''}
               </select>
               <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px" onclick="addLogEntry('${req.id}')">+ Agregar</button>
             </div>
@@ -8402,6 +8447,7 @@ function renderTaskDetail(req) {
 }
 
 function changeTaskStatus(id, newStatus) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede cambiar el estado de las tareas.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const old = req.status;
@@ -8418,6 +8464,7 @@ function changeTaskStatus(id, newStatus) {
 }
 
 function assignOwnerToTask(id, owner) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede asignar owners.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const old = req.assigned_owner||'Sin asignar';
@@ -8436,6 +8483,7 @@ function saveOwnerChange(id) {
   if(req) renderTaskDetail(req);
 }
 function saveStakeholders(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede editar stakeholders.','warning'); return; }
   const sel = document.getElementById(`stakeholders-select-${id}`);
   const req = state.requests.find(r=>r.id===id);
   if(!sel || !req) return;
@@ -8474,6 +8522,7 @@ function updateField(id, field, value) {
 }
 
 function updateMilestone(reqId, idx, field, value) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede editar milestones.','warning'); return; }
   const req = state.requests.find(r=>r.id===reqId);
   if(!req||!req.milestones[idx]) return;
   req.milestones[idx][field] = value;
@@ -8488,6 +8537,7 @@ function addLogEntry(id) {
   if(!req) return;
   const text = document.getElementById('new-log-text').value.trim();
   const type = document.getElementById('new-log-type').value;
+  if(!state.isAdmin && type!=='comment'){ toast('🔒 Sin permiso','Solo puedes dejar comentarios en el backlog.','warning'); return; }
 
   if(type === 'action_item') {
     const aiTitle = document.getElementById(`ai-title-${id}`) ? document.getElementById(`ai-title-${id}`).value.trim() : '';
@@ -8541,6 +8591,7 @@ function addLogEntry(id) {
 }
 
 function addFile(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede cargar archivos.','warning'); return; }
   const url = prompt('Pega el link del archivo o documento:');
   if(!url) return;
   const req = state.requests.find(r=>r.id===id);
@@ -8560,6 +8611,7 @@ function addFile(id) {
 }
 
 function addMilestone(id) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede agregar milestones.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   // Store target request id on modal — clear msIdx to indicate add mode
@@ -8583,6 +8635,7 @@ function addMilestone(id) {
 }
 
 function editMilestone(reqId, idx) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede editar milestones.','warning'); return; }
   const req = state.requests.find(r=>r.id===reqId);
   if(!req || !req.milestones || !req.milestones[idx]) return;
   const ms = req.milestones[idx];
@@ -8604,6 +8657,7 @@ function editMilestone(reqId, idx) {
 }
 
 function deleteMilestone(reqId, idx) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede eliminar milestones.','warning'); return; }
   const req = state.requests.find(r=>r.id===reqId);
   if(!req || !req.milestones || !req.milestones[idx]) return;
   const ms = req.milestones[idx];
@@ -8616,6 +8670,7 @@ function deleteMilestone(reqId, idx) {
 }
 
 function submitMilestoneModal() {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede modificar milestones.','warning'); return; }
   const modal = document.getElementById('modal-milestone');
   const type = modal.dataset.type || 'request';
   const name = document.getElementById('ms-modal-name').value.trim();
@@ -8670,6 +8725,7 @@ function submitMilestoneModal() {
 }
 
 function loadTemplate(id, templateKey) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede cargar flujos de trabajo.','warning'); return; }
   const req = state.requests.find(r=>r.id===id);
   if(!req) return;
   const steps = WORKFLOW_TEMPLATES[templateKey]||[];
@@ -8937,8 +8993,40 @@ function normalizeRequest(r) {
   if(!r.recurrence) r.recurrence = 'none';
   return r;
 }
+// ── Equipo/Departamento: agrupa usuarios para el rol "Usuario" (team) ──
+// Resuelve el equipo de una persona por nombre. Coincidencia exacta contra
+// state.config.users primero; si no hay match, intenta una coincidencia
+// parcial (p.ej. owner "JC" vs. login "JC Bosch").
+function getUserTeam(name) {
+  if(!name) return '';
+  const users = state.config.users || [];
+  let u = users.find(x=>x.name===name);
+  if(!u) {
+    const n = String(name).trim().toLowerCase();
+    if(n) u = users.find(x=>x.name && (x.name.toLowerCase().startsWith(n) || n.startsWith(x.name.toLowerCase())));
+  }
+  return (u && u.team) ? String(u.team).trim() : '';
+}
+function isTeammateOf(personName, myName) {
+  const myTeam = getUserTeam(myName);
+  if(!myTeam || !personName) return false;
+  return getUserTeam(personName) === myTeam;
+}
+// ── Iniciativas Transversales: hasta 2 owners (co-ownership entre equipos) ──
+function normalizeIniOwners(ini) {
+  if(!ini) return;
+  if(!Array.isArray(ini.owners) || !ini.owners.length) {
+    ini.owners = ini.owner ? [ini.owner] : [];
+  } else {
+    ini.owners = [...new Set(ini.owners.map(o=>String(o||'').trim()).filter(Boolean))];
+  }
+  if(!ini.owner && ini.owners.length) ini.owner = ini.owners[0];
+}
+
 function normalizeState() {
   (state.requests||[]).forEach(normalizeRequest);
+  (state.areaRoadmaps||[]).forEach(normalizeIniOwners);
+  (state.config.users||[]).forEach(u=>{ if(u.team==null) u.team=''; });
   if(!Array.isArray(state.trash)) state.trash = [];
 }
 
@@ -9437,6 +9525,7 @@ function uploadBacklogFileClick() {
 }
 
 function processBacklogUpload(input) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede cargar el backlog masivamente.','warning'); input.value=''; return; }
   const file = input.files[0];
   if(!file) return;
   const isJson = file.name.toLowerCase().endsWith('.json');
@@ -9512,10 +9601,10 @@ function downloadOKRExcel() {
   const af = state.areaFilter || '';
   const qf = state.quarterFilter || '';
   const filtered = items.filter(i=>(af?i.area===af:true)&&(qf?i.quarter===qf:true));
-  const headers = ['ID','Título','Área Transversal','Quarter','Owner','Estatus','Prioridad','Fecha Inicio','Fecha Fin','Descripción','Tags'];
+  const headers = ['ID','Título','Área Transversal','Quarter','Owner 1','Owner 2','Estatus','Prioridad','Fecha Inicio','Fecha Fin','Descripción','Tags'];
   const rows = filtered.map(i=>[
     i.id||'', i.title||'', i.area||'', i.quarter||'',
-    i.owner||'', i.status||'', i.priority||'',
+    (i.owners&&i.owners[0])||i.owner||'', (i.owners&&i.owners[1])||'', i.status||'', i.priority||'',
     i.start_date||'', i.end_date||'',
     i.description||'',
     (i.tags||[]).join(', ')
@@ -9523,7 +9612,7 @@ function downloadOKRExcel() {
   if(!window.XLSX) { toast('⚠️ Excel no disponible','Recarga la página e intenta de nuevo.','warning'); return; }
   const wb = window.XLSX.utils.book_new();
   const ws = window.XLSX.utils.aoa_to_sheet([headers,...rows]);
-  ws['!cols'] = [{wch:18},{wch:40},{wch:20},{wch:10},{wch:16},{wch:14},{wch:10},{wch:12},{wch:12},{wch:40},{wch:24}];
+  ws['!cols'] = [{wch:18},{wch:40},{wch:20},{wch:10},{wch:16},{wch:16},{wch:14},{wch:10},{wch:12},{wch:12},{wch:40},{wch:24}];
   window.XLSX.utils.book_append_sheet(wb, ws, 'OKRs');
   // Hoja 2: Milestones de cada iniciativa (editable y re-importable)
   const msData = [['Iniciativa ID','Iniciativa','Milestone ID','Milestone','Owner','Fecha','Estatus']];
@@ -9557,6 +9646,7 @@ function uploadOKRFileClick() {
 }
 
 function processOKRUpload(input) {
+  if(!state.isAdmin){ toast('🔒 Sin permiso','Solo un administrador puede cargar OKRs masivamente.','warning'); input.value=''; return; }
   const file = input.files[0];
   if(!file) return;
   const isJson = file.name.toLowerCase().endsWith('.json');
@@ -9638,11 +9728,14 @@ function processOKRUpload(input) {
         const title=getH(row,'titulo','title','nombre','name');
         if(!title)continue;
         const id=getH(row,'id')||'plan-'+Date.now()+'-'+i;
+        const _ownerA=getH(row,'owner_1','owner1','owner','responsable')||'';
+        const _ownerB=getH(row,'owner_2','owner2','segundo_owner','owner_secundario')||'';
         const item={
           id,title,
           area:getH(row,'area_transversal','area','transversal')||'Otro',
           quarter:getH(row,'quarter','trimestre')||(typeof QUARTERS!=='undefined'?QUARTERS[0]:'Q1-2026'),
-          owner:getH(row,'owner','responsable')||'',
+          owner:_ownerA,
+          owners:[...new Set([_ownerA,_ownerB].filter(Boolean))],
           status:getH(row,'estatus','status','estado')||'Planeado',
           priority:getH(row,'prioridad','priority')||'Media',
           start_date:getH(row,'fecha_inicio','start_date','inicio')||'',
